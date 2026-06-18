@@ -1,5 +1,5 @@
 import XCTest
-@testable import Midgar
+@testable import MidgarKit
 
 final class MidgarTests: XCTestCase {
 

@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "Midgar",
+    name: "MidgarKit",
     defaultLocalization: "en",
     platforms: [.iOS(.v16), .macOS(.v13), .visionOS(.v1)],
     products: [
-        .library(name: "Midgar", targets: ["Midgar"])
+        .library(name: "MidgarKit", targets: ["MidgarKit"])
     ],
     targets: [
         .target(
-            name: "Midgar",
+            name: "MidgarKit",
             resources: [
                 .process("Resources/catalog.fallback.json"),
                 .copy("Resources/fallback-icons"),
@@ -18,8 +18,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MidgarTests",
-            dependencies: ["Midgar"]
+            name: "MidgarKitTests",
+            dependencies: ["MidgarKit"]
         )
     ]
 )

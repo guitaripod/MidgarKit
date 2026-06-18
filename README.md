@@ -1,4 +1,4 @@
-# Midgar
+# MidgarKit
 
 A beautiful, drop-in **in-app App Store** for cross-promoting your other apps. One line to embed; the catalog updates without an app release.
 
@@ -13,10 +13,10 @@ A beautiful, drop-in **in-app App Store** for cross-promoting your other apps. O
 Swift Package Manager:
 
 ```swift
-.package(url: "https://github.com/guitaripod/Midgar", from: "1.0.0")
+.package(url: "https://github.com/guitaripod/MidgarKit", from: "2.0.0")
 ```
 
-Then add `Midgar` to your app target.
+Then add `MidgarKit` to your app target.
 
 ## Use
 
@@ -25,7 +25,7 @@ Midgar is **UIKit-only** — one call presents the storefront from anywhere.
 From a UIKit settings/about screen (e.g. on a row tap):
 
 ```swift
-import Midgar
+import MidgarKit
 
 func didTapMoreApps() {
     Midgar.present(from: self)
