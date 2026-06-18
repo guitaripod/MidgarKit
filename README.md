@@ -20,7 +20,7 @@ Then add `MidgarKit` to your app target.
 
 ## Use
 
-Midgar is **UIKit-only** — one call presents the storefront from anywhere.
+One call presents the native storefront from anywhere — UIKit on iOS, AppKit on macOS, SwiftUI hosts welcome.
 
 From a UIKit settings/about screen (e.g. on a row tap):
 
