@@ -1,20 +1,20 @@
 import Foundation
-import SwiftUI
+import UIKit
 
 /// Configuration for a Midgar in-app storefront.
 ///
-/// Pass an instance to ``MidgarMoreAppsRow``, the ``SwiftUI/View/midgarStore(isPresented:config:)``
-/// modifier, or ``Midgar/present(from:config:)``. All values have production-ready defaults; the
-/// host app's own bundle identifier is excluded automatically so an app never advertises itself.
+/// Pass an instance to ``Midgar/present(from:config:)`` or ``MidgarStoreViewController``. All values
+/// have production-ready defaults; the host app's own bundle identifier is excluded automatically so
+/// an app never advertises itself.
 public struct MidgarConfig: Sendable {
 
     /// Base URL of the Midgar catalog service. Both `/v1/catalog` and `/v1/event` hang off this.
     public var endpoint: URL
 
-    /// Tint applied to the navigation bar and the GET buttons. `nil` inherits the host app's accent.
-    public var accent: Color?
+    /// Tint applied to the navigation bar and the GET buttons. `nil` inherits the presenter's tint.
+    public var accent: UIColor?
 
-    /// Title shown at the top of the storefront sheet.
+    /// Title shown at the top of the storefront.
     public var title: String
 
     /// Bundle identifiers never shown in the list. The host app's own identifier is always added.
@@ -28,7 +28,7 @@ public struct MidgarConfig: Sendable {
 
     public init(
         endpoint: URL = MidgarConfig.defaultEndpoint,
-        accent: Color? = nil,
+        accent: UIColor? = nil,
         title: String = "More Apps",
         excludedBundleIDs: [String] = [],
         enableTelemetry: Bool = true,
@@ -64,4 +64,6 @@ extension MidgarConfig {
         if let storefront, !storefront.isEmpty { return storefront.lowercased() }
         return Locale.current.region?.identifier.lowercased()
     }
+
+    var resolvedAccent: UIColor { accent ?? .tintColor }
 }

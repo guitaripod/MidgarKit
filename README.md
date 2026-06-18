@@ -2,7 +2,7 @@
 
 A beautiful, drop-in **in-app App Store** for cross-promoting your other apps. One line to embed; the catalog updates without an app release.
 
-- **SwiftUI, native, in-app.** A polished list with live icons, ratings, prices, and screenshots — installs happen inside your app via `SKStoreProductViewController`, users never leave.
+- **UIKit, native, in-app.** A polished list with live icons, ratings, prices, and screenshots — installs happen inside your app via `SKStoreProductViewController`, users never leave.
 - **Curated, always current.** A hosted catalog (Cloudflare Worker) decides which apps, in what order, with editorial taglines and featured flags. Every entry is enriched at runtime with live App Store data for the user's region.
 - **Resilient.** Last-good catalog and a fully-enriched snapshot are cached on disk; a bundled fallback ships in the package, so the store renders instantly and works offline.
 - **Self-aware.** The host app's own bundle id is excluded automatically — an app never advertises itself.
@@ -20,41 +20,29 @@ Then add `Midgar` to your app target.
 
 ## Use
 
-A ready-made settings/about row:
+Midgar is **UIKit-only** — one call presents the storefront from anywhere.
+
+From a UIKit settings/about screen (e.g. on a row tap):
 
 ```swift
 import Midgar
 
-Section {
-    MidgarMoreAppsRow()
+func didTapMoreApps() {
+    Midgar.present(from: self)
 }
 ```
 
-Present from anywhere as a sheet:
+Embed or push the controller yourself:
 
 ```swift
-struct ContentView: View {
-    @State private var showMoreApps = false
-    var body: some View {
-        Button("More Apps") { showMoreApps = true }
-            .midgarStore(isPresented: $showMoreApps)
-    }
-}
+let store = Midgar.makeStoreViewController(config: .init(accent: .systemPink))
+present(store, animated: true)
 ```
 
-From UIKit:
+From a SwiftUI host — no presenter needed, it finds the top view controller:
 
 ```swift
-Midgar.present()
-```
-
-Custom button / embedding:
-
-```swift
-MidgarMoreAppsButton { Label("Discover", systemImage: "sparkles") }
-
-// or embed the screen directly
-Midgar.storeView(config: .init(accent: .pink, title: "More from Midgar"))
+Button("More Apps") { Midgar.present() }
 ```
 
 ## Configure
@@ -64,7 +52,7 @@ Everything has a production-ready default.
 ```swift
 MidgarConfig(
     endpoint: MidgarConfig.defaultEndpoint, // catalog + telemetry service
-    accent: nil,                            // nil inherits the host app's tint
+    accent: nil,                            // nil inherits the presenter's tint
     title: "More Apps",
     excludedBundleIDs: [],                  // own bundle id is always excluded
     enableTelemetry: true,                  // anonymous tap/impression counts
