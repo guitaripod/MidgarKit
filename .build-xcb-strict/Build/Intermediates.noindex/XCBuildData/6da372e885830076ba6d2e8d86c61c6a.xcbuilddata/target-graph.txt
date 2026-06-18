@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'Midgar' in project 'Midgar'
-➜ Explicit dependency on target 'Midgar' in project 'Midgar'
-➜ Explicit dependency on target 'Midgar_Midgar' in project 'Midgar'
-Target 'Midgar' in project 'Midgar'
-➜ Explicit dependency on target 'Midgar_Midgar' in project 'Midgar'
-Target 'Midgar_Midgar' in project 'Midgar' (no dependencies)

@@ -45,24 +45,29 @@ def errstr(body):
     return str(body)[:300]
 
 
-def get_build(app_id, cfbundle):
-    _, b = req("GET", f"/v1/builds?filter[app]={app_id}&filter[version]={cfbundle}&limit=1")
+def get_build(app_id, cfbundle, platform):
+    _, b = req("GET", f"/v1/builds?filter[app]={app_id}&filter[version]={cfbundle}&include=preReleaseVersion&limit=20")
+    included = {i["id"]: i for i in b.get("included", [])}
+    for build in b.get("data", []):
+        ref = build.get("relationships", {}).get("preReleaseVersion", {}).get("data")
+        if ref and included.get(ref["id"], {}).get("attributes", {}).get("platform") == platform:
+            return build
     data = b.get("data", [])
-    return data[0] if data else None
+    return data[0] if len(data) == 1 else None
 
 
-def find_version(app_id, version_string):
-    _, v = req("GET", f"/v1/apps/{app_id}/appStoreVersions?limit=10")
+def find_version(app_id, version_string, platform):
+    _, v = req("GET", f"/v1/apps/{app_id}/appStoreVersions?filter[platform]={platform}&limit=10")
     for ver in v.get("data", []):
         if ver["attributes"].get("versionString") == version_string:
             return ver
     return None
 
 
-def create_version(app_id, version_string):
+def create_version(app_id, version_string, platform):
     status, v = req("POST", "/v1/appStoreVersions", {
         "data": {"type": "appStoreVersions",
-                 "attributes": {"platform": "IOS", "versionString": version_string, "releaseType": "AFTER_APPROVAL"},
+                 "attributes": {"platform": platform, "versionString": version_string, "releaseType": "AFTER_APPROVAL"},
                  "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})
     if status >= 300:
         log(f"  create_version FAILED {status}: {errstr(v)}")
@@ -70,11 +75,11 @@ def create_version(app_id, version_string):
     return v["data"]
 
 
-def cancel_active_submission(app_id):
+def cancel_active_submission(app_id, platform):
     _, subs = req("GET", f"/v1/reviewSubmissions?filter[app]={app_id}&limit=20")
     for s in subs.get("data", []):
         state = s["attributes"].get("state")
-        if state in ACTIVE_SUBMISSION:
+        if state in ACTIVE_SUBMISSION and s["attributes"].get("platform") == platform:
             sid = s["id"]
             status, body = req("PATCH", f"/v1/reviewSubmissions/{sid}",
                                {"data": {"type": "reviewSubmissions", "id": sid, "attributes": {"canceled": True}}})
@@ -105,10 +110,10 @@ def set_whats_new(version_id, text):
     log(f"  set whatsNew on {len(locs.get('data', []))} localizations")
 
 
-def submit(app_id, version_id):
+def submit(app_id, version_id, platform):
     for attempt in range(4):
         status, rs = req("POST", "/v1/reviewSubmissions",
-                         {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+                         {"data": {"type": "reviewSubmissions", "attributes": {"platform": platform},
                                    "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})
         if status < 300:
             break
@@ -134,21 +139,21 @@ def submit(app_id, version_id):
     return status < 300
 
 
-def run(app_id, cfbundle, version_string, whats_new):
-    log(f"== app {app_id}  build {cfbundle}  version {version_string} ==")
-    build = get_build(app_id, cfbundle)
+def run(app_id, cfbundle, version_string, whats_new, platform):
+    log(f"== app {app_id}  build {cfbundle}  version {version_string}  platform {platform} ==")
+    build = get_build(app_id, cfbundle, platform)
     if not build:
         log("  build not found in ASC yet"); return False
     if build["attributes"].get("processingState") != "VALID":
         log(f"  build state {build['attributes'].get('processingState')} (not VALID)"); return False
     build_id = build["id"]
 
-    ver = find_version(app_id, version_string)
+    ver = find_version(app_id, version_string, platform)
     if ver and ver["attributes"]["appStoreState"] in IN_REVIEW:
-        cancel_active_submission(app_id)
+        cancel_active_submission(app_id, platform)
         time.sleep(8)
     elif ver is None:
-        ver = create_version(app_id, version_string)
+        ver = create_version(app_id, version_string, platform)
         if not ver:
             return False
 
@@ -159,7 +164,7 @@ def run(app_id, cfbundle, version_string, whats_new):
         attach_build(version_id, build_id)
     if whats_new:
         set_whats_new(version_id, whats_new)
-    return submit(app_id, version_id)
+    return submit(app_id, version_id, platform)
 
 
 if __name__ == "__main__":
@@ -168,6 +173,7 @@ if __name__ == "__main__":
     ap.add_argument("cfbundle")
     ap.add_argument("version")
     ap.add_argument("--whatsnew", default="")
+    ap.add_argument("--platform", default="IOS", choices=["IOS", "MAC_OS", "VISION_OS"])
     a = ap.parse_args()
-    ok = run(a.app_id, a.cfbundle, a.version, a.whatsnew)
+    ok = run(a.app_id, a.cfbundle, a.version, a.whatsnew, a.platform)
     sys.exit(0 if ok else 1)
