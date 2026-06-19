@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "updatedAt": "2026-06-18",
+  "version": 3,
+  "updatedAt": "2026-06-19",
   "developer": {
     "name": "Midgar",
     "artistId": "1484270247"
@@ -113,7 +113,7 @@
       "appId": "6705124497",
       "bundleId": "com.marcusziade.solarbeam",
       "name": "Solar Beam",
-      "tagline": "Pro-grade photo editing, supercharged.",
+      "tagline": "A new NASA masterpiece every day.",
       "genre": "Photo & Video",
       "accent": "#F59E0B",
       "featured": false,
