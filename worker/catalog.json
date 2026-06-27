@@ -1,11 +1,23 @@
 {
-  "version": 3,
-  "updatedAt": "2026-06-19",
+  "version": 4,
+  "updatedAt": "2026-06-27",
   "developer": {
     "name": "Midgar",
     "artistId": "1484270247"
   },
   "apps": [
+    {
+      "appId": "6784940198",
+      "bundleId": "com.guitaripod.embr",
+      "name": "Embr — Live Streams",
+      "tagline": "The best native Twitch client.",
+      "genre": "Entertainment",
+      "accent": "#9147FF",
+      "featured": true,
+      "order": 0,
+      "icon": null,
+      "screenshots": []
+    },
     {
       "appId": "6777952645",
       "bundleId": "com.guitaripod.psybeam",
