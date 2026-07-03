@@ -203,6 +203,18 @@
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a1/f4/c1/a1f4c178-83a9-4b9c-1807-2ceaf8be4ad0/05-add.png/1320x2868bb.png",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f4/37/72/f43772e8-953f-a095-384f-bde8023b241b/06-paywall.png/1320x2868bb.png"
       ]
+    },
+    {
+      "appId": "6785542220",
+      "bundleId": "com.guitaripod.helia",
+      "name": "Helia: UV Index & Sun Safety",
+      "tagline": "The honest solar coach.",
+      "genre": "Health & Fitness",
+      "accent": "#F5A623",
+      "featured": true,
+      "order": 11,
+      "icon": null,
+      "screenshots": []
     }
   ]
 }
