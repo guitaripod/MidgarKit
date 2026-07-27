@@ -20,10 +20,18 @@ final class MidgarTests: XCTestCase {
         XCTAssertTrue(entries.contains { $0.featured == true })
     }
 
-    func testInReviewAppsHaveBundledIcons() {
+    func testInReviewAppsHaveBundledIcons() async {
         for appId in ["6777952645", "6779927672"] {
-            XCTAssertNotNil(midgarBundledIcon(appId), "Missing bundled icon for \(appId)")
+            let icon = await midgarBundledIcon(appId, maxPixel: 60, scale: 2)
+            XCTAssertNotNil(icon, "Missing bundled icon for \(appId)")
         }
+    }
+
+    func testBundledIconIsDownsampledToTheRequestedSize() async {
+        let icon = await midgarBundledIcon("6779927672", maxPixel: 60, scale: 2)
+        let longestEdge = max(icon?.size.width ?? 0, icon?.size.height ?? 0)
+        XCTAssertGreaterThan(longestEdge, 0)
+        XCTAssertLessThanOrEqual(longestEdge, 60, "Icon should be downsampled to the target size")
     }
 
     func testOrderingPutsFeaturedFirstThenByOrder() {

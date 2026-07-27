@@ -6,6 +6,18 @@ import StoreKit
 /// ``Midgar/makeStoreViewController(config:)``, or push this controller directly.
 public final class MidgarStoreViewController: UIViewController {
 
+    private enum Section: Int, CaseIterable {
+        case featured
+        case all
+
+        var title: String {
+            switch self {
+            case .featured: return "Featured"
+            case .all: return "All Apps"
+            }
+        }
+    }
+
     private let config: MidgarConfig
     private let service = CatalogService()
     private lazy var telemetry = Telemetry(config: config)
@@ -16,7 +28,7 @@ public final class MidgarStoreViewController: UIViewController {
     private var isPresentingProduct = false
 
     private var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, MidgarApp>!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, MidgarApp>!
     private let refreshControl = UIRefreshControl()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
     private lazy var emptyView = EmptyStateView(accent: config.resolvedAccent) { [weak self] in
@@ -51,37 +63,97 @@ public final class MidgarStoreViewController: UIViewController {
         dismiss(animated: true)
     }
 
-    private func setupCollectionView() {
-        let layout = UICollectionViewCompositionalLayout { _, _ in
-            let item = NSCollectionLayoutItem(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(240))
+    private func makeLayout() -> UICollectionViewLayout {
+        UICollectionViewCompositionalLayout { [weak self] index, _ in
+            let section = Section(rawValue: index) ?? .all
+            let header = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1), heightDimension: .estimated(44)),
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
             )
-            let group = NSCollectionLayoutGroup.vertical(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(240)),
-                subitems: [item]
-            )
-            return NSCollectionLayoutSection(group: group)
-        }
 
-        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
+            switch section {
+            case .featured:
+                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1), heightDimension: .fractionalHeight(1)))
+                let group = NSCollectionLayoutGroup.horizontal(
+                    layoutSize: NSCollectionLayoutSize(
+                        widthDimension: .fractionalWidth(0.86),
+                        heightDimension: .absolute(FeaturedCardCell.preferredHeight)),
+                    subitems: [item]
+                )
+                let layoutSection = NSCollectionLayoutSection(group: group)
+                layoutSection.orthogonalScrollingBehavior = .groupPagingCentered
+                layoutSection.interGroupSpacing = 12
+                layoutSection.contentInsets = NSDirectionalEdgeInsets(
+                    top: 0, leading: 0, bottom: 24, trailing: 0)
+                layoutSection.boundarySupplementaryItems =
+                    (self?.hasFeatured ?? false) ? [header] : []
+                return layoutSection
+
+            case .all:
+                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1), heightDimension: .estimated(92)))
+                let group = NSCollectionLayoutGroup.vertical(
+                    layoutSize: NSCollectionLayoutSize(
+                        widthDimension: .fractionalWidth(1), heightDimension: .estimated(92)),
+                    subitems: [item]
+                )
+                let layoutSection = NSCollectionLayoutSection(group: group)
+                layoutSection.boundarySupplementaryItems =
+                    (self?.hasFeatured ?? false) ? [header] : []
+                return layoutSection
+            }
+        }
+    }
+
+    private var hasFeatured: Bool { apps.contains(where: \.featured) }
+
+    private func setupCollectionView() {
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: makeLayout())
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .systemBackground
         collectionView.alwaysBounceVertical = true
         collectionView.delegate = self
+        collectionView.prefetchDataSource = self
         collectionView.refreshControl = refreshControl
         refreshControl.addAction(UIAction { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
         }, for: .valueChanged)
         view.addSubview(collectionView)
 
-        let registration = UICollectionView.CellRegistration<AppCell, MidgarApp> { [weak self] cell, _, app in
-            guard let self else { return }
-            cell.configure(with: app, accent: self.config.resolvedAccent) { [weak self] in
-                self?.open(app)
-            }
+        let accent = config.resolvedAccent
+        let featuredRegistration = UICollectionView.CellRegistration<FeaturedCardCell, MidgarApp> {
+            cell, _, app in
+            cell.configure(with: app, accent: accent)
         }
-        dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView) { collectionView, indexPath, app in
-            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: app)
+        let rowRegistration = UICollectionView.CellRegistration<AppRowCell, MidgarApp> {
+            cell, _, app in
+            cell.configure(with: app, accent: accent)
+        }
+
+        dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView) {
+            collectionView, indexPath, app in
+            if Section(rawValue: indexPath.section) == .featured {
+                return collectionView.dequeueConfiguredReusableCell(
+                    using: featuredRegistration, for: indexPath, item: app)
+            }
+            return collectionView.dequeueConfiguredReusableCell(
+                using: rowRegistration, for: indexPath, item: app)
+        }
+
+        let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(
+            elementKind: UICollectionView.elementKindSectionHeader
+        ) { [weak self] header, _, indexPath in
+            guard let self,
+                  let section = self.dataSource.sectionIdentifier(for: indexPath.section)
+            else { return }
+            header.configure(title: section.title)
+        }
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            collectionView.dequeueConfiguredReusableSupplementary(
+                using: headerRegistration, for: indexPath)
         }
     }
 
@@ -143,11 +215,22 @@ public final class MidgarStoreViewController: UIViewController {
         Task { @MainActor in await refresh() }
     }
 
+    /// Partitions into the two sections. An app appears in exactly one of them — a diffable data
+    /// source treats a repeated item identifier across sections as a programmer error.
     private func apply(_ newApps: [MidgarApp], animatingDifferences: Bool) {
         apps = newApps
-        var snapshot = NSDiffableDataSourceSnapshot<Int, MidgarApp>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(newApps, toSection: 0)
+        let featured = newApps.filter(\.featured)
+        let rest = newApps.filter { !$0.featured }
+
+        var snapshot = NSDiffableDataSourceSnapshot<Section, MidgarApp>()
+        if !featured.isEmpty {
+            snapshot.appendSections([.featured])
+            snapshot.appendItems(featured, toSection: .featured)
+        }
+        if !rest.isEmpty {
+            snapshot.appendSections([.all])
+            snapshot.appendItems(rest, toSection: .all)
+        }
         dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
     }
 
@@ -187,13 +270,39 @@ public final class MidgarStoreViewController: UIViewController {
 extension MidgarStoreViewController: UICollectionViewDelegate {
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        guard indexPath.item < apps.count else { return }
-        open(apps[indexPath.item])
+        guard let app = dataSource.itemIdentifier(for: indexPath) else { return }
+        open(app)
     }
 
-    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard indexPath.item < apps.count else { return }
-        registerImpression(apps[indexPath.item])
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        guard let app = dataSource.itemIdentifier(for: indexPath) else { return }
+        registerImpression(app)
+    }
+}
+
+extension MidgarStoreViewController: UICollectionViewDataSourcePrefetching {
+    /// Warms the downsampled-image cache ahead of the scroll so a cell that scrolls into view
+    /// usually has its artwork already decoded.
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        prefetchItemsAt indexPaths: [IndexPath]
+    ) {
+        let scale = view.window?.screen.scale ?? traitCollection.displayScale
+        for indexPath in indexPaths {
+            guard let app = dataSource.itemIdentifier(for: indexPath) else { continue }
+            let isFeatured = Section(rawValue: indexPath.section) == .featured
+            Task { @MainActor in
+                _ = await midgarLoadImage(app.iconURL, maxPixel: isFeatured ? 56 : 60, scale: scale)
+                if isFeatured, let first = app.screenshotURLs.first {
+                    _ = await midgarLoadImage(
+                        first, maxPixel: FeaturedCardCell.preferredHeight, scale: scale)
+                }
+            }
+        }
     }
 }
 

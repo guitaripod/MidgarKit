@@ -452,8 +452,12 @@ private final class MidgarAppRowView: NSView {
         let url = app.iconURL
         let monogram = app.monogram
         let accent = appAccent
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
         iconTask = Task { @MainActor [weak self] in
-            let loaded = await midgarLoadImage(url) ?? midgarBundledIcon(appId)
+            var loaded = await midgarLoadImage(url, maxPixel: 60, scale: scale)
+            if loaded == nil {
+                loaded = await midgarBundledIcon(appId, maxPixel: 60, scale: scale)
+            }
             guard let self, !Task.isCancelled else { return }
             if let loaded {
                 self.iconView.image = loaded
@@ -634,8 +638,10 @@ private final class MidgarScreenshotView: NSImageView {
     deinit { loadTask?.cancel() }
 
     private func load(url: URL) {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
         loadTask = Task { @MainActor [weak self] in
-            let loaded = await midgarLoadImage(url)
+            let loaded = await midgarLoadImage(
+                url, maxPixel: MidgarScreenshotStripView.preferredHeight, scale: scale)
             guard let self, !Task.isCancelled, let loaded, loaded.size.height > 0 else { return }
             self.image = loaded
             let height = MidgarScreenshotStripView.preferredHeight

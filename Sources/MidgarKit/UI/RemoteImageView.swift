@@ -1,12 +1,13 @@
 #if canImport(UIKit)
 import UIKit
 
-/// An image view that asynchronously loads remote artwork with an animated shimmer placeholder,
-/// cancels in-flight loads on reuse, and falls back to a bundled icon or a tinted monogram.
+/// An image view that asynchronously loads remote artwork downsampled to its own size, cancels
+/// in-flight loads on reuse, and falls back to a bundled icon or a tinted monogram.
+///
+/// The target size is passed in rather than read from `bounds` so a load can start before the first
+/// layout pass — during prefetch, the view has no frame yet.
 @MainActor
 final class RemoteImageView: UIImageView {
-    var onImageLoaded: ((CGSize) -> Void)?
-
     private var loadTask: Task<Void, Never>?
     private let monogramLabel = UILabel()
     private let shimmerLayer = CAGradientLayer()
@@ -18,6 +19,7 @@ final class RemoteImageView: UIImageView {
         contentMode = .scaleAspectFill
         backgroundColor = .secondarySystemBackground
         isAccessibilityElement = false
+        layer.allowsGroupOpacity = false
 
         monogramLabel.textAlignment = .center
         monogramLabel.textColor = .white
@@ -54,13 +56,13 @@ final class RemoteImageView: UIImageView {
     func reset() {
         cancel()
         image = nil
+        alpha = 1
         monogramLabel.isHidden = true
         backgroundColor = .secondarySystemBackground
-        onImageLoaded = nil
         stopShimmer()
     }
 
-    func loadIcon(for app: MidgarApp, accent: UIColor) {
+    func loadIcon(for app: MidgarApp, accent: UIColor, maxPixel: CGFloat) {
         cancel()
         image = nil
         monogramLabel.isHidden = true
@@ -68,31 +70,39 @@ final class RemoteImageView: UIImageView {
         let appId = app.appId
         let url = app.iconURL
         let monogram = app.monogram
+        let scale = traitCollection.displayScale
         loadTask = Task { @MainActor [weak self] in
-            let loaded = await midgarLoadImage(url) ?? midgarBundledIcon(appId)
+            var loaded = await midgarLoadImage(url, maxPixel: maxPixel, scale: scale)
+            if loaded == nil {
+                loaded = await midgarBundledIcon(appId, maxPixel: maxPixel, scale: scale)
+            }
             guard let self, !Task.isCancelled else { return }
             self.stopShimmer()
             if let loaded {
-                self.image = loaded
+                self.set(loaded)
             } else {
                 self.showMonogram(monogram, accent: accent)
             }
         }
     }
 
-    func loadScreenshot(url: URL) {
+    func loadScreenshot(url: URL, maxPixel: CGFloat) {
         cancel()
         image = nil
         startShimmer()
+        let scale = traitCollection.displayScale
         loadTask = Task { @MainActor [weak self] in
-            let loaded = await midgarLoadImage(url)
-            guard let self, !Task.isCancelled else { return }
+            let loaded = await midgarLoadImage(url, maxPixel: maxPixel, scale: scale)
+            guard let self, !Task.isCancelled, let loaded else { return }
             self.stopShimmer()
-            if let loaded {
-                self.image = loaded
-                self.onImageLoaded?(loaded.size)
-            }
+            self.set(loaded)
         }
+    }
+
+    private func set(_ loaded: UIImage) {
+        image = loaded
+        alpha = 0
+        UIView.animate(withDuration: 0.18, delay: 0, options: .curveEaseOut) { self.alpha = 1 }
     }
 
     private func showMonogram(_ text: String, accent: UIColor) {
