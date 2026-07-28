@@ -20,7 +20,7 @@ final class FeaturedCardCell: UICollectionViewCell {
     private let icon = RemoteImageView()
     private let nameLabel = UILabel()
     private let taglineLabel = UILabel()
-    private let pill = UILabel()
+    private let pill = PillLabel()
     private var accent: UIColor = .systemBlue
 
     override init(frame: CGRect) {
@@ -77,7 +77,7 @@ final class FeaturedCardCell: UICollectionViewCell {
         nameLabel.text = app.name
         taglineLabel.text = app.tagline
         taglineLabel.isHidden = (app.tagline ?? "").isEmpty
-        pill.text = "  \(app.priceLabel.uppercased())  "
+        pill.text = app.priceLabel.uppercased()
 
         isAccessibilityElement = true
         accessibilityTraits = .button

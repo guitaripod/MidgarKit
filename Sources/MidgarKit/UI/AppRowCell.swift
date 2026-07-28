@@ -13,7 +13,7 @@ final class AppRowCell: UICollectionViewCell {
     private let titleLabel = UILabel()
     private let taglineLabel = UILabel()
     private let metaLabel = UILabel()
-    private let pill = UILabel()
+    private let pill = PillLabel()
     private let separator = UIView()
 
     override init(frame: CGRect) {
@@ -40,7 +40,7 @@ final class AppRowCell: UICollectionViewCell {
         metaLabel.attributedText = midgarMetaText(for: app)
         metaLabel.isHidden = metaLabel.attributedText?.length == 0
 
-        pill.text = "  \(app.priceLabel.uppercased())  "
+        pill.text = app.priceLabel.uppercased()
         pill.textColor = accent
         pill.backgroundColor = accent.withAlphaComponent(0.14)
 
