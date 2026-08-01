@@ -285,13 +285,22 @@ extension MidgarStoreViewController: UICollectionViewDelegate {
 }
 
 extension MidgarStoreViewController: UICollectionViewDataSourcePrefetching {
+    /// visionOS windows have no `UIScreen`, so the trait environment is the only scale there.
+    private var prefetchScale: CGFloat {
+        #if os(visionOS)
+        traitCollection.displayScale
+        #else
+        view.window?.screen.scale ?? traitCollection.displayScale
+        #endif
+    }
+
     /// Warms the downsampled-image cache ahead of the scroll so a cell that scrolls into view
     /// usually has its artwork already decoded.
     public func collectionView(
         _ collectionView: UICollectionView,
         prefetchItemsAt indexPaths: [IndexPath]
     ) {
-        let scale = view.window?.screen.scale ?? traitCollection.displayScale
+        let scale = prefetchScale
         for indexPath in indexPaths {
             guard let app = dataSource.itemIdentifier(for: indexPath) else { continue }
             let isFeatured = Section(rawValue: indexPath.section) == .featured
