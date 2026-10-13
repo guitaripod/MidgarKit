@@ -416,4 +416,31 @@ final class PortalControllerTests: XCTestCase {
             }
         }
     }
+
+    func testAGrowingCatalogOfSixtyAppsStillLaysOutAndRenders() {
+        let controller = PortalController(scale: 2, reduceMotion: false)
+        let apps = (1...60).map { index in
+            MidgarApp(
+                appId: "\(index)", bundleId: "com.example.app\(index)", name: "App \(index)",
+                accentHex: "#7C5CFF", topics: ["t\(index % 5)"], value: Double(index % 10) / 10
+            )
+        }
+        let ranked = PortalRanking.order(apps: apps, hostBundleID: "com.example.app1", installed: [])
+        controller.load(ranked: ranked, hostBundleID: "com.example.app1", installed: [], initialFocus: ranked.first?.appId)
+        controller.resize(to: CGSize(width: 393, height: 852), insets: PortalInsets(top: 110, bottom: 200))
+        XCTAssertEqual(controller.layout.cells.count, 61)
+        XCTAssertEqual(Set(controller.layout.cells.map(\.hex)).count, 61)
+        controller.begin(at: 0)
+        var time: CFTimeInterval = 0
+        while time < 4 {
+            time += 1.0 / 60.0
+            controller.tick(now: time)
+        }
+        XCTAssertFalse(controller.camera.isMoving)
+        measure {
+            for frame in 0..<120 {
+                controller.renderer.render(camera: CGPoint(x: CGFloat(frame), y: CGFloat(frame) * 0.5), intro: 5)
+            }
+        }
+    }
 }
