@@ -6,7 +6,7 @@ import UIKit
 /// the portal with an iris that grows out of the card.
 @MainActor
 public final class MidgarEntryView: UIControl {
-    public static let preferredHeight: CGFloat = 116
+    public static let preferredHeight: CGFloat = 116 * PortalMetrics.scale
 
     private let config: MidgarConfig
     private let renderer: PortalRenderer
@@ -23,7 +23,7 @@ public final class MidgarEntryView: UIControl {
         self.config = config
         let scale = MidgarEntryView.displayScale()
         renderer = PortalRenderer(
-            layout: PortalLayout.make(appIDs: [], pitch: 46),
+            layout: PortalLayout.make(appIDs: [], pitch: 46 * PortalMetrics.scale),
             scale: scale,
             reduceMotion: UIAccessibility.isReduceMotionEnabled
         )
@@ -93,26 +93,26 @@ public final class MidgarEntryView: UIControl {
     public override func layoutSubviews() {
         super.layoutSubviews()
         clip.frame = bounds
-        clip.cornerRadius = 26
+        clip.cornerRadius = 26 * PortalMetrics.scale
         backdrop.frame = bounds
         glow.frame = bounds
         renderer.rootLayer.frame = bounds
-        let center = CGPoint(x: max(bounds.width - 80, bounds.width * 0.64), y: bounds.height / 2)
+        let center = CGPoint(x: max(bounds.width - 80 * PortalMetrics.scale, bounds.width * 0.64), y: bounds.height / 2)
         renderer.setViewport(
             size: bounds.size,
             center: center,
-            halfExtent: CGSize(width: 108, height: 78),
-            diameter: 38
+            halfExtent: CGSize(width: 108 * PortalMetrics.scale, height: 78 * PortalMetrics.scale),
+            diameter: 38 * PortalMetrics.scale
         )
         renderer.render(camera: .zero, intro: 99)
-        let textWidth = max(0, center.x - 66 - 20)
-        titleLabel.frame = CGRect(x: 20, y: bounds.height / 2 - 34, width: textWidth, height: 26)
-        subtitleLabel.frame = CGRect(x: 20, y: bounds.height / 2 + 0, width: textWidth, height: 36)
-        chevron.frame = CGRect(x: 20, y: bounds.height - 34, width: 14, height: 16)
+        let textWidth = max(0, center.x - 66 * PortalMetrics.scale - 20 * PortalMetrics.scale)
+        titleLabel.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height / 2 - 34 * PortalMetrics.scale, width: textWidth, height: 26 * PortalMetrics.scale)
+        subtitleLabel.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height / 2, width: textWidth, height: 36 * PortalMetrics.scale)
+        chevron.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height - 34 * PortalMetrics.scale, width: 14 * PortalMetrics.scale, height: 16 * PortalMetrics.scale)
     }
 
     private func configureLayers() {
-        layer.cornerRadius = 26
+        layer.cornerRadius = 26 * PortalMetrics.scale
         layer.cornerCurve = .continuous
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.28
@@ -141,13 +141,13 @@ public final class MidgarEntryView: UIControl {
     private func configureLabels() {
         titleLabel.text = MidgarStrings.entryTitle
         titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(
-            for: .systemFont(ofSize: 18, weight: .bold).rounded)
+            for: .systemFont(ofSize: 18 * PortalMetrics.scale, weight: .bold).rounded)
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = .white
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.75
         subtitleLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(
-            for: .systemFont(ofSize: 14, weight: .medium).rounded)
+            for: .systemFont(ofSize: 14 * PortalMetrics.scale, weight: .medium).rounded)
         subtitleLabel.adjustsFontForContentSizeCategory = true
         subtitleLabel.textColor = UIColor(white: 1, alpha: 0.7)
         subtitleLabel.numberOfLines = 2
@@ -168,7 +168,7 @@ public final class MidgarEntryView: UIControl {
         guard ids != loadedIDs else { return }
         loadedIDs = ids
         let shown = Array(ranked.filter { $0.bundleId.lowercased() != host?.lowercased() }.prefix(12))
-        let layout = PortalLayout.make(appIDs: shown.map(\.appId), pitch: 46, ghostRings: 1)
+        let layout = PortalLayout.make(appIDs: shown.map(\.appId), pitch: 46 * PortalMetrics.scale, ghostRings: 1)
         renderer.configure(
             layout: layout,
             apps: Dictionary(uniqueKeysWithValues: shown.map { ($0.appId, $0) }),

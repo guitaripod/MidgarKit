@@ -1,4 +1,4 @@
-#if DEBUG && canImport(UIKit) && !os(tvOS)
+#if DEBUG && canImport(UIKit) && !os(tvOS) && !os(visionOS)
 import StoreKit
 import UIKit
 
