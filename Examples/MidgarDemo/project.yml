@@ -22,6 +22,7 @@ targets:
       properties:
         CFBundleDisplayName: Midgar Demo
         UILaunchScreen: {}
+        CADisableMinimumFrameDurationOnPhone: true
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations:
