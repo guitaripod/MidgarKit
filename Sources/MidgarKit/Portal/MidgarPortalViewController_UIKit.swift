@@ -9,10 +9,11 @@ import UIKit
 public final class MidgarPortalViewController: UIViewController {
     private let model: PortalModel
     private let hosting: UIHostingController<PortalScreen>
-    private let irisDelegate = PortalIrisTransitioning()
+    private let irisDelegate: PortalIrisTransitioning
     private var presentingProduct = false
 
-    init(config: MidgarConfig) {
+    init(config: MidgarConfig, irisOrigin: CGPoint? = nil) {
+        irisDelegate = PortalIrisTransitioning(origin: irisOrigin)
         model = PortalModel(config: config)
         hosting = UIHostingController(rootView: PortalScreen(model: model))
         super.init(nibName: nil, bundle: nil)
@@ -133,23 +134,31 @@ extension MidgarPortalViewController: @MainActor SKStoreProductViewControllerDel
 /// Opens the portal like an iris: a circle grows from the middle of the screen, where the Midgar
 /// core sits, and closes back into it on dismissal.
 final class PortalIrisTransitioning: NSObject, UIViewControllerTransitioningDelegate {
+    private let origin: CGPoint?
+
+    init(origin: CGPoint?) { self.origin = origin }
+
     func animationController(
         forPresented presented: UIViewController,
         presenting: UIViewController,
         source: UIViewController
     ) -> UIViewControllerAnimatedTransitioning? {
-        PortalIrisAnimator(opening: true)
+        PortalIrisAnimator(opening: true, origin: origin)
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        PortalIrisAnimator(opening: false)
+        PortalIrisAnimator(opening: false, origin: origin)
     }
 }
 
 final class PortalIrisAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     private let opening: Bool
+    private let origin: CGPoint?
 
-    init(opening: Bool) { self.opening = opening }
+    init(opening: Bool, origin: CGPoint?) {
+        self.opening = opening
+        self.origin = origin
+    }
 
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         opening ? 0.62 : 0.42
@@ -168,9 +177,14 @@ final class PortalIrisAnimator: NSObject, UIViewControllerAnimatedTransitioning 
             container.insertSubview(underneath, at: 0)
         }
 
-        let centre = CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+        let centre = origin ?? CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+        let reach = max(
+            hypot(centre.x, centre.y), hypot(container.bounds.width - centre.x, centre.y),
+            hypot(centre.x, container.bounds.height - centre.y),
+            hypot(container.bounds.width - centre.x, container.bounds.height - centre.y)
+        ) + 20
         let small = Self.circle(centre: centre, radius: 6)
-        let large = Self.circle(centre: centre, radius: hypot(container.bounds.width, container.bounds.height) / 2 + 20)
+        let large = Self.circle(centre: centre, radius: reach)
         let mask = CAShapeLayer()
         mask.path = opening ? large : small
         portalView.layer.mask = mask

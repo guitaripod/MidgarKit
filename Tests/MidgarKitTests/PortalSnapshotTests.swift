@@ -103,5 +103,27 @@ final class PortalSnapshotTests: XCTestCase {
             try write(hosting, name: "7-outer", to: directory)
         }
     }
+
+    func testRenderEntryCard() throws {
+        guard let directory = outputDirectory else { throw XCTSkip("MIDGAR_SNAPSHOT_DIR not set") }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        MidgarPlatform.simulated = .ios
+        defer { MidgarPlatform.simulated = nil }
+        for width in [360.0, 393.0, 600.0] {
+            let card = MidgarEntryView(config: MidgarConfig(enableTelemetry: false))
+            let size = CGSize(width: width, height: MidgarEntryView.preferredHeight + 40)
+            let container = NSView(frame: CGRect(origin: .zero, size: size))
+            container.wantsLayer = true
+            container.layer?.backgroundColor = NSColor(white: 0.1, alpha: 1).cgColor
+            card.frame = CGRect(x: 16, y: 20, width: width - 32, height: MidgarEntryView.preferredHeight)
+            container.addSubview(card)
+            let window = NSWindow(contentRect: container.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = container
+            window.setFrameOrigin(CGPoint(x: -6000, y: -6000))
+            window.orderFront(nil)
+            spin(0.8)
+            try write(container, name: "entry-\(Int(width))", to: directory)
+        }
+    }
 }
 #endif

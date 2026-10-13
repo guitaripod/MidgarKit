@@ -27,16 +27,27 @@ public enum Midgar {
     /// `false` (and logs) when no presenter could be found.
     @discardableResult
     @MainActor
-    public static func present(from presenter: UIViewController? = nil, config: MidgarConfig = .default) -> Bool {
+    public static func present(
+        from presenter: UIViewController? = nil,
+        config: MidgarConfig = .default,
+        sourceView: UIView? = nil
+    ) -> Bool {
         guard let host = presenter ?? topViewController() else {
             log.error("Midgar.present found no view controller to present from; pass an explicit presenter.")
             assertionFailure("Midgar.present found no view controller to present from.")
             return false
         }
-        let portal = makeStoreViewController(config: config)
+        let portal = MidgarPortalViewController(config: config, irisOrigin: irisOrigin(for: sourceView))
         portal.modalPresentationStyle = .fullScreen
         host.present(portal, animated: true)
         return true
+    }
+
+    /// The centre of `view` in window coordinates, where the iris should open from.
+    @MainActor
+    private static func irisOrigin(for view: UIView?) -> CGPoint? {
+        guard let view, let window = view.window else { return nil }
+        return view.convert(CGPoint(x: view.bounds.midX, y: view.bounds.midY), to: window)
     }
 
     @MainActor
