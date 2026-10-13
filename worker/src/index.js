@@ -12,11 +12,12 @@ const VALID_EVENTS = new Set(["impression", "tap", "loaded", "launch", "portal_o
 const MAX_APP_ID_LENGTH = 12;
 const DISCOVERED_KEY = "discovered";
 const DISCOVERED_TTL_SECONDS = 14 * 24 * 60 * 60;
-const LOOKUP_URL = "https://itunes.apple.com/lookup";
-const LOOKUP_USER_AGENT = "midgar-catalog/1.0";
-const LOOKUP_KINDS = new Set(["software", "mac-software"]);
+const DEVELOPER_PAGE_URL = "https://apps.apple.com/us/developer/midgar-oy/id";
+const PAGE_USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+const SERVER_DATA_PATTERN = /<script[^>]*id="serialized-server-data"[^>]*>([\s\S]*?)<\/script>/;
+const ICON_SIZE = 512;
 const TAGLINE_LIMIT = 60;
-const SCREENSHOT_LIMIT = 5;
 const DISCOVERED_ORDER_BASE = 100;
 const DISCOVERED_VALUE = 0.4;
 const ACCENT_SATURATION = 0.62;
@@ -48,6 +49,9 @@ export default {
     }
     if (url.pathname === "/v1/catalog" && request.method === "GET") {
       return handleCatalog(request, url, env, ctx);
+    }
+    if (url.pathname === "/v1/discovered/refresh" && request.method === "POST") {
+      return handleDiscoveredRefresh(request, url, env);
     }
     if (url.pathname === "/v1/discovered" && request.method === "GET") {
       return handleDiscovered(env);
@@ -154,75 +158,102 @@ async function handleCatalog(request, url, env, ctx) {
   );
 }
 
+/**
+ * Forces a discovery run and reports what the App Store answered, for the stats key holder.
+ */
+async function handleDiscoveredRefresh(request, url, env) {
+  if (!env || !env.STATS_KEY) return json({ error: "stats_unconfigured" }, 503);
+  if (!authorized(request, url, env)) return json({ error: "unauthorized" }, 401);
+  const report = {};
+  const stored = await refreshDiscovered(env, report);
+  return json({ stored: Boolean(stored), report }, 200, { "cache-control": "no-store" });
+}
+
 async function handleDiscovered(env) {
   const discovered = await readDiscovered(env);
   return json(discovered || { updatedAt: null, apps: [] }, 200, { "cache-control": "no-store" });
 }
 
 /**
- * Looks up the developer's live apps on the iTunes lookup API and stores them in the
- * `discovered` KV key. A failed fetch or an empty result keeps the previous value.
- * Returns the stored object, or null when nothing was written.
+ * Reads the developer's public App Store page, which lists every live app with its bundle id,
+ * subtitle and icon, and stores one catalog entry per app. The lookup API answers 403 to
+ * Workers, the page does not. A failed or empty read keeps the previous value.
  */
-async function refreshDiscovered(env) {
+async function refreshDiscovered(env, report = {}) {
   if (!env || !env.MIDGAR) return null;
   try {
     const curated = await loadCuratedCatalog(env);
     const artistId = String(curated.developer && curated.developer.artistId);
-    const response = await fetch(
-      `${LOOKUP_URL}?id=${encodeURIComponent(artistId)}&entity=software&country=us&limit=200`,
-      { headers: { "user-agent": LOOKUP_USER_AGENT } }
-    );
+    const developerName = String((curated.developer && curated.developer.name) || "Midgar");
+    const response = await fetch(`${DEVELOPER_PAGE_URL}${encodeURIComponent(artistId)}`, {
+      headers: { "user-agent": PAGE_USER_AGENT, "accept-language": "en-US" },
+    });
+    report.status = response.status;
     if (!response.ok) return null;
-    const payload = await response.json();
-    const apps = (Array.isArray(payload.results) ? payload.results : [])
-      .filter((result) => isDeveloperSoftware(result, artistId))
-      .map((result, index) => discoveredEntry(result, index));
+    const lockups = developerLockups(await response.text(), developerName);
+    report.lockups = lockups.length;
+    const apps = lockups.map((lockup, index) => discoveredEntry(lockup, index));
     if (apps.length === 0) return null;
     const stored = { updatedAt: new Date().toISOString(), apps };
     await env.MIDGAR.put(DISCOVERED_KEY, JSON.stringify(stored), { expirationTtl: DISCOVERED_TTL_SECONDS });
     return stored;
   } catch (error) {
+    report.error = String(error);
     console.error("discovery_failed", error);
     return null;
   }
 }
 
 /**
- * True for a lookup result that is a software product of the given developer with the
- * fields a catalog entry needs.
+ * Pulls the app lockups out of the page's serialized server data: objects of kind Lockup that
+ * carry an adamId, a bundle id and a title and belong to the developer. Deduplicated by adamId.
  */
-function isDeveloperSoftware(result, artistId) {
-  if (!result || typeof result !== "object") return false;
-  const software = result.wrapperType === "software" || LOOKUP_KINDS.has(result.kind);
+function developerLockups(html, developerName) {
+  const match = SERVER_DATA_PATTERN.exec(html);
+  if (!match) return [];
+  const found = new Map();
+  const visit = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+    } else if (node && typeof node === "object") {
+      if (isDeveloperLockup(node, developerName) && !found.has(String(node.adamId))) {
+        found.set(String(node.adamId), node);
+      }
+      Object.values(node).forEach(visit);
+    }
+  };
+  visit(JSON.parse(match[1]));
+  return [...found.values()];
+}
+
+function isDeveloperLockup(node, developerName) {
   return (
-    software &&
-    String(result.artistId) === artistId &&
-    Boolean(result.trackId) &&
-    Boolean(result.bundleId) &&
-    Boolean(result.trackName)
+    node.$kind === "Lockup" &&
+    Boolean(node.adamId) &&
+    Boolean(node.bundleId) &&
+    Boolean(node.title) &&
+    typeof node.developerName === "string" &&
+    node.developerName.startsWith(developerName)
   );
 }
 
-/**
- * Builds a catalog entry with sensible defaults from one iTunes lookup software result.
- */
-function discoveredEntry(result, index) {
-  const appId = String(result.trackId);
-  const genre = result.primaryGenreName || "";
+function discoveredEntry(lockup, index) {
+  const appId = String(lockup.adamId);
+  const fields = (lockup.impressionMetrics && lockup.impressionMetrics.fields) || {};
+  const subtitle = typeof lockup.subtitle === "string" ? lockup.subtitle.trim() : "";
   return {
     appId,
-    bundleId: result.bundleId,
-    name: result.trackName,
-    tagline: taglineFrom(result.description, genre),
-    genre,
+    bundleId: lockup.bundleId,
+    name: lockup.title,
+    tagline: subtitle || null,
+    genre: null,
     accent: accentFor(appId),
     featured: false,
     order: DISCOVERED_ORDER_BASE + index,
-    icon: null,
-    screenshots: Array.isArray(result.screenshotUrls) ? result.screenshotUrls.slice(0, SCREENSHOT_LIMIT) : [],
-    platforms: result.kind === "mac-software" ? ["mac"] : ["ios"],
-    topics: genre ? [genre.toLowerCase()] : [],
+    icon: artworkURL(lockup.icon),
+    screenshots: [],
+    platforms: String(fields.kind).toLowerCase() === "macsoftware" ? ["mac"] : ["ios"],
+    topics: [],
     related: [],
     value: DISCOVERED_VALUE,
     status: "live",
@@ -231,18 +262,15 @@ function discoveredEntry(result, index) {
 }
 
 /**
- * First sentence of a description, cut to TAGLINE_LIMIT characters on a word boundary.
- * Falls back to the genre when the description has no usable text.
+ * Builds a 512 point icon URL from the page's artwork template, or null when it has none.
  */
-function taglineFrom(description, fallback) {
-  const text = String(description || "").trim();
-  const sentence = (text.match(/^[^\n]*?(?:[.!?](?=\s|$)|(?=\n|$))/) || [""])[0].trim();
-  if (!sentence) return fallback;
-  if (sentence.length <= TAGLINE_LIMIT) return sentence;
-  const cut = sentence.slice(0, TAGLINE_LIMIT + 1);
-  const boundary = cut.lastIndexOf(" ");
-  const trimmed = (boundary > 0 ? cut.slice(0, boundary) : cut.slice(0, TAGLINE_LIMIT)).replace(/[\s,;:.\-]+$/, "");
-  return trimmed || fallback;
+function artworkURL(artwork) {
+  if (!artwork || typeof artwork.template !== "string") return null;
+  return artwork.template
+    .replace("{w}", String(ICON_SIZE))
+    .replace("{h}", String(ICON_SIZE))
+    .replace("{c}", "bb")
+    .replace("{f}", "png");
 }
 
 /**

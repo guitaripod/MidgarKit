@@ -188,12 +188,15 @@ def build_document(meta, existing_by_id, live_by_id, problems):
             check_live_app(meta_app, live, problems)
         apps.append(merge_app(meta_app, existing_by_id.get(app_id, {}), live))
     apps.sort(key=lambda app: app.get("order", 0))
-    return {
+    document = {
         "version": meta["version"],
         "updatedAt": utc_now(),
         "developer": meta["developer"],
         "apps": [ordered_app(app) for app in apps],
     }
+    if meta.get("hide"):
+        document["hide"] = list(meta["hide"])
+    return document
 
 
 def find_duplicates(label, values):
