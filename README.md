@@ -20,10 +20,16 @@ Add `MidgarKit` to every app target that ships.
 ## Integrate a host app
 
 1. **Put the card first in Settings.** UIKit: `MidgarEntryView().embed(in: cell.contentView, verticalInset: 8)` in a clear, non-selecting cell of height `MidgarEntryView.preferredHeight + 16`. SwiftUI: `MidgarEntryCard()` as a clear list row. macOS: `MidgarEntryView()` or `MidgarEntryCard()`. Tapping the card opens the portal itself; there is no handler to write.
-2. **Register the schemes.** The host's own URL scheme is its lowercased bundle id (`CFBundleURLTypes`) and every Midgar scheme is listed in `LSApplicationQueriesSchemes`. `scripts/midgar_schemes.py` prints the list, `--yaml` prints an xcodegen fragment. This is how installed apps are detected and opened; macOS needs nothing.
+2. **Register the schemes.** The host's own URL scheme is its lowercased bundle id, or its reserved slot when the catalog assigns one (`CFBundleURLTypes`), and every Midgar scheme plus the 30 reserved slots is listed in `LSApplicationQueriesSchemes`. `scripts/midgar_schemes.py` prints the list, `--yaml` prints an xcodegen fragment. This is how installed apps are detected and opened; macOS needs nothing.
 3. **Ship it.** `scripts/audit_hosts.py --app Some.app --bundle-id com.example.app` checks a built app, and without arguments checks every host in `scripts/hosts.json`.
 
 To open the portal from your own button: `Midgar.present(from: viewController, config: MidgarConfig(placement: "profile"), sourceView: button)`. The iris grows out of `sourceView`.
+
+## Adding an app
+
+1. **Publish it.** The worker reads the developer's App Store page every six hours and adds any live app it does not know, with its name, subtitle, icon and platform. It shows up in every host on the next catalog refresh. No host app changes and no release.
+2. **Curate it (optional).** Add an entry to `worker/catalog.meta.json` for a better tagline, accent colour, topics, related apps, `featured` and `value`, then `python3 -I worker/scripts/gen_catalog.py` and `wrangler deploy`.
+3. **Make it read as installed (optional).** Give the entry a reserved `scheme` such as `"midgar-07"` and register that scheme in the new app's own `CFBundleURLTypes`. Every host already lists `midgar-01` to `midgar-30` (`scripts/midgar_schemes.py`), so no existing host needs an update. Hosts shipped before 3.1 only know the older apps' bundle-id schemes until their next update.
 
 ## Configuration
 
