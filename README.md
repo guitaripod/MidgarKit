@@ -1,104 +1,64 @@
 # MidgarKit
 
-A beautiful, drop-in **in-app App Store** for cross-promoting your other apps. One line to embed; the catalog updates without an app release.
+The doorway between Midgar apps. One card in a host app's Settings opens the **portal**: a full-screen universe in the spirit of the original watchOS home screen, a honeycomb of round app icons that you drag around, with a fisheye that keeps the focused app large and everything else orbiting it. Tap an icon to see what it is, tap it again to install it without leaving the app.
 
-- **Native on every Apple platform.** UIKit on iOS / iPadOS / visionOS / Mac Catalyst, AppKit on native macOS, with thin SwiftUI wrappers (`MidgarStoreView`, `.midgarStore(isPresented:)`) for SwiftUI hosts. A polished list with live icons, ratings, prices, and screenshots — on iOS installs happen inside the app via `SKStoreProductViewController`; on macOS it opens the Mac App Store.
-- **Curated, always current.** A hosted catalog (Cloudflare Worker) decides which apps, in what order, with editorial taglines and featured flags. Every entry is enriched at runtime with live App Store data for the user's region.
-- **Resilient.** Last-good catalog and a fully-enriched snapshot are cached on disk; a bundled fallback ships in the package, so the store renders instantly and works offline.
-- **Self-aware.** The host app's own bundle id is excluded automatically — an app never advertises itself.
-- **Private by default.** Anonymous, opt-out tap/impression counts only; ships a privacy manifest; no tracking, no IDFA, no user data.
+- **Every app, everywhere.** The catalog is hosted, so all Midgar apps appear in every host the moment they ship. The host app itself stays in the universe as the "you are here" marker.
+- **Knows what you have.** Installed apps get a tick and an OPEN button, the progress ring around the Midgar emblem counts them, and apps that live on another platform say so ("Mac", "iPhone") and offer to send the link.
+- **Related apps sit closest.** The ranking puts apps related to the host nearest the centre and apps the person already has further out.
+- **Fast by construction.** The portal is drawn with Core Animation layers only. A frame sets position, scale and opacity on pre-rendered textures, so the GPU does the work and the display link runs only while something moves.
+- **Private.** Anonymous, aggregate counts only (portal opens, impressions, taps, per placement and storefront). No IDFA, no identifier, no user data. A privacy manifest ships in the package.
+- **Native on every Apple platform.** UIKit on iOS, iPadOS, tvOS and visionOS; AppKit on macOS; SwiftUI wrappers for SwiftUI hosts.
 
 ## Install
 
-Swift Package Manager:
-
 ```swift
-.package(url: "https://github.com/guitaripod/MidgarKit", from: "2.0.0")
+.package(url: "https://github.com/guitaripod/MidgarKit", from: "3.0.0")
 ```
 
-Then add `MidgarKit` to your app target.
+Add `MidgarKit` to every app target that ships.
 
-## Use
+## Integrate a host app
 
-One call presents the native storefront from anywhere — UIKit on iOS, AppKit on macOS, SwiftUI hosts welcome.
+1. **Put the card first in Settings.** UIKit: `MidgarEntryView().embed(in: cell.contentView, verticalInset: 8)` in a clear, non-selecting cell of height `MidgarEntryView.preferredHeight + 16`. SwiftUI: `MidgarEntryCard()` as a clear list row. macOS: `MidgarEntryView()` or `MidgarEntryCard()`. Tapping the card opens the portal itself; there is no handler to write.
+2. **Register the schemes.** The host's own URL scheme is its lowercased bundle id (`CFBundleURLTypes`) and every Midgar scheme is listed in `LSApplicationQueriesSchemes`. `scripts/midgar_schemes.py` prints the list, `--yaml` prints an xcodegen fragment. This is how installed apps are detected and opened; macOS needs nothing.
+3. **Ship it.** `scripts/audit_hosts.py --app Some.app --bundle-id com.example.app` checks a built app, and without arguments checks every host in `scripts/hosts.json`.
 
-From a UIKit settings/about screen (e.g. on a row tap):
+To open the portal from your own button: `Midgar.present(from: viewController, config: MidgarConfig(placement: "profile"), sourceView: button)`. The iris grows out of `sourceView`.
 
-```swift
-import MidgarKit
-
-func didTapMoreApps() {
-    Midgar.present(from: self)
-}
-```
-
-Embed or push the controller yourself:
-
-```swift
-let store = Midgar.makeStoreViewController(config: .init(accent: .systemPink))
-present(store, animated: true)
-```
-
-From a SwiftUI host — no presenter needed, it finds the top view controller:
-
-```swift
-Button("More Apps") { Midgar.present() }
-```
-
-## Configure
-
-Everything has a production-ready default.
+## Configuration
 
 ```swift
 MidgarConfig(
-    endpoint: MidgarConfig.defaultEndpoint, // catalog + telemetry service
-    accent: nil,                            // nil inherits the presenter's tint
-    title: "More Apps",
-    excludedBundleIDs: [],                  // own bundle id is always excluded
-    enableTelemetry: true,                  // anonymous tap/impression counts
-    storefront: nil                         // nil uses the device region
+    endpoint: MidgarConfig.defaultEndpoint, // catalog and telemetry service
+    excludedBundleIDs: [],                  // apps to leave out of the portal
+    enableTelemetry: true,                  // anonymous counts
+    storefront: nil,                        // nil uses the device region
+    placement: "settings",                  // reported with every event and the App Store campaign token
+    providerToken: MidgarConfig.defaultProviderToken
 )
 ```
 
-## Telemetry & privacy
+Product pages open with a campaign token `<host>-<placement>` and the provider token, so App Store Connect can credit installs to the host and placement that drove them. Only people who share analytics with developers are counted, so treat the numbers as a lower bound.
 
-Midgar reports **anonymous, aggregate** impression/tap counts per promoted app (no IDFA/IDFV, no user identifier, no cross-app linkage) so you can see which apps your cross-promotion drives. It ships a `PrivacyInfo.xcprivacy` declaring `Product Interaction` (not linked, not tracking, analytics purpose).
+## The catalog service
 
-Telemetry is on by default. Disable it per host app:
-
-```swift
-Midgar.present(from: self, config: MidgarConfig(enableTelemetry: false))
-```
-
-The package only ever promotes the catalog owner's own apps: the host app's own bundle id is auto-excluded, and any catalog entry whose live App Store `artistId` doesn't match the catalog's developer is dropped client-side.
-
-## Catalog service
-
-The default catalog lives in [`worker/`](worker/) — a Cloudflare Worker exposing:
+[`worker/`](worker/) is a Cloudflare Worker with a D1 database.
 
 | Route | Purpose |
 | --- | --- |
-| `GET /v1/catalog?exclude=<bundleId>` | Curated, ordered catalog (KV-overridable, inline default) |
-| `POST /v1/event` | Anonymous impression/tap counters |
-| `GET /v1/stats` | Aggregated counters |
+| `GET /v1/catalog` | The curated catalog (from `catalog.json`, overridable through the `catalog` KV key) |
+| `POST /v1/event` | Anonymous counters: `portal_open`, `impression`, `tap`, `loaded`, `launch`, by host, storefront, placement and day |
+| `GET /v1/stats?by=app\|source\|storefront\|placement\|day&since=YYYY-MM-DD` | Aggregates, guarded by the stats key |
 
-Update the curated list by editing [`worker/catalog.json`](worker/catalog.json) and redeploying, or by writing a `catalog` key to the `MIDGAR` KV namespace — no app release required.
+Edit `worker/catalog.meta.json` (taglines, accents, topics, related apps, platforms, value), then `python3 -I worker/scripts/gen_catalog.py` merges it with live App Store data, rewrites `catalog.json`, the bundled fallback and the fallback icons. `worker/scripts/audit_catalog.py` fails when a live app is missing from the catalog. Deploy with `wrangler deploy` from `worker/`.
 
-## How the data flows
+## Developing
 
-```
-host app ──bundleId──▶ Worker /v1/catalog   (curated: ids, order, tagline, featured)
-                           │
-                           ▼
-            enrich each id ▶ iTunes lookup (user's storefront: icon, ★rating, screenshots, price)
-                           │
-                           ▼
-            missing / region-locked / offline ▶ disk snapshot ▶ bundled fallback
-                           │
-                           ▼
-                    native storefront sheet
-```
+- `swift test` runs the engine tests (lattice, lens, camera physics, ranking, controller).
+- `MIDGAR_SNAPSHOT_DIR=/tmp/shots swift test --filter PortalSnapshotTests` renders the portal and the entry card to PNGs on the Mac (`MIDGAR_SNAPSHOT_SIZE=393x852`, `MIDGAR_SNAPSHOT_PLATFORM=mac`, `MIDGAR_SNAPSHOT_HOST=<bundle id>`).
+- `scripts/install-demo.sh` builds `Examples/MidgarDemo`, installs it on the iPhone Air, runs a scripted self test (frame pacing and screenshots, Debug builds only) and collects the report.
+- `scripts/check_strings.py` validates the string catalog.
 
 ## Requirements
 
-iOS 16+ · macOS 13+ · visionOS 1+ · Swift 5.9+
+iOS 16, macOS 13, tvOS 16, visionOS 1, Swift 5.9. Liquid Glass is used on iOS, macOS and tvOS 26 and later.
