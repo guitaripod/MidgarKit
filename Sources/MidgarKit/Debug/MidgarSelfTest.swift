@@ -1,4 +1,5 @@
 #if DEBUG && canImport(UIKit) && !os(tvOS)
+import StoreKit
 import UIKit
 
 /// A scripted run of the portal for devices nobody is touching: it opens the portal, flicks the
@@ -46,12 +47,49 @@ public enum MidgarSelfTest {
             snapshot(window, name: "04-outer", to: directory)
         }
 
-        let report = meter.report(
+        let productSheet = await openProductSheet(canvas.controller, window: window, directory: directory)
+
+        var report = meter.report(
             maxFPS: window.windowScene?.screen.maximumFramesPerSecond ?? 60,
             cells: canvas.controller.layout.cells.count
         )
+        if var object = (try? JSONSerialization.jsonObject(with: report)) as? [String: Any] {
+            object["productSheetPresented"] = productSheet
+            report = (try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])) ?? report
+        }
         write("selftest.json", report, to: directory)
         NSLog("MIDGAR_SELFTEST_DONE \(String(data: report, encoding: .utf8) ?? "")")
+    }
+
+    /// Centres an app, activates it like a tap would, and reports whether the App Store product
+    /// sheet came up inside the app instead of the App Store opening.
+    @MainActor
+    private static func openProductSheet(_ controller: PortalController, window: UIWindow, directory: URL) async -> Bool {
+        guard let cell = controller.layout.cells.first(where: { !$0.isCore }) else { return false }
+        controller.bringToCentre(cell)
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        controller.activateFocused()
+        var presented: UIViewController?
+        for _ in 0..<24 {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            presented = Midgar.topViewController()
+            if isProductSheet(presented) { break }
+        }
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        snapshot(window, name: "05-product", to: directory)
+        let isSheet = isProductSheet(presented)
+        write("product-class.txt", Data(String(describing: presented.map { type(of: $0) }).utf8), to: directory)
+        presented?.dismiss(animated: false)
+        return isSheet
+    }
+
+    /// Recent iOS shows the App Store sheet inside Apple's own service card container instead of
+    /// an `SKStoreProductViewController` instance.
+    @MainActor
+    private static func isProductSheet(_ controller: UIViewController?) -> Bool {
+        guard let controller else { return false }
+        return controller.isKind(of: SKStoreProductViewController.self)
+            || String(describing: type(of: controller)).contains("ServiceCard")
     }
 
     @MainActor
