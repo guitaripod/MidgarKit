@@ -14,7 +14,11 @@ enum PortalEntryContent {
         return PortalRanking.order(apps: apps, hostBundleID: hostBundleID, installed: installed)
     }
 
+    /// Skipped for hosts with a gate: a parental gate means nothing may talk to the network on the
+    /// host's behalf until a grown-up has passed it, so the card shows the bundled or cached
+    /// catalog and the first request happens when the portal opens.
     static func refreshIfStale(config: MidgarConfig, now: Date = Date(), defaults: UserDefaults = .standard) {
+        guard config.gate == nil else { return }
         let last = defaults.object(forKey: refreshKey) as? Date ?? .distantPast
         guard now.timeIntervalSince(last) > refreshInterval else { return }
         defaults.set(now, forKey: refreshKey)

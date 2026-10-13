@@ -39,18 +39,23 @@ def sync_plist(text, schemes):
 
 
 def sync_yaml(text, schemes):
-    """Insert missing schemes into the LSApplicationQueriesSchemes list of a project.yml."""
-    match = re.search(r"^(\s*)LSApplicationQueriesSchemes:\s*\n((?:\1\s+-\s+.*\n?)*)", text, re.M)
-    if not match:
+    """Insert missing schemes into every LSApplicationQueriesSchemes list of a project.yml."""
+    pattern = re.compile(r"^(\s*)LSApplicationQueriesSchemes:\s*\n((?:\1\s+-\s+.*\n?)*)", re.M)
+    if not pattern.search(text):
         return None
-    present = {line.split("-", 1)[1].strip().lower() for line in match.group(2).splitlines() if "-" in line}
-    missing = [s for s in schemes if s not in present]
-    if not missing:
-        return text
-    item_indent = re.match(r"\s*", match.group(2).splitlines()[0]).group(0) if match.group(2) else match.group(1) + "  "
-    body = match.group(2) if match.group(2).endswith("\n") else match.group(2) + "\n"
-    body += "".join(f"{item_indent}- {s}\n" for s in missing)
-    return text[:match.start(2)] + body + text[match.end(2):]
+
+    def fill(match):
+        present = {line.split("-", 1)[1].strip().lower() for line in match.group(2).splitlines() if "-" in line}
+        missing = [s for s in schemes if s not in present]
+        if not missing:
+            return match.group(0)
+        first = match.group(2).splitlines()[0] if match.group(2) else ""
+        item_indent = re.match(r"\s*", first).group(0) if first else match.group(1) + "  "
+        body = match.group(2) if match.group(2).endswith("\n") or not match.group(2) else match.group(2) + "\n"
+        body += "".join(f"{item_indent}- {s}\n" for s in missing)
+        return f"{match.group(1)}LSApplicationQueriesSchemes:\n{body}"
+
+    return pattern.sub(fill, text)
 
 
 def main():
