@@ -32,6 +32,14 @@ public enum Midgar {
         config: MidgarConfig = .default,
         sourceView: UIView? = nil
     ) -> Bool {
+        if let gate = config.gate {
+            var ungated = config
+            ungated.gate = nil
+            Task { @MainActor in
+                if await gate() { present(from: presenter, config: ungated, sourceView: sourceView) }
+            }
+            return true
+        }
         guard let host = presenter ?? topViewController() else {
             log.error("Midgar.present found no view controller to present from; pass an explicit presenter.")
             assertionFailure("Midgar.present found no view controller to present from.")
@@ -80,6 +88,14 @@ public enum Midgar {
     @discardableResult
     @MainActor
     public static func present(from presenter: NSViewController? = nil, config: MidgarConfig = .default) -> Bool {
+        if let gate = config.gate {
+            var ungated = config
+            ungated.gate = nil
+            Task { @MainActor in
+                if await gate() { present(from: presenter, config: ungated) }
+            }
+            return true
+        }
         let store = makeStoreViewController(config: config)
         if let presenter {
             presenter.presentAsSheet(store)

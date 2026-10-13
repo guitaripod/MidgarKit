@@ -40,6 +40,10 @@ public struct MidgarConfig: Sendable {
     /// App Analytics campaigns. `nil` sends the campaign token alone.
     public var providerToken: String?
 
+    /// Asked before the portal opens. Return `false` to keep it closed. Apps with a parental gate
+    /// pass it here so the portal, and the App Store pages inside it, only open for a grown-up.
+    public var gate: (@MainActor @Sendable () async -> Bool)?
+
     public init(
         endpoint: URL = MidgarConfig.defaultEndpoint,
         accent: MidgarColor? = nil,
@@ -48,7 +52,8 @@ public struct MidgarConfig: Sendable {
         enableTelemetry: Bool = true,
         storefront: String? = nil,
         placement: String = "settings",
-        providerToken: String? = MidgarConfig.defaultProviderToken
+        providerToken: String? = MidgarConfig.defaultProviderToken,
+        gate: (@MainActor @Sendable () async -> Bool)? = nil
     ) {
         self.endpoint = endpoint
         self.accent = accent
@@ -58,6 +63,7 @@ public struct MidgarConfig: Sendable {
         self.storefront = storefront
         self.placement = placement
         self.providerToken = providerToken
+        self.gate = gate
     }
 
     /// The default configuration, pointing at the hosted Midgar catalog.
