@@ -26,8 +26,9 @@ LEGACY_PATTERN = re.compile(r"Midgar\.present|MoreAppsService|MoreAppsView")
 
 
 def catalog_schemes():
-    apps = json.loads((ROOT / "worker" / "catalog.json").read_text())["apps"]
-    return sorted({app["bundleId"].lower() for app in apps})
+    """Every scheme a host should list: the apps' own schemes plus the reserved slots."""
+    output = subprocess.run([sys.executable, str(ROOT / "scripts" / "midgar_schemes.py")], capture_output=True, text=True)
+    return output.stdout.split()
 
 
 def audit_app(path, bundle_id):
@@ -39,7 +40,10 @@ def audit_app(path, bundle_id):
     problems = []
     if own not in registered:
         problems.append(f"own scheme {own} missing from CFBundleURLTypes")
-    missing = [s for s in catalog_schemes() if s not in queries and s != own]
+    missing = [s for s in catalog_schemes() if s not in queries and s != own and not s.startswith("midgar-")]
+    absent_slots = [s for s in catalog_schemes() if s.startswith("midgar-") and s not in queries]
+    if absent_slots:
+        print(f"WARN {len(absent_slots)} reserved scheme slots are not listed yet (new apps will not read as installed here)")
     if missing:
         problems.append(f"LSApplicationQueriesSchemes missing {len(missing)}: {', '.join(missing)}")
     is_ios = "UIDeviceFamily" in plist or "UIRequiredDeviceCapabilities" in plist or plist.get("DTPlatformName") == "iphoneos"

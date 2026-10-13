@@ -55,6 +55,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     public let related: [String]
     public let family: String?
     public let value: Double
+    public let scheme: String?
 
     public var id: String { appId }
 
@@ -76,7 +77,8 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         topics: [String] = [],
         related: [String] = [],
         family: String? = nil,
-        value: Double = 0.5
+        value: Double = 0.5,
+        scheme: String? = nil
     ) {
         self.appId = appId
         self.bundleId = bundleId
@@ -96,6 +98,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         self.related = related
         self.family = family
         self.value = value
+        self.scheme = scheme
     }
 
     /// Public App Store product page, used as a fallback when in-app presentation is unavailable.
@@ -122,9 +125,10 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased()
     }
 
-    /// The URL scheme this app registers so sibling apps can detect and open it: its bundle
-    /// identifier, lowercased.
-    public var urlScheme: String { bundleId.lowercased() }
+    /// The URL scheme this app registers so sibling apps can detect and open it. Older apps use
+    /// their lowercased bundle identifier; newer ones claim a reserved slot such as `midgar-07`
+    /// in the catalog, which every host already declares.
+    public var urlScheme: String { (scheme ?? bundleId).lowercased() }
 
     /// `true` when the app can be installed on the platform the package is running on.
     public var runsOnThisDevice: Bool { platforms.contains(.current) }
@@ -145,7 +149,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case appId, bundleId, name, tagline, genre, accentHex, featured, order, iconURL
         case screenshotURLs, rating, ratingCount, formattedPrice, platforms, topics, related
-        case family, value
+        case family, value, scheme
     }
 
     public init(from decoder: Decoder) throws {
@@ -168,7 +172,8 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
             topics: try container.decodeIfPresent([String].self, forKey: .topics) ?? [],
             related: try container.decodeIfPresent([String].self, forKey: .related) ?? [],
             family: try container.decodeIfPresent(String.self, forKey: .family),
-            value: try container.decodeIfPresent(Double.self, forKey: .value) ?? 0.5
+            value: try container.decodeIfPresent(Double.self, forKey: .value) ?? 0.5,
+            scheme: try container.decodeIfPresent(String.self, forKey: .scheme)
         )
     }
 }

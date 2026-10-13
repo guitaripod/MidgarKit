@@ -25,6 +25,7 @@ cleanup() {
     wait "$SERVER_PID" 2>/dev/null
   fi
   rm -f "$MIGRATE_LOG"
+  wrangler kv key delete catalog --binding MIDGAR --local >/dev/null 2>&1
   if [ "$FAILURES" -eq 0 ]; then
     rm -f "$SERVER_LOG"
   else
@@ -120,7 +121,7 @@ else
   exit 1
 fi
 
-wrangler dev --local --port "$PORT" >"$SERVER_LOG" 2>&1 </dev/null &
+wrangler dev --local --test-scheduled --port "$PORT" >"$SERVER_LOG" 2>&1 </dev/null &
 SERVER_PID=$!
 
 if server_ready; then
@@ -141,5 +142,74 @@ check "storefront dimension shows lowercase us" stats_equals "by=storefront&app=
 check "stats without key returns 401" status_is 401 "$BASE/v1/stats"
 check "stats accepts ?key= query" status_is 200 "$BASE/v1/stats?key=$STATS_KEY_VALUE"
 check "catalog returns 200 with apps array" catalog_has_apps
+
+HELIA=com.guitaripod.helia
+SCHEDULED_URL="$BASE/__scheduled?cron=17+*/6+*+*+*"
+
+catalog_override_json() {
+  python3 -I - "$1" <<'PY'
+import json
+import sys
+
+with open("catalog.json") as handle:
+    document = json.load(handle)
+document["apps"] = [app for app in document["apps"] if app["bundleId"] != "com.guitaripod.helia"]
+if sys.argv[1] != "":
+    document["hide"] = sys.argv[1].split(",")
+print(json.dumps(document))
+PY
+}
+
+put_catalog_override() {
+  wrangler kv key put catalog "$(catalog_override_json "$1")" --binding MIDGAR --local >/dev/null 2>&1
+}
+
+trigger_scheduled() {
+  curl -fsS "$SCHEDULED_URL" >/dev/null 2>&1
+}
+
+catalog_json() {
+  curl -s "$BASE/v1/catalog"
+}
+
+helia_is_discovered_and_curated_unchanged() {
+  catalog_json | node -e '
+    let data = "";
+    process.stdin.on("data", (chunk) => (data += chunk));
+    process.stdin.on("end", () => {
+      const apps = JSON.parse(data).apps;
+      const curated = JSON.parse(require("fs").readFileSync("catalog.json", "utf8")).apps.filter((a) => a.bundleId !== process.argv[1]);
+      const helia = apps.find((a) => a.bundleId === process.argv[1]);
+      const unchanged = curated.every((c) => JSON.stringify(apps.find((a) => a.bundleId === c.bundleId)) === JSON.stringify(c));
+      process.exit(helia && helia.auto === true && curated.length === 15 && unchanged ? 0 : 1);
+    });
+  ' "$HELIA"
+}
+
+discovered_has_many_apps() {
+  curl -s "$BASE/v1/discovered" | node -e '
+    let data = "";
+    process.stdin.on("data", (chunk) => (data += chunk));
+    process.stdin.on("end", () => process.exit(JSON.parse(data).apps.length > 10 ? 0 : 1));
+  '
+}
+
+helia_is_hidden() {
+  catalog_json | node -e '
+    let data = "";
+    process.stdin.on("data", (chunk) => (data += chunk));
+    process.stdin.on("end", () => {
+      const apps = JSON.parse(data).apps;
+      process.exit(apps.length === 15 && !apps.some((a) => a.bundleId === process.argv[1]) ? 0 : 1);
+    });
+  ' "$HELIA"
+}
+
+check "kv catalog override without helia is written" put_catalog_override ""
+check "scheduled handler runs" trigger_scheduled
+check "catalog gains helia with auto true and keeps the 15 curated entries" helia_is_discovered_and_curated_unchanged
+check "discovered returns more than 10 apps" discovered_has_many_apps
+check "kv catalog override with hide is written" put_catalog_override "$HELIA"
+check "hide removes the discovered entry" helia_is_hidden
 
 exit $((FAILURES > 0))

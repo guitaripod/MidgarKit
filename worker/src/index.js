@@ -10,6 +10,17 @@ const JSON_HEADERS = {
 const CATALOG_CACHE = "public, max-age=60, s-maxage=60, stale-while-revalidate=600";
 const VALID_EVENTS = new Set(["impression", "tap", "loaded", "launch", "portal_open"]);
 const MAX_APP_ID_LENGTH = 12;
+const DISCOVERED_KEY = "discovered";
+const DISCOVERED_TTL_SECONDS = 14 * 24 * 60 * 60;
+const LOOKUP_URL = "https://itunes.apple.com/lookup";
+const LOOKUP_USER_AGENT = "midgar-catalog/1.0";
+const LOOKUP_KINDS = new Set(["software", "mac-software"]);
+const TAGLINE_LIMIT = 60;
+const SCREENSHOT_LIMIT = 5;
+const DISCOVERED_ORDER_BASE = 100;
+const DISCOVERED_VALUE = 0.4;
+const ACCENT_SATURATION = 0.62;
+const ACCENT_LIGHTNESS = 0.58;
 const UNKNOWN_SOURCE = "unknown";
 const EMPTY_STOREFRONT = "";
 const DEFAULT_PLACEMENT = "settings";
@@ -36,7 +47,10 @@ export default {
       return new Response(null, { status: 204, headers: JSON_HEADERS });
     }
     if (url.pathname === "/v1/catalog" && request.method === "GET") {
-      return handleCatalog(request, url, env);
+      return handleCatalog(request, url, env, ctx);
+    }
+    if (url.pathname === "/v1/discovered" && request.method === "GET") {
+      return handleDiscovered(env);
     }
     if (url.pathname === "/v1/event" && request.method === "POST") {
       return handleEvent(request, env, ctx);
@@ -47,15 +61,25 @@ export default {
     if (url.pathname === "/" || url.pathname === "/health") {
       return json({
         service: "midgar-catalog",
-        endpoints: ["/v1/catalog", "/v1/event", "/v1/stats"],
+        endpoints: ["/v1/catalog", "/v1/discovered", "/v1/event", "/v1/stats"],
         apps: defaultCatalog.apps.length,
       });
     }
     return json({ error: "not_found" }, 404);
   },
+
+  async scheduled(event, env, ctx) {
+    await refreshDiscovered(env);
+  },
 };
 
-async function loadCatalog(env) {
+let bootstrapStarted = false;
+
+/**
+ * Returns the curated catalog: the `catalog` KV override when it has an apps array,
+ * otherwise the bundled catalog.json.
+ */
+async function loadCuratedCatalog(env) {
   if (env && env.MIDGAR) {
     const override = await env.MIDGAR.get("catalog", "json").catch(() => null);
     if (override && Array.isArray(override.apps)) return override;
@@ -63,8 +87,41 @@ async function loadCatalog(env) {
   return defaultCatalog;
 }
 
-async function handleCatalog(request, url, env) {
-  const catalog = await loadCatalog(env);
+/**
+ * Returns the stored `{updatedAt, apps}` discovery object, or null when KV has none yet.
+ */
+async function readDiscovered(env) {
+  if (!env || !env.MIDGAR) return null;
+  const stored = await env.MIDGAR.get(DISCOVERED_KEY, "json").catch(() => null);
+  return stored && Array.isArray(stored.apps) ? stored : null;
+}
+
+/**
+ * Merges the curated catalog with the discovered apps. Curated entries always win; a
+ * discovered entry is added only when neither its appId nor its bundleId is curated and
+ * its bundleId is not listed in the curated catalog's optional `hide` array. The merged
+ * catalog carries `discoveredAt` so callers can fold it into cache validators.
+ */
+async function loadCatalog(env, discovered) {
+  const curated = await loadCuratedCatalog(env);
+  const found = discovered === undefined ? await readDiscovered(env) : discovered;
+  const appIds = new Set(curated.apps.map((app) => String(app.appId)));
+  const bundleIds = new Set(curated.apps.map((app) => String(app.bundleId).toLowerCase()));
+  const hidden = new Set((Array.isArray(curated.hide) ? curated.hide : []).map((id) => String(id).toLowerCase()));
+  const extra = ((found && found.apps) || []).filter((app) => {
+    const bundleId = String(app.bundleId).toLowerCase();
+    return !appIds.has(String(app.appId)) && !bundleIds.has(bundleId) && !hidden.has(bundleId);
+  });
+  return { ...curated, apps: [...curated.apps, ...extra], discoveredAt: (found && found.updatedAt) || "" };
+}
+
+async function handleCatalog(request, url, env, ctx) {
+  const discovered = await readDiscovered(env);
+  if (!discovered && ctx && !bootstrapStarted) {
+    bootstrapStarted = true;
+    ctx.waitUntil(refreshDiscovered(env).then((stored) => { bootstrapStarted = stored !== null; }));
+  }
+  const catalog = await loadCatalog(env, discovered);
   const exclude = new Set(
     (url.searchParams.get("exclude") || "")
       .split(",")
@@ -82,7 +139,7 @@ async function handleCatalog(request, url, env) {
     })
     .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
-  const etag = `"${catalog.version}-${catalog.updatedAt || ""}-${[...exclude].sort().join(",")}"`;
+  const etag = `"${catalog.version}-${catalog.updatedAt || ""}-${catalog.discoveredAt}-${[...exclude].sort().join(",")}"`;
   if (request.headers.get("if-none-match") === etag) {
     return new Response(null, {
       status: 304,
@@ -95,6 +152,124 @@ async function handleCatalog(request, url, env) {
     200,
     { "cache-control": CATALOG_CACHE, etag }
   );
+}
+
+async function handleDiscovered(env) {
+  const discovered = await readDiscovered(env);
+  return json(discovered || { updatedAt: null, apps: [] }, 200, { "cache-control": "no-store" });
+}
+
+/**
+ * Looks up the developer's live apps on the iTunes lookup API and stores them in the
+ * `discovered` KV key. A failed fetch or an empty result keeps the previous value.
+ * Returns the stored object, or null when nothing was written.
+ */
+async function refreshDiscovered(env) {
+  if (!env || !env.MIDGAR) return null;
+  try {
+    const curated = await loadCuratedCatalog(env);
+    const artistId = String(curated.developer && curated.developer.artistId);
+    const response = await fetch(
+      `${LOOKUP_URL}?id=${encodeURIComponent(artistId)}&entity=software&country=us&limit=200`,
+      { headers: { "user-agent": LOOKUP_USER_AGENT } }
+    );
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const apps = (Array.isArray(payload.results) ? payload.results : [])
+      .filter((result) => isDeveloperSoftware(result, artistId))
+      .map((result, index) => discoveredEntry(result, index));
+    if (apps.length === 0) return null;
+    const stored = { updatedAt: new Date().toISOString(), apps };
+    await env.MIDGAR.put(DISCOVERED_KEY, JSON.stringify(stored), { expirationTtl: DISCOVERED_TTL_SECONDS });
+    return stored;
+  } catch (error) {
+    console.error("discovery_failed", error);
+    return null;
+  }
+}
+
+/**
+ * True for a lookup result that is a software product of the given developer with the
+ * fields a catalog entry needs.
+ */
+function isDeveloperSoftware(result, artistId) {
+  if (!result || typeof result !== "object") return false;
+  const software = result.wrapperType === "software" || LOOKUP_KINDS.has(result.kind);
+  return (
+    software &&
+    String(result.artistId) === artistId &&
+    Boolean(result.trackId) &&
+    Boolean(result.bundleId) &&
+    Boolean(result.trackName)
+  );
+}
+
+/**
+ * Builds a catalog entry with sensible defaults from one iTunes lookup software result.
+ */
+function discoveredEntry(result, index) {
+  const appId = String(result.trackId);
+  const genre = result.primaryGenreName || "";
+  return {
+    appId,
+    bundleId: result.bundleId,
+    name: result.trackName,
+    tagline: taglineFrom(result.description, genre),
+    genre,
+    accent: accentFor(appId),
+    featured: false,
+    order: DISCOVERED_ORDER_BASE + index,
+    icon: null,
+    screenshots: Array.isArray(result.screenshotUrls) ? result.screenshotUrls.slice(0, SCREENSHOT_LIMIT) : [],
+    platforms: result.kind === "mac-software" ? ["mac"] : ["ios"],
+    topics: genre ? [genre.toLowerCase()] : [],
+    related: [],
+    value: DISCOVERED_VALUE,
+    status: "live",
+    auto: true,
+  };
+}
+
+/**
+ * First sentence of a description, cut to TAGLINE_LIMIT characters on a word boundary.
+ * Falls back to the genre when the description has no usable text.
+ */
+function taglineFrom(description, fallback) {
+  const text = String(description || "").trim();
+  const sentence = (text.match(/^[^\n]*?(?:[.!?](?=\s|$)|(?=\n|$))/) || [""])[0].trim();
+  if (!sentence) return fallback;
+  if (sentence.length <= TAGLINE_LIMIT) return sentence;
+  const cut = sentence.slice(0, TAGLINE_LIMIT + 1);
+  const boundary = cut.lastIndexOf(" ");
+  const trimmed = (boundary > 0 ? cut.slice(0, boundary) : cut.slice(0, TAGLINE_LIMIT)).replace(/[\s,;:.\-]+$/, "");
+  return trimmed || fallback;
+}
+
+/**
+ * Deterministic `#RRGGBB` accent: hue from an FNV-1a hash of the app id, fixed
+ * saturation and lightness.
+ */
+function accentFor(appId) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < appId.length; i++) {
+    hash ^= appId.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hslToHex((hash % 360) / 360, ACCENT_SATURATION, ACCENT_LIGHTNESS);
+}
+
+function hslToHex(h, s, l) {
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const channel = (t) => {
+    const x = (t + 1) % 1;
+    if (x < 1 / 6) return p + (q - p) * 6 * x;
+    if (x < 1 / 2) return q;
+    if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6;
+    return p;
+  };
+  const hex = (v) => Math.round(v * 255).toString(16).padStart(2, "0");
+  return `#${hex(channel(h + 1 / 3))}${hex(channel(h))}${hex(channel(h - 1 / 3))}`.toUpperCase();
 }
 
 async function handleEvent(request, env, ctx) {

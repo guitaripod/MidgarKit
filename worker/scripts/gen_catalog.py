@@ -35,6 +35,7 @@ SCREENSHOT_LIMIT = 5
 FALLBACK_SCREENSHOT_LIMIT = 3
 ICON_SIZE = 256
 VALID_PLATFORMS = ("ios", "mac", "tvos", "vision")
+SLOT_PATTERN = re.compile(r"^midgar-(0[1-9]|[12][0-9]|30)$")
 ACCENT_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 APP_KEY_ORDER = (
     "appId",
@@ -201,12 +202,25 @@ def find_duplicates(label, values):
     return ["duplicate {} {}".format(label, value) for value, count in counts.items() if count > 1]
 
 
+def validate_schemes(apps):
+    """Returns problems with the URL schemes hosts must list: slots well formed, schemes unique."""
+    problems = []
+    for app in apps:
+        scheme = app.get("scheme")
+        if scheme is not None and not SLOT_PATTERN.match(scheme):
+            problems.append("{} has scheme {!r}, which is not a reserved slot midgar-01 to midgar-30".format(describe(app), scheme))
+    effective = [(app.get("scheme") or app.get("bundleId", "")).lower() for app in apps]
+    problems += find_duplicates("URL scheme", effective)
+    return problems
+
+
 def validate_document(document):
     """Returns every validation problem in the document, or an empty list when it is valid."""
     apps = document["apps"]
     problems = []
     problems += find_duplicates("appId", [app.get("appId") for app in apps])
     problems += find_duplicates("bundleId", [app.get("bundleId") for app in apps])
+    problems += validate_schemes(apps)
     bundle_ids = {app.get("bundleId") for app in apps}
     for app in apps:
         label = describe(app)

@@ -177,6 +177,15 @@ final class MidgarTests: XCTestCase {
         XCTAssertEqual(makeApp(name: "Solar Beam").shortName, "Solar Beam")
     }
 
+    func testACatalogAssignedSchemeWinsOverTheBundleIdentifier() throws {
+        let json = #"{"appId":"9","bundleId":"com.example.New","name":"New","scheme":"midgar-07"}"#
+        let app = try JSONDecoder().decode(MidgarApp.self, from: Data(json.utf8))
+        XCTAssertEqual(app.urlScheme, "midgar-07")
+        XCTAssertEqual(InstalledApps.launchURL(for: app)?.absoluteString, "midgar-07://")
+        let entry = try JSONDecoder().decode(CatalogEntry.self, from: Data(json.utf8))
+        XCTAssertEqual(CatalogService.merge(entry: entry, live: nil).urlScheme, "midgar-07")
+    }
+
     func testURLSchemeIsTheLowercasedBundleIdentifier() {
         XCTAssertEqual(makeApp(id: "7").urlScheme, "com.example.7")
         let mixed = MidgarApp(appId: "1", bundleId: "com.guitaripod.Pixie", name: "P")
