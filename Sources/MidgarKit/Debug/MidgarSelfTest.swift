@@ -23,6 +23,7 @@ public enum MidgarSelfTest {
     static func run() async {
         guard let host = Midgar.topViewController() else { return }
         let directory = outputDirectory()
+        if let hostWindow = host.view.window { snapshot(hostWindow, name: "00-settings", to: directory) }
         Midgar.present(from: host, config: MidgarConfig(enableTelemetry: false, placement: "selftest"))
         try? await Task.sleep(nanoseconds: 3_800_000_000)
         guard let window = host.view.window ?? Midgar.topViewController()?.view.window,

@@ -51,9 +51,18 @@ public final class MidgarEntryView: NSControl {
         let center = CGPoint(x: max(bounds.width - 80, bounds.width * 0.64), y: bounds.height / 2)
         renderer.setViewport(size: bounds.size, center: center, halfExtent: CGSize(width: 108, height: 78), diameter: 38)
         renderer.render(camera: .zero, intro: 99)
-        let textWidth = max(0, center.x - 66 - 20)
-        titleLabel.frame = NSRect(x: 20, y: bounds.height / 2 + 2, width: textWidth, height: 26)
-        subtitleLabel.frame = NSRect(x: 20, y: bounds.height / 2 - 38, width: textWidth, height: 38)
+        layoutLabels(textWidth: max(0, center.x - 66 * PortalMetrics.scale - 20 * PortalMetrics.scale))
+    }
+
+    /// Stacks the title and subtitle as one block, centred vertically in the card.
+    private func layoutLabels(textWidth: CGFloat) {
+        let titleHeight = titleLabel.sizeThatFits(NSSize(width: textWidth, height: .greatestFiniteMagnitude)).height
+        let subtitleHeight = min(subtitleLabel.sizeThatFits(NSSize(width: textWidth, height: .greatestFiniteMagnitude)).height, bounds.height * 0.4)
+        let gap: CGFloat = 3
+        let total = titleHeight + gap + subtitleHeight
+        let bottom = (bounds.height - total) / 2
+        subtitleLabel.frame = NSRect(x: 20, y: bottom, width: textWidth, height: subtitleHeight)
+        titleLabel.frame = NSRect(x: 20, y: bottom + subtitleHeight + gap, width: textWidth, height: titleHeight)
     }
 
     public override func mouseDown(with event: NSEvent) {

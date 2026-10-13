@@ -15,7 +15,6 @@ public final class MidgarEntryView: UIControl {
     private let clip = CALayer()
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
     private var ranked: [MidgarApp] = []
     private var loadedIDs: [String] = []
 
@@ -105,10 +104,19 @@ public final class MidgarEntryView: UIControl {
             diameter: 38 * PortalMetrics.scale
         )
         renderer.render(camera: .zero, intro: 99)
-        let textWidth = max(0, center.x - 66 * PortalMetrics.scale - 20 * PortalMetrics.scale)
-        titleLabel.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height / 2 - 34 * PortalMetrics.scale, width: textWidth, height: 26 * PortalMetrics.scale)
-        subtitleLabel.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height / 2, width: textWidth, height: 36 * PortalMetrics.scale)
-        chevron.frame = CGRect(x: 20 * PortalMetrics.scale, y: bounds.height - 34 * PortalMetrics.scale, width: 14 * PortalMetrics.scale, height: 16 * PortalMetrics.scale)
+        layoutLabels(textWidth: max(0, center.x - 66 * PortalMetrics.scale - 20 * PortalMetrics.scale))
+    }
+
+    /// Stacks the title and subtitle as one block, centred vertically in the card.
+    private func layoutLabels(textWidth: CGFloat) {
+        let limit = CGSize(width: textWidth, height: .greatestFiniteMagnitude)
+        let titleHeight = titleLabel.sizeThatFits(limit).height
+        let subtitleHeight = min(subtitleLabel.sizeThatFits(limit).height, bounds.height * 0.4)
+        let gap = 3 * PortalMetrics.scale
+        let top = (bounds.height - (titleHeight + gap + subtitleHeight)) / 2
+        let left = 20 * PortalMetrics.scale
+        titleLabel.frame = CGRect(x: left, y: top, width: textWidth, height: titleHeight)
+        subtitleLabel.frame = CGRect(x: left, y: top + titleHeight + gap, width: textWidth, height: subtitleHeight)
     }
 
     private func configureLayers() {
@@ -153,9 +161,7 @@ public final class MidgarEntryView: UIControl {
         subtitleLabel.adjustsFontForContentSizeCategory = true
         subtitleLabel.textColor = UIColor(white: 1, alpha: 0.7)
         subtitleLabel.numberOfLines = 2
-        chevron.tintColor = UIColor(white: 1, alpha: 0.85)
-        chevron.contentMode = .scaleAspectFit
-        for view in [titleLabel, subtitleLabel, chevron] {
+        for view in [titleLabel, subtitleLabel] {
             view.isUserInteractionEnabled = false
             addSubview(view)
         }
