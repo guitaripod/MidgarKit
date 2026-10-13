@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import QuartzCore
 import SwiftUI
 import XCTest
 @testable import MidgarKit
@@ -65,7 +66,7 @@ final class PortalSnapshotTests: XCTestCase {
         let canvasView = try XCTUnwrap(canvas(in: hosting), "canvas view missing")
         let controller = canvasView.controller
 
-        var time: CFTimeInterval = 100
+        var time: CFTimeInterval = CACurrentMediaTime() + 0.05
         controller.begin(at: time)
         time = run(controller, from: time, seconds: 0.18)
         spin(0.1)

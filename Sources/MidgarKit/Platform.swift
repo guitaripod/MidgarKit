@@ -52,15 +52,17 @@ private func midgarDownsample(_ data: Data, maxPixel: CGFloat, scale: CGFloat) -
     #if canImport(UIKit)
     return UIImage(cgImage: cgImage, scale: scale, orientation: .up)
     #else
-    // `NSImage.size` is in points; the thumbnail comes back in pixels, so it has to be divided
-    // by the backing scale or the artwork draws at twice its intended size on Retina.
-    let points = NSSize(
-        width: CGFloat(cgImage.width) / scale,
-        height: CGFloat(cgImage.height) / scale
-    )
-    return NSImage(cgImage: cgImage, size: points)
+    return NSImage(cgImage: cgImage, size: midgarPointSize(of: cgImage, scale: scale))
     #endif
 }
+
+#if canImport(AppKit) && !canImport(UIKit)
+/// `NSImage.size` is in points while a thumbnail comes back in pixels, so it has to be divided by
+/// the backing scale or the artwork draws at twice its intended size on Retina.
+private func midgarPointSize(of image: CGImage, scale: CGFloat) -> NSSize {
+    NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
+}
+#endif
 
 /// Carries a decoded image off the background executor. `NSImage` only gained a `Sendable`
 /// conformance in macOS 14 and the package supports 13; the images boxed here are freshly created

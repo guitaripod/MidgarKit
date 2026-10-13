@@ -17,24 +17,27 @@ struct PortalScreen: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let layout = PortalScreenLayout(size: proxy.size, safeArea: proxy.safeAreaInsets)
             ZStack {
                 PortalBackdrop(accent: model.accent, animated: !reduceMotion)
-                PortalCanvas(
-                    model: model,
-                    insets: PortalInsets(
-                        top: proxy.safeAreaInsets.top + Self.headerHeight,
-                        bottom: proxy.safeAreaInsets.bottom + Self.cardHeight + 28
-                    )
-                )
-                .ignoresSafeArea()
+                PortalCanvas(model: model, insets: layout.canvasInsets)
+                    .ignoresSafeArea()
                 VStack(spacing: 0) {
                     PortalHeader(model: model)
                         .padding(.top, proxy.safeAreaInsets.top > 0 ? 0 : 8)
                     Spacer(minLength: 0)
+                    if !layout.isSideCard {
+                        PortalCard(model: model)
+                            .frame(maxWidth: 560)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, max(proxy.safeAreaInsets.bottom, 16))
+                    }
+                }
+                if layout.isSideCard {
                     PortalCard(model: model)
-                        .frame(maxWidth: 560)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, max(proxy.safeAreaInsets.bottom, 16))
+                        .frame(width: layout.sideCardWidth)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                        .padding(.trailing, max(proxy.safeAreaInsets.trailing, 16))
                 }
             }
         }
@@ -42,6 +45,29 @@ struct PortalScreen: View {
         .preferredColorScheme(.dark)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+    }
+}
+
+/// Where the card goes: under the canvas on tall screens, beside it when the screen is too short
+/// for both, as on a phone held sideways.
+struct PortalScreenLayout {
+    let size: CGSize
+    let safeArea: EdgeInsets
+
+    var isSideCard: Bool { size.width > size.height && size.height < 560 }
+
+    var sideCardWidth: CGFloat { min(340, size.width * 0.42) }
+
+    var canvasInsets: PortalInsets {
+        let top = safeArea.top + PortalScreen.headerHeight
+        if isSideCard {
+            return PortalInsets(
+                top: top,
+                bottom: max(safeArea.bottom, 12),
+                trailing: sideCardWidth + max(safeArea.trailing, 16) + 8
+            )
+        }
+        return PortalInsets(top: top, bottom: safeArea.bottom + PortalScreen.cardHeight + 28)
     }
 }
 
@@ -128,6 +154,7 @@ struct PortalCard: View {
         .id(model.selection)
         .transition(.asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.16)), removal: .identity))
         .padding(18)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .frame(maxWidth: .infinity, minHeight: PortalScreen.cardHeight, maxHeight: PortalScreen.cardHeight, alignment: .topLeading)
         .portalGlass(in: RoundedRectangle(cornerRadius: 30, style: .continuous))
     }

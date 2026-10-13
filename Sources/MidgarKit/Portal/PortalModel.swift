@@ -57,13 +57,12 @@ final class PortalModel: ObservableObject {
     func start() {
         telemetry.send(.portalOpen)
         let cached = service.cachedSnapshot()
-        let seed = cached.isEmpty ? CatalogService.bundledApps() : cached
-        apply(seed.filter { !config.resolvedExclusions.contains($0.bundleId.lowercased()) || $0.bundleId.lowercased() == hostBundleID?.lowercased() })
+        apply(withoutExcluded(cached.isEmpty ? CatalogService.bundledApps() : cached))
         loadTask = Task { [weak self] in
             guard let self else { return }
             let result = await service.buildIncludingHost(config: config)
             guard !Task.isCancelled, !result.isEmpty else { return }
-            if Set(result.map(\.appId)) != Set(ranked.map(\.appId)) { apply(result) }
+            if Set(result.map(\.appId)) != Set(ranked.map(\.appId)) { apply(withoutExcluded(result)) }
         }
     }
 
@@ -142,6 +141,11 @@ final class PortalModel: ObservableObject {
 
     func perform(_ action: PortalAction) {
         onAction?(action)
+    }
+
+    private func withoutExcluded(_ apps: [MidgarApp]) -> [MidgarApp] {
+        let excluded = Set(config.excludedBundleIDs.map { $0.lowercased() })
+        return apps.filter { !excluded.contains($0.bundleId.lowercased()) }
     }
 
     private func apply(_ apps: [MidgarApp]) {

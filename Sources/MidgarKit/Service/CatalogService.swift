@@ -29,7 +29,7 @@ actor CatalogService {
     /// enrichment succeeded** so an offline refresh can never clobber the rich cached snapshot.
     /// `enriched` reports whether live App Store data was merged in.
     func build(config: MidgarConfig, ignoringOwnBundle: Bool = false) async -> (apps: [MidgarApp], enriched: Bool) {
-        let exclusions = ignoringOwnBundle ? Set(config.excludedBundleIDs.map { $0.lowercased() }) : Set(config.resolvedExclusions)
+        let exclusions = Set(ignoringOwnBundle ? config.excludedBundleIDs.map { $0.lowercased() } : config.resolvedExclusions)
         let catalog = await resolveCatalog(config: config)
         let entries = catalog.apps.filter { !exclusions.contains($0.bundleId.lowercased()) }
         guard !entries.isEmpty else { return ([], false) }
@@ -63,18 +63,10 @@ actor CatalogService {
         return belongsToDeveloper(entry, live: live[entry.appId], expectedArtistID: expectedArtistID)
     }
 
-    /// Same as ``build(config:)`` but keeps the host app's own entry, which the portal shows as
-    /// the "you are here" marker instead of hiding.
+    /// Same as ``build(config:ignoringOwnBundle:)`` but keeps the host app's own entry, which the
+    /// portal shows as the "you are here" marker instead of hiding.
     func buildIncludingHost(config: MidgarConfig) async -> [MidgarApp] {
-        var withoutExclusions = config
-        withoutExclusions.excludedBundleIDs = []
-        let own = Bundle.main.bundleIdentifier?.lowercased()
-        let extra = Set(config.excludedBundleIDs.map { $0.lowercased() })
-        let result = await build(config: withoutExclusions, ignoringOwnBundle: true)
-        return result.apps.filter { app in
-            let id = app.bundleId.lowercased()
-            return id == own || !extra.contains(id)
-        }
+        await build(config: config, ignoringOwnBundle: true).apps
     }
 
     private func resolveCatalog(config: MidgarConfig) async -> CatalogResponse {

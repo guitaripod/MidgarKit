@@ -7,6 +7,7 @@ import QuartzCore
 struct PortalInsets: Equatable, Sendable {
     var top: CGFloat = 0
     var bottom: CGFloat = 0
+    var trailing: CGFloat = 0
 }
 
 /// The platform-neutral brain of the portal canvas. UIKit and AppKit views feed it input and
@@ -123,7 +124,6 @@ final class PortalController {
         }
 
         let moving = camera.step(dt)
-        if !moving || camera.isDragging { /* position already current */ }
         updateFocusFromCamera(moving: moving)
         renderer.render(camera: camera.position, intro: elapsed)
 
@@ -205,7 +205,8 @@ final class PortalController {
         guard size.width > 0, size.height > 0 else { return }
         let usable = CGRect(
             x: 0, y: insets.top,
-            width: size.width, height: max(size.height - insets.top - insets.bottom, 120)
+            width: max(size.width - insets.trailing, 160),
+            height: max(size.height - insets.top - insets.bottom, 120)
         )
         let metrics = Self.metrics(for: usable)
         let newLayout = PortalLayout.make(appIDs: rankedIDs, pitch: metrics.pitch, rowStretch: metrics.rowStretch)

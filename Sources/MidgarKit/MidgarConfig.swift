@@ -5,23 +5,25 @@ import UIKit
 import AppKit
 #endif
 
-/// Configuration for a Midgar in-app storefront.
+/// Configuration for the Midgar portal.
 ///
-/// Pass an instance to ``Midgar/present(from:config:)`` or ``MidgarStoreViewController``. All values
-/// have production-ready defaults; the host app's own bundle identifier is excluded automatically so
-/// an app never advertises itself.
+/// Pass an instance to ``Midgar/present(from:config:sourceView:)``, ``MidgarEntryView`` or
+/// ``MidgarEntryCard``. All values have production-ready defaults; the host app's own bundle
+/// identifier is shown as the "you are here" marker and never advertised.
 public struct MidgarConfig: Sendable {
 
     /// Base URL of the Midgar catalog service. Both `/v1/catalog` and `/v1/event` hang off this.
     public var endpoint: URL
 
-    /// Tint applied to the navigation bar and the GET buttons. `nil` inherits the presenter's tint.
+    /// Kept for source compatibility with MidgarKit 2. The portal takes each app's own colour, so
+    /// this value is no longer used.
     public var accent: MidgarColor?
 
-    /// Title shown at the top of the storefront.
+    /// Kept for source compatibility with MidgarKit 2. The portal always shows the Midgar name, so
+    /// this value is no longer used.
     public var title: String
 
-    /// Bundle identifiers never shown in the list. The host app's own identifier is always added.
+    /// Bundle identifiers never shown in the portal. The host app's own identifier is not affected.
     public var excludedBundleIDs: [String]
 
     /// When `true`, anonymous impression/tap counts are reported to the catalog service.
