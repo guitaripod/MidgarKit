@@ -141,13 +141,15 @@ public final class MidgarEntryView: UIControl {
     private func configureLabels() {
         titleLabel.text = MidgarStrings.entryTitle
         titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(
-            for: .systemFont(ofSize: 18 * PortalMetrics.scale, weight: .bold).rounded)
+            for: .systemFont(ofSize: 18 * PortalMetrics.scale, weight: .bold).rounded,
+            maximumPointSize: 24 * PortalMetrics.scale)
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = .white
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.75
         subtitleLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(
-            for: .systemFont(ofSize: 14 * PortalMetrics.scale, weight: .medium).rounded)
+            for: .systemFont(ofSize: 14 * PortalMetrics.scale, weight: .medium).rounded,
+            maximumPointSize: 18 * PortalMetrics.scale)
         subtitleLabel.adjustsFontForContentSizeCategory = true
         subtitleLabel.textColor = UIColor(white: 1, alpha: 0.7)
         subtitleLabel.numberOfLines = 2
