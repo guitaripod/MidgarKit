@@ -57,6 +57,30 @@ public final class MidgarEntryView: UIControl {
         CGSize(width: size.width, height: Self.preferredHeight)
     }
 
+    /// Pins the card inside `container` (a cell's content view, a stack, a header) with the given
+    /// vertical padding, so every host places it the same way.
+    public func embed(in container: UIView, verticalInset: CGFloat = 8, horizontalInset: CGFloat = 0) {
+        translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(self)
+        NSLayoutConstraint.activate([
+            topAnchor.constraint(equalTo: container.topAnchor, constant: verticalInset),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -verticalInset),
+            leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: horizontalInset),
+            trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -horizontalInset),
+            heightAnchor.constraint(equalToConstant: Self.preferredHeight),
+        ])
+    }
+
+    #if os(tvOS)
+    public override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        super.didUpdateFocus(in: context, with: coordinator)
+        coordinator.addCoordinatedAnimations {
+            self.transform = self.isFocused ? CGAffineTransform(scaleX: 1.06, y: 1.06) : .identity
+            self.layer.shadowOpacity = self.isFocused ? 0.5 : 0.28
+        }
+    }
+    #endif
+
     public override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.18, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {

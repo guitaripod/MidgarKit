@@ -3,11 +3,13 @@ import UIKit
 
 /// A scripted run of the portal for devices nobody is touching: it opens the portal, flicks the
 /// camera around, records frame pacing, and writes screenshots and a JSON report into the app's
-/// Documents folder. Only compiled into Debug builds and only active with `-midgar-selftest`.
+/// Documents folder. Only compiled into Debug builds and only active with `-midgar-selftest` or the
+/// `MIDGAR_SELFTEST` environment variable.
 public enum MidgarSelfTest {
     @MainActor
     public static func autorun(after delay: TimeInterval = 2.5) {
-        guard ProcessInfo.processInfo.arguments.contains("-midgar-selftest") else { return }
+        let info = ProcessInfo.processInfo
+        guard info.arguments.contains("-midgar-selftest") || info.environment["MIDGAR_SELFTEST"] != nil else { return }
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             await run()

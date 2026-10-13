@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "midgar-events",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "05d39b0c-333c-4c8c-a603-e8b9aa6ebd8d",
       "migrations_dir": "migrations"
     }
   ]

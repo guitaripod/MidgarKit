@@ -6,3 +6,5 @@
 DerivedData/
 worker/node_modules/
 worker/.wrangler/
+.scratch/
+Examples/**/Info.plist
