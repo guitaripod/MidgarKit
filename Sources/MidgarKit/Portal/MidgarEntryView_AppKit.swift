@@ -65,9 +65,7 @@ public final class MidgarEntryView: NSControl {
         alphaValue = 1
         defer { pressed = false }
         guard pressed, bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
-        var copy = config
-        copy.placement = "entry"
-        Midgar.present(config: copy)
+        Midgar.present(config: config)
     }
 
     private func configureLayers() {

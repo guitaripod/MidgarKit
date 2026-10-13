@@ -196,13 +196,7 @@ public final class MidgarEntryView: UIControl {
     }
 
     @objc private func tapped() {
-        Midgar.present(from: nearestViewController(), config: portalConfig, sourceView: self)
-    }
-
-    private var portalConfig: MidgarConfig {
-        var copy = config
-        copy.placement = "entry"
-        return copy
+        Midgar.present(from: nearestViewController(), config: config, sourceView: self)
     }
 
     private func nearestViewController() -> UIViewController? {
