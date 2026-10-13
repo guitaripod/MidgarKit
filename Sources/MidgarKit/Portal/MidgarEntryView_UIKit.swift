@@ -139,7 +139,7 @@ public final class MidgarEntryView: UIControl {
     }
 
     private func configureLabels() {
-        titleLabel.text = "Midgar universe"
+        titleLabel.text = MidgarStrings.entryTitle
         titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(
             for: .systemFont(ofSize: 18, weight: .bold).rounded)
         titleLabel.adjustsFontForContentSizeCategory = true

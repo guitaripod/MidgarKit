@@ -13,6 +13,7 @@ let package = Package(
             name: "MidgarKit",
             resources: [
                 .process("Resources/catalog.fallback.json"),
+                .process("Resources/Localizable.xcstrings"),
                 .copy("Resources/fallback-icons"),
                 .copy("PrivacyInfo.xcprivacy")
             ]

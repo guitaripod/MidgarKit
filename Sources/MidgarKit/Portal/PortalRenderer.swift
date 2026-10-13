@@ -416,7 +416,7 @@ final class PortalRenderer {
     }
 
     private func configureHostMarker(_ entry: CellLayers) {
-        let label = PortalArt.pill(text: "You are here", scale: scale, tint: entry.accent)
+        let label = PortalArt.pill(text: MidgarStrings.youAreHere, scale: scale, tint: entry.accent)
         entry.markerLabel.contents = label
         let width = CGFloat(label?.width ?? 0) / scale
         entry.markerLabel.bounds = CGRect(x: 0, y: 0, width: width, height: 20)

@@ -12,7 +12,7 @@ public final class MidgarEntryView: NSControl {
     private let backdrop = CAGradientLayer()
     private let glow = CAGradientLayer()
     private let clip = CALayer()
-    private let titleLabel = NSTextField(labelWithString: "Midgar universe")
+    private let titleLabel = NSTextField(labelWithString: MidgarStrings.entryTitle)
     private let subtitleLabel = NSTextField(labelWithString: "")
     private var loadedIDs: [String] = []
     private var pressed = false

@@ -128,12 +128,12 @@ final class PortalModel: ObservableObject {
 
     func buttonTitle(for app: MidgarApp) -> String? {
         if isHost(app) { return nil }
-        if isInstalled(app) { return "OPEN" }
+        if isInstalled(app) { return MidgarStrings.open }
         if let foreign = app.foreignPlatform {
             #if os(iOS)
-            return "SEND TO \(foreign.badgeLabel.uppercased())"
+            return MidgarStrings.sendTo(foreign.badgeLabel.uppercased())
             #else
-            return "VIEW"
+            return MidgarStrings.view
             #endif
         }
         return app.priceLabel

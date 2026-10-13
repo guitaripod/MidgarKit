@@ -205,7 +205,7 @@ final class PortalCanvasView: UIView {
             element.cell = cell
             let app = cell.appID.flatMap { apps[$0] }
             element.accessibilityLabel = app?.name ?? "Midgar"
-            element.accessibilityHint = app?.tagline ?? "All apps by Midgar Oy"
+            element.accessibilityHint = app?.tagline ?? MidgarStrings.coreAccessibilityHint
             element.accessibilityTraits = .button
             if let frame = controller.frame(forCell: cell.index) {
                 let rect = CGRect(

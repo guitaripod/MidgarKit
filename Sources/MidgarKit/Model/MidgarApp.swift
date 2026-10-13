@@ -112,7 +112,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     public var priceLabel: String {
         guard let price = formattedPrice, !price.isEmpty,
               price.caseInsensitiveCompare("Free") != .orderedSame else {
-            return "GET"
+            return MidgarStrings.get
         }
         return price
     }

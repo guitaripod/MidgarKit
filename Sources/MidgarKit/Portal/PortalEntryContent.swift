@@ -24,6 +24,6 @@ enum PortalEntryContent {
     }
 
     static func subtitle(appCount: Int) -> String {
-        "\(appCount) apps to explore"
+        MidgarStrings.entrySubtitle(appCount: appCount)
     }
 }

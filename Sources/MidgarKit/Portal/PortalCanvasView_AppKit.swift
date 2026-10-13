@@ -200,7 +200,7 @@ final class PortalCanvasView: NSView {
             let element = NSAccessibilityElement()
             let app = cell.appID.flatMap { apps[$0] }
             element.setAccessibilityLabel(app?.name ?? "Midgar")
-            element.setAccessibilityHelp(app?.tagline ?? "All apps by Midgar Oy")
+            element.setAccessibilityHelp(app?.tagline ?? MidgarStrings.coreAccessibilityHint)
             element.setAccessibilityRole(.button)
             element.setAccessibilityParent(self)
             if let frame = controller.frame(forCell: cell.index) {

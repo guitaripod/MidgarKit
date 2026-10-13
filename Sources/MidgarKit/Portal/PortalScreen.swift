@@ -128,14 +128,14 @@ struct PortalHeader: View {
             }
             .buttonStyle(.plain)
             .closeShortcut()
-            .accessibilityLabel("Close")
+            .accessibilityLabel(MidgarStrings.close)
         }
         .padding(.horizontal, 20)
         .frame(height: PortalScreen.headerHeight)
     }
 
     private var subtitle: String {
-        "You have \(model.installedCount) of \(model.availableHere)"
+        MidgarStrings.installedCount(model.installedCount, of: model.availableHere)
     }
 }
 
@@ -164,14 +164,14 @@ struct PortalCard: View {
             Text("Midgar Oy")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
-            Text("Every app we make lives here. Drag to explore, tap an icon to look closer.")
+            Text(MidgarStrings.coreBlurb)
                 .font(.system(size: 15, weight: .regular, design: .rounded))
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             HStack {
                 Spacer()
-                PortalPillButton(title: "ALL APPS", accent: PortalColor.midgar) {
+                PortalPillButton(title: MidgarStrings.allApps, accent: PortalColor.midgar) {
                     model.perform(.developerPage)
                 }
             }
@@ -215,8 +215,8 @@ struct PortalCard: View {
     }
 
     private func statusLabel(for app: MidgarApp) -> String? {
-        if model.isHost(app) { return "You are here" }
-        if model.isInstalled(app) { return "Installed" }
+        if model.isHost(app) { return MidgarStrings.youAreHere }
+        if model.isInstalled(app) { return MidgarStrings.installed }
         return nil
     }
 }

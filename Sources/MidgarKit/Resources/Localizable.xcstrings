@@ -1,0 +1,162 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Close": {
+      "comment": "Accessibility label of the button that closes the Midgar portal",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "You have %lld of %lld": {
+      "comment": "Portal header subtitle: how many of the Midgar apps for this device are installed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have %lld of %lld"
+          }
+        }
+      }
+    },
+    "Every app we make lives here. Drag to explore, tap an icon to look closer.": {
+      "comment": "Portal card text while the Midgar emblem at the centre is selected",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every app we make lives here. Drag to explore, tap an icon to look closer."
+          }
+        }
+      }
+    },
+    "ALL APPS": {
+      "comment": "Button that opens the Midgar developer page in the App Store",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALL APPS"
+          }
+        }
+      }
+    },
+    "OPEN": {
+      "comment": "Button that opens an installed Midgar app",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OPEN"
+          }
+        }
+      }
+    },
+    "VIEW": {
+      "comment": "Button that opens the App Store page of a Midgar app",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIEW"
+          }
+        }
+      }
+    },
+    "GET": {
+      "comment": "Button that installs a free Midgar app",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GET"
+          }
+        }
+      }
+    },
+    "SEND TO %@": {
+      "comment": "Button that shares an app link, %@ is a device such as Mac or Apple TV",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SEND TO %@"
+          }
+        }
+      }
+    },
+    "You are here": {
+      "comment": "Label on the app the person is using right now",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are here"
+          }
+        }
+      }
+    },
+    "Installed": {
+      "comment": "Chip shown on a Midgar app that is already installed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed"
+          }
+        }
+      }
+    },
+    "Midgar universe": {
+      "comment": "Title of the card in Settings that opens the portal",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midgar universe"
+          }
+        }
+      }
+    },
+    "%lld apps to explore": {
+      "comment": "Subtitle of the card in Settings that opens the portal",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld apps to explore"
+          }
+        }
+      }
+    },
+    "All apps by Midgar Oy": {
+      "comment": "Accessibility hint of the Midgar emblem in the portal",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All apps by Midgar Oy"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
