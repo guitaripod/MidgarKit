@@ -62,9 +62,12 @@ for attempt in $(seq 1 90); do
   sleep 20
 done
 [ $launched -eq 1 ] || { echo "LAUNCH FAILED"; exit 1; }
-sleep 34
 rm -rf "$SCRATCH/selftest" && mkdir -p "$SCRATCH/selftest"
-xcrun devicectl device copy from --device "$DEVICE" --domain-type appDataContainer --domain-identifier "$BUNDLE" \
-  --source Documents/midgar-selftest --destination "$SCRATCH/selftest" 2>&1 | tail -3
+for poll in $(seq 1 30); do
+  sleep 5
+  xcrun devicectl device copy from --device "$DEVICE" --domain-type appDataContainer --domain-identifier "$BUNDLE" \
+    --source Documents/midgar-selftest --destination "$SCRATCH/selftest" > /dev/null 2>&1
+  [ -f "$SCRATCH/selftest/selftest.json" ] && break
+done
 ls "$SCRATCH/selftest"
 [ -f "$SCRATCH/selftest/selftest.json" ] && cat "$SCRATCH/selftest/selftest.json"

@@ -42,6 +42,9 @@ def audit_app(path, bundle_id):
     missing = [s for s in catalog_schemes() if s not in queries and s != own]
     if missing:
         problems.append(f"LSApplicationQueriesSchemes missing {len(missing)}: {', '.join(missing)}")
+    is_ios = "UIDeviceFamily" in plist or "UIRequiredDeviceCapabilities" in plist or plist.get("DTPlatformName") == "iphoneos"
+    if is_ios and plist.get("DTPlatformName", "iphoneos") == "iphoneos" and not plist.get("CADisableMinimumFrameDurationOnPhone"):
+        problems.append("CADisableMinimumFrameDurationOnPhone is not true, the portal would be capped at 60 Hz on iPhone")
     return problems
 
 

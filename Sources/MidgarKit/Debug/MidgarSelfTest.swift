@@ -10,9 +10,11 @@ public enum MidgarSelfTest {
     public static func autorun(after delay: TimeInterval = 2.5) {
         let info = ProcessInfo.processInfo
         guard info.arguments.contains("-midgar-selftest") || info.environment["MIDGAR_SELFTEST"] != nil else { return }
+        UIApplication.shared.isIdleTimerDisabled = true
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             await run()
+            UIApplication.shared.isIdleTimerDisabled = false
         }
     }
 
