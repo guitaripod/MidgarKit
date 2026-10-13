@@ -23,4 +23,14 @@ struct CatalogEntry: Codable {
     let order: Int?
     let icon: URL?
     let screenshots: [URL]?
+    let platforms: [MidgarPlatform]?
+    let topics: [String]?
+    let related: [String]?
+    let family: String?
+    let value: Double?
+    let status: String?
+
+    /// Staged entries are listed in the catalog ahead of their release and only appear once the
+    /// App Store itself starts returning them.
+    var isStaged: Bool { status?.lowercased() == "staged" }
 }

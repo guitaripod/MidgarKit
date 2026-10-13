@@ -1,11 +1,142 @@
 {
-  "version": 5,
-  "updatedAt": "2026-07-27T15:25:35Z",
+  "version": 6,
+  "updatedAt": "2026-10-13T16:39:50Z",
   "developer": {
     "name": "Midgar",
     "artistId": "1484270247"
   },
   "apps": [
+    {
+      "appId": "6787493695",
+      "bundleId": "com.midgarcorp.flaccy",
+      "name": "Flaccy: Lossless FLAC Player",
+      "tagline": "Lossless FLAC, beautifully played.",
+      "genre": "Music",
+      "accent": "#73C7FF",
+      "family": "flaccy",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "music",
+        "audio"
+      ],
+      "related": [
+        "com.marcusziade.psywave",
+        "com.midgarcorp.flaccy.mac"
+      ],
+      "value": 1.0,
+      "featured": true,
+      "order": 0,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a6/33/2a/a6332a18-9f3d-af90-9a3e-dbe43fd0e1a9/01-hero.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/49/d6/96/49d69635-d439-53e0-b902-0c8e00106cf1/02-nowplaying.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/6c/7f/c86c7f17-116a-db33-e71f-0ff1dfbdc900/03-lyrics.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/1e/cf/83/1ecf83b7-6d9e-48ee-425c-b8ec35c0b815/04-playlists.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b8/a5/30/b8a530e9-4ee7-4ed6-eb6e-e7cc41377160/05-scrobble.png/320x480bb.jpg"
+      ]
+    },
+    {
+      "appId": "6705124497",
+      "bundleId": "com.marcusziade.solarbeam",
+      "name": "Solar Beam",
+      "tagline": "A new NASA masterpiece every day.",
+      "genre": "Photo & Video",
+      "accent": "#F59E0B",
+      "platforms": [
+        "ios",
+        "mac",
+        "tvos",
+        "vision"
+      ],
+      "topics": [
+        "space",
+        "science",
+        "photo"
+      ],
+      "related": [
+        "com.guitaripod.helia"
+      ],
+      "value": 1.0,
+      "featured": true,
+      "order": 1,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/20/98/79/209879e0-7075-edab-b8b9-46a8444959d4/apod.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/55/2c/42/552c426a-0754-011a-4da6-f03253dffb1c/asteroids.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1e/4c/3e/1e4c3eab-6912-45b1-df4f-e6769d443fcd/jwst.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5b/f0/af/5bf0afda-17ce-6077-20ed-f8a80db3102f/webb-iphone-3.0.0.png/800x1738bb.jpg"
+      ]
+    },
+    {
+      "appId": "1484270248",
+      "bundleId": "com.marcusziade.knowtheflag",
+      "name": "Master of Flags: World Quiz",
+      "tagline": "Master every flag in the world.",
+      "genre": "Education",
+      "accent": "#EF4444",
+      "platforms": [
+        "ios",
+        "mac",
+        "tvos"
+      ],
+      "topics": [
+        "learning",
+        "quiz",
+        "geography",
+        "games"
+      ],
+      "related": [
+        "com.marcusziade.aotd"
+      ],
+      "value": 1.0,
+      "featured": true,
+      "order": 2,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a8/27/ea/a827ea43-f3ca-b605-03f2-4c2e98ac114d/01.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c0/b2/9d/c0b29d16-7eab-7e77-bd78-85a539109b12/02.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a3/21/ae/a321aece-a8c8-d9ad-e6a6-6d3249a8f433/03.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/32/a3/8a/32a38a7e-7b65-0ef8-c91a-7270d38878db/04.png/800x1738bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9e/1c/ad/9e1cadec-74c0-6bc9-564a-1841eeb4f1cd/05.png/800x1738bb.jpg"
+      ]
+    },
+    {
+      "appId": "6791660932",
+      "bundleId": "com.guitaripod.tailscode",
+      "name": "Tailscode: Coding Agent Remote",
+      "tagline": "Your coding agents, in your pocket.",
+      "genre": "Developer Tools",
+      "accent": "#3373F2",
+      "platforms": [
+        "ios",
+        "mac"
+      ],
+      "topics": [
+        "developer",
+        "ai",
+        "productivity"
+      ],
+      "related": [
+        "com.marcusziade.sforesight"
+      ],
+      "value": 1.0,
+      "featured": true,
+      "order": 3,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/fe/be/d6/febed61d-b451-6af0-64c2-28e4caa17d70/01-lock-screen.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/20/bd/86/20bd86c6-01f6-5dc4-a0ac-39dc3949b73e/02-approve.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/91/d3/d8/91d3d87f-2661-60da-8f0e-233d19352b9b/03-private.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/4d/60/13/4d6013a3-e031-a3a7-6ecf-a34e7d262edc/04-one-board.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0f/f7/9e/0ff79ec6-d3b1-10aa-6677-6a3f8c8e5141/05-read-the-diff.png/320x480bb.jpg"
+      ]
+    },
     {
       "appId": "6784940198",
       "bundleId": "com.guitaripod.embr",
@@ -13,8 +144,18 @@
       "tagline": "The best native Twitch client.",
       "genre": "Entertainment",
       "accent": "#9147FF",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "entertainment",
+        "streaming"
+      ],
+      "related": [],
+      "value": 0.3,
       "featured": true,
-      "order": 0,
+      "order": 4,
+      "status": "live",
       "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/87/ca/81/87ca81dd-6e6b-3610-58a2-222cdaff14e6/01-01.png/800x1738bb.jpg",
@@ -31,8 +172,21 @@
       "tagline": "Real-time two-way voice translation.",
       "genre": "Utilities",
       "accent": "#7C5CFF",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "translate",
+        "travel",
+        "ai"
+      ],
+      "related": [
+        "com.marcusziade.doublekick"
+      ],
+      "value": 0.7,
       "featured": true,
-      "order": 0,
+      "order": 5,
+      "status": "live",
       "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/83/1c/da/831cda61-ef2f-b621-7df2-cd45ad938be9/01.png/800x1738bb.jpg",
@@ -49,8 +203,20 @@
       "tagline": "EU e-invoicing and Peppol, done right.",
       "genre": "Business",
       "accent": "#16A34A",
-      "featured": true,
-      "order": 1,
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "business",
+        "finance"
+      ],
+      "related": [
+        "com.marcusziade.inventory"
+      ],
+      "value": 0.8,
+      "featured": false,
+      "order": 6,
+      "status": "live",
       "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/90/ca/ea/90caea38-904e-1af6-d44d-6441439db704/dashboard.png/800x1738bb.jpg",
@@ -67,9 +233,22 @@
       "tagline": "AI-built playlists for any mood.",
       "genre": "Music",
       "accent": "#EC4899",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "music",
+        "ai"
+      ],
+      "related": [
+        "com.midgarcorp.flaccy",
+        "com.midgarcorp.flaccy.mac"
+      ],
+      "value": 0.7,
       "featured": false,
-      "order": 2,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/a0/bd/52/a0bd5254-066e-cec8-a59a-fcbd400e6080/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "order": 7,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9f/30/0a/9f300a10-cf25-a8fe-5bcc-803ebfa904bc/iphone_1_result.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/28/c1/54/28c15414-0cca-7aa5-5e31-7a0c12492dc4/iphone_2_create.png/800x1738bb.jpg",
@@ -84,9 +263,21 @@
       "tagline": "Generate stunning images from a prompt.",
       "genre": "Photo & Video",
       "accent": "#F472B6",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "creative",
+        "ai"
+      ],
+      "related": [
+        "com.marcusziade.DreamEater"
+      ],
+      "value": 0.3,
       "featured": false,
-      "order": 3,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/31/45/09/31450933-1db7-1d24-b451-980c1d29b344/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "order": 8,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e8/16/9a/e8169a41-7e0a-9015-b008-0f7cfd2ddd0f/framed_iphone_create.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/64/bd/52/64bd52b5-7ab7-986b-74e7-a41d1ef66cc7/framed_iphone_edit.png/800x1738bb.jpg",
@@ -100,9 +291,22 @@
       "tagline": "Translate any restaurant menu instantly.",
       "genre": "Food & Drink",
       "accent": "#F97316",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "translate",
+        "travel",
+        "food"
+      ],
+      "related": [
+        "com.guitaripod.psybeam"
+      ],
+      "value": 0.6,
       "featured": false,
-      "order": 4,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/92/39/04/923904f0-802a-7227-e10f-b6200fec5e6a/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+      "order": 9,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4c/93/a9/4c93a9b5-b44a-cf46-acac-28bf72b93e34/doublekick_1.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/15/af/e0/15afe0f8-b793-77a2-0888-ebceb7b475bb/doublekick_2.png/800x1738bb.jpg",
@@ -117,31 +321,28 @@
       "tagline": "Decode the meaning of your dreams.",
       "genre": "Lifestyle",
       "accent": "#8B5CF6",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "wellness",
+        "ai",
+        "journal"
+      ],
+      "related": [
+        "com.guitaripod.Pixie",
+        "com.guitaripod.helia"
+      ],
+      "value": 0.6,
       "featured": false,
-      "order": 5,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/21/0e/92/210e929d-8f88-c66f-3486-374f7ba3e8ec/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "order": 10,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8d/0c/86/8d0c868c-e712-8be0-07b8-094c7c0815cd/dreameater_iphone_1_interpret.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a6/8f/c1/a68fc17e-5e3d-0a6e-1eb8-cef81ef64375/dreameater_iphone_2_home.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/47/7b/24/477b24a6-aaa9-aba3-7977-90d267ffb970/dreameater_iphone_3_journal.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/65/df/33/65df332c-2539-298e-d20a-aa5d3a9e7801/dreameater_iphone_4_stats.png/800x1738bb.jpg"
-      ]
-    },
-    {
-      "appId": "6705124497",
-      "bundleId": "com.marcusziade.solarbeam",
-      "name": "Solar Beam",
-      "tagline": "A new NASA masterpiece every day.",
-      "genre": "Photo & Video",
-      "accent": "#F59E0B",
-      "featured": false,
-      "order": 6,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6b/ed/7a/6bed7a18-8f6d-11b9-a5b2-261195be441f/App_Icon-marketing.lsr/512x512bb.jpg",
-      "screenshots": [
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/20/98/79/209879e0-7075-edab-b8b9-46a8444959d4/apod.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/55/2c/42/552c426a-0754-011a-4da6-f03253dffb1c/asteroids.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1e/4c/3e/1e4c3eab-6912-45b1-df4f-e6769d443fcd/jwst.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5b/f0/af/5bf0afda-17ce-6077-20ed-f8a80db3102f/webb-iphone-3.0.0.png/800x1738bb.jpg"
       ]
     },
     {
@@ -151,10 +352,28 @@
       "tagline": "Search every SF Symbol, instantly.",
       "genre": "Developer Tools",
       "accent": "#0EA5E9",
+      "platforms": [
+        "mac"
+      ],
+      "topics": [
+        "developer",
+        "design"
+      ],
+      "related": [
+        "com.guitaripod.tailscode"
+      ],
+      "value": 0.3,
       "featured": false,
-      "order": 7,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/0b/fa/bd/0bfabd3a-c80e-ad13-0e02-11b4605e538c/AppIcon-0-0-85-220-0-5-0-2x.png/512x512bb.png",
-      "screenshots": []
+      "order": 11,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5f/da/cf/5fdacf9b-997d-62fa-6340-47b3e081a177/c72c4dd6-f8cb-42ed-adfe-f36e2a122148_sforesight-appstore-1.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b8/9b/28/b89b2803-5cbf-c603-24ed-16de31d10552/68136458-822f-4237-b608-efb3e61f14a3_sforesight-appstore-2.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a8/a7/8b/a8a78ba3-c3bc-220b-913a-5a975f89545d/da7d44cf-14b4-4c42-9df6-663cb4be9d8a_sforesight-appstore-3.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/40/34/7f/40347f81-2370-7cd0-f43a-be56b6baa4d4/bc0cbc9b-a4f0-42f8-bb93-b1f93c82e960_sforesight-appstore-4.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/43/06/3b/43063bac-9449-643a-2db3-eca87c31af8e/dd3bd0d2-e70f-4d4f-a2bf-6c744d14a886_sforesight-appstore-5.png/800x500bb.jpg"
+      ]
     },
     {
       "appId": "6746733380",
@@ -163,9 +382,21 @@
       "tagline": "Explore the world's religions and beliefs.",
       "genre": "Education",
       "accent": "#6366F1",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "learning",
+        "culture"
+      ],
+      "related": [
+        "com.marcusziade.knowtheflag"
+      ],
+      "value": 0.3,
       "featured": false,
-      "order": 8,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/17/2f/b5/172fb5b5-414f-38f8-9c61-37f0bc0fde12/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "order": 12,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/13/1e/cc/131eccad-a7ce-c3c0-8ee6-3ccc235ef058/cap_1_hero.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/86/b2/cd/86b2cd1f-119c-2964-78e3-8a226345e342/cap_2_home.png/800x1738bb.jpg",
@@ -175,33 +406,28 @@
       ]
     },
     {
-      "appId": "1484270248",
-      "bundleId": "com.marcusziade.knowtheflag",
-      "name": "Master of Flags: World Quiz",
-      "tagline": "Master every flag in the world.",
-      "genre": "Education",
-      "accent": "#EF4444",
-      "featured": false,
-      "order": 9,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8f/2b/b6/8f2bb607-53aa-946d-8f9e-0129d994d10e/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
-      "screenshots": [
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a8/27/ea/a827ea43-f3ca-b605-03f2-4c2e98ac114d/01.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c0/b2/9d/c0b29d16-7eab-7e77-bd78-85a539109b12/02.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a3/21/ae/a321aece-a8c8-d9ad-e6a6-6d3249a8f433/03.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/32/a3/8a/32a38a7e-7b65-0ef8-c91a-7270d38878db/04.png/800x1738bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9e/1c/ad/9e1cadec-74c0-6bc9-564a-1841eeb4f1cd/05.png/800x1738bb.jpg"
-      ]
-    },
-    {
       "appId": "1523538855",
       "bundleId": "com.marcusziade.inventory",
       "name": "Master of Inventory: Warranty",
       "tagline": "Track warranties and everything you own.",
       "genre": "Utilities",
       "accent": "#14B8A6",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "home",
+        "organization",
+        "finance"
+      ],
+      "related": [
+        "com.guitaripod.payday"
+      ],
+      "value": 0.6,
       "featured": false,
-      "order": 10,
-      "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/af/35/08/af350831-9cab-37c6-dcc3-28dc5aa1cfcb/AppIcon-0-0-1x_U007emarketing-0-9-0-85-220.png/512x512bb.jpg",
+      "order": 13,
+      "status": "live",
+      "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8b/0a/39/8b0a3914-7d14-e7df-3675-8b005d4332b1/01-items.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/58/84/2b/58842be5-4b1c-283f-45b4-b870a79bfba5/02-detail.png/800x1738bb.jpg",
@@ -217,8 +443,21 @@
       "tagline": "The honest solar coach.",
       "genre": "Health & Fitness",
       "accent": "#F5A623",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "health",
+        "sun",
+        "science"
+      ],
+      "related": [
+        "com.marcusziade.solarbeam"
+      ],
+      "value": 0.6,
       "featured": true,
-      "order": 11,
+      "order": 14,
+      "status": "live",
       "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/cc/36/91/cc3691fb-76b4-06d5-3632-d881f3aea8e3/01_hero.png/800x1738bb.jpg",
@@ -226,6 +465,37 @@
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e6/bb/ef/e6bbefb6-f71b-0b1d-4dce-07df530b80a7/03_trails.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/0e/a1/d8/0ea1d8fa-44eb-a857-0fcd-694dc4b9f223/04_coach.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3e/a7/16/3ea71627-dd39-390c-f1c5-69b04d87685a/05_learn.png/800x1738bb.jpg"
+      ]
+    },
+    {
+      "appId": "6789594504",
+      "bundleId": "com.midgarcorp.flaccy.mac",
+      "name": "Flaccy: FLAC Music Player",
+      "tagline": "Your FLAC library, on the Mac.",
+      "genre": "Music",
+      "accent": "#73C7FF",
+      "family": "flaccy",
+      "platforms": [
+        "mac"
+      ],
+      "topics": [
+        "music",
+        "audio"
+      ],
+      "related": [
+        "com.midgarcorp.flaccy"
+      ],
+      "value": 0.8,
+      "featured": false,
+      "order": 15,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8a/d6/3b/8ad63bfa-ea2a-b5ba-2217-6aa4c51d43f2/1-nowplaying.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d1/48/33/d14833e7-7d13-e3d3-92d1-4b20fbb6c986/2-albums.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3c/1f/af/3c1faf6a-9134-047b-16b8-1c7751b9236e/3-artist.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c1/a5/6c/c1a56cf5-c594-cfa1-833d-4d72a2da8de1/4-songs.png/800x500bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/72/d0/9c/72d09c99-a33c-6961-8a01-29817d082fff/5-playlists.png/800x500bb.jpg"
       ]
     }
   ]

@@ -8,12 +8,28 @@ const JSON_HEADERS = {
 };
 
 const CATALOG_CACHE = "public, max-age=60, s-maxage=60, stale-while-revalidate=600";
-const VALID_EVENTS = new Set(["impression", "tap"]);
-const DAILY_TTL_SECONDS = 60 * 60 * 24 * 120;
-const MAX_APP_ID_LENGTH = 16;
+const VALID_EVENTS = new Set(["impression", "tap", "loaded", "launch", "portal_open"]);
+const MAX_APP_ID_LENGTH = 12;
+const UNKNOWN_SOURCE = "unknown";
+const EMPTY_STOREFRONT = "";
+const DEFAULT_PLACEMENT = "settings";
+const SOURCE_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
+const STOREFRONT_PATTERN = /^[A-Za-z]{2}$/;
+const PLACEMENT_PATTERN = /^[a-z0-9_-]{1,24}$/;
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const STATS_COLUMNS = new Map([
+  ["app", "app_id"],
+  ["source", "source"],
+  ["storefront", "storefront"],
+  ["placement", "placement"],
+  ["day", "day"],
+]);
+const INSERT_COUNTER_SQL =
+  "INSERT INTO counters (day, event, app_id, source, storefront, placement, n) VALUES (?,?,?,?,?,?,1) " +
+  "ON CONFLICT(day,event,app_id,source,storefront,placement) DO UPDATE SET n = n + 1";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -23,7 +39,7 @@ export default {
       return handleCatalog(request, url, env);
     }
     if (url.pathname === "/v1/event" && request.method === "POST") {
-      return handleEvent(request, env);
+      return handleEvent(request, env, ctx);
     }
     if (url.pathname === "/v1/stats" && request.method === "GET") {
       return handleStats(request, url, env);
@@ -81,35 +97,62 @@ async function handleCatalog(request, url, env) {
   );
 }
 
-async function handleEvent(request, env) {
+async function handleEvent(request, env, ctx) {
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ error: "invalid_json" }, 400);
   }
-  const event = String(body.event || "").toLowerCase();
-  const appId = String(body.appId || "").replace(/[^0-9]/g, "");
-  if (!VALID_EVENTS.has(event) || !appId || appId.length > MAX_APP_ID_LENGTH) {
-    return json({ error: "invalid_event" }, 400);
-  }
-  await recordEvent(env, event, appId).catch(() => {});
+  const counter = parseCounter(body);
+  if (!counter) return json({ error: "invalid_event" }, 400);
+  if (env && env.DB) ctx.waitUntil(recordCounter(env.DB, counter));
   return new Response(null, { status: 204, headers: JSON_HEADERS });
 }
 
-async function recordEvent(env, event, appId) {
-  if (!env || !env.MIDGAR) return;
-  const day = new Date().toISOString().slice(0, 10);
-  await Promise.all([
-    bump(env, `c:${event}:${appId}`),
-    bump(env, `c:${event}:${appId}:${day}`, { expirationTtl: DAILY_TTL_SECONDS }),
-  ]);
+/**
+ * Validates a telemetry body and normalises its optional dimensions. Returns null when
+ * the event name or app id is unusable; an unusable source, storefront or placement
+ * falls back to its default instead of rejecting the event.
+ */
+function parseCounter(body) {
+  const fields = body && typeof body === "object" ? body : {};
+  const event = String(fields.event || "").toLowerCase();
+  const appId = String(fields.appId || "").replace(/[^0-9]/g, "");
+  if (!VALID_EVENTS.has(event) || !appId || appId.length > MAX_APP_ID_LENGTH) return null;
+  return {
+    day: utcDay(),
+    event,
+    appId,
+    source: matchOrDefault(fields.source, SOURCE_PATTERN, UNKNOWN_SOURCE),
+    storefront: normalizeStorefront(fields.storefront),
+    placement: matchOrDefault(fields.placement, PLACEMENT_PATTERN, DEFAULT_PLACEMENT),
+  };
 }
 
-async function bump(env, key, options = {}) {
-  const current = parseInt((await env.MIDGAR.get(key)) || "0", 10) || 0;
-  const next = current + 1;
-  await env.MIDGAR.put(key, String(next), { ...options, metadata: { count: next } });
+function utcDay() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function matchOrDefault(value, pattern, fallback) {
+  return typeof value === "string" && pattern.test(value) ? value : fallback;
+}
+
+function normalizeStorefront(value) {
+  return typeof value === "string" && STOREFRONT_PATTERN.test(value)
+    ? value.toLowerCase()
+    : EMPTY_STOREFRONT;
+}
+
+async function recordCounter(db, counter) {
+  try {
+    await db
+      .prepare(INSERT_COUNTER_SQL)
+      .bind(counter.day, counter.event, counter.appId, counter.source, counter.storefront, counter.placement)
+      .run();
+  } catch (error) {
+    console.error("counter_write_failed", error);
+  }
 }
 
 function authorized(request, url, env) {
@@ -120,25 +163,51 @@ function authorized(request, url, env) {
 }
 
 async function handleStats(request, url, env) {
-  if (!env || !env.MIDGAR) return json({ error: "no_storage" }, 503);
+  if (!env || !env.DB) return json({ error: "no_storage" }, 503);
   if (!env.STATS_KEY) return json({ error: "stats_unconfigured" }, 503);
   if (!authorized(request, url, env)) return json({ error: "unauthorized" }, 401);
 
+  const query = parseStatsQuery(url);
+  if (!query) return json({ error: "invalid_query" }, 400);
+  const { results } = await env.DB.prepare(query.sql).bind(...query.binds).all();
+  return json({ totals: totalsFromRows(results) });
+}
+
+/**
+ * Builds the aggregate query for /v1/stats. The grouping column comes only from the
+ * STATS_COLUMNS allowlist, and every user-supplied value is bound as a parameter.
+ * Returns null when `by` or `since` is not recognised.
+ */
+function parseStatsQuery(url) {
+  const column = STATS_COLUMNS.get(url.searchParams.get("by") || "app");
+  const since = url.searchParams.get("since") || "";
+  const app = url.searchParams.get("app") || "";
+  if (!column) return null;
+  if (since && !DAY_PATTERN.test(since)) return null;
+
+  const clauses = [];
+  const binds = [];
+  if (since) {
+    clauses.push("day >= ?");
+    binds.push(since);
+  }
+  if (app) {
+    clauses.push("app_id = ?");
+    binds.push(app);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const sql = `SELECT ${column} AS dimension, event, SUM(n) AS n FROM counters ${where} GROUP BY ${column}, event`;
+  return { sql, binds };
+}
+
+function totalsFromRows(rows) {
   const totals = {};
-  let cursor;
-  do {
-    const page = await env.MIDGAR.list({ prefix: "c:", cursor });
-    for (const entry of page.keys) {
-      const parts = entry.name.split(":");
-      if (parts.length !== 3) continue;
-      const [, event, appId] = parts;
-      const count = (entry.metadata && entry.metadata.count) || 0;
-      totals[appId] = totals[appId] || {};
-      totals[appId][event] = (totals[appId][event] || 0) + count;
-    }
-    cursor = page.list_complete ? undefined : page.cursor;
-  } while (cursor);
-  return json({ totals });
+  for (const row of rows) {
+    const key = String(row.dimension);
+    totals[key] = totals[key] || {};
+    totals[key][row.event] = (totals[key][row.event] || 0) + Number(row.n);
+  }
+  return totals;
 }
 
 function json(data, status = 200, extra = {}) {

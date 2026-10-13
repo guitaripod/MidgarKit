@@ -18,12 +18,18 @@ actor CatalogService {
         DiskCache().loadSnapshot()
     }
 
+    /// The catalog shipped inside the package, as apps, for a first paint with no network and no
+    /// cache. Icons come from the bundled fallbacks.
+    nonisolated static func bundledApps() -> [MidgarApp] {
+        bundledCatalog().filter { !$0.isStaged }.map { merge(entry: $0, live: nil) }.sorted(by: ordering)
+    }
+
     /// Builds the storefront fresh: pulls the curated catalog, enriches with live App Store data for
     /// the user's region, applies exclusions, sorts, and persists the snapshot **only when
     /// enrichment succeeded** so an offline refresh can never clobber the rich cached snapshot.
     /// `enriched` reports whether live App Store data was merged in.
-    func build(config: MidgarConfig) async -> (apps: [MidgarApp], enriched: Bool) {
-        let exclusions = Set(config.resolvedExclusions)
+    func build(config: MidgarConfig, ignoringOwnBundle: Bool = false) async -> (apps: [MidgarApp], enriched: Bool) {
+        let exclusions = ignoringOwnBundle ? Set(config.excludedBundleIDs.map { $0.lowercased() }) : Set(config.resolvedExclusions)
         let catalog = await resolveCatalog(config: config)
         let entries = catalog.apps.filter { !exclusions.contains($0.bundleId.lowercased()) }
         guard !entries.isEmpty else { return ([], false) }
@@ -34,13 +40,41 @@ actor CatalogService {
 
         var seen = Set<String>()
         let apps = entries
-            .filter { Self.belongsToDeveloper($0, live: live[$0.appId], expectedArtistID: expectedArtistID) }
-            .map { merge(entry: $0, live: live[$0.appId]) }
+            .filter { Self.isVisible($0, live: live, enriched: enriched, expectedArtistID: expectedArtistID) }
+            .map { Self.merge(entry: $0, live: live[$0.appId]) }
             .sorted(by: Self.ordering)
             .filter { seen.insert($0.appId).inserted }
 
         if enriched, !apps.isEmpty { cache.saveSnapshot(apps) }
         return (apps, enriched)
+    }
+
+    /// Decides whether an entry is shown. Staged entries wait for the App Store to return them. An
+    /// entry the store omits while it answers for the others is not sold in this region, so it is
+    /// hidden. With no live data at all everything stays, so the portal still works offline.
+    static func isVisible(
+        _ entry: CatalogEntry,
+        live: [String: ITunesApp],
+        enriched: Bool,
+        expectedArtistID: String?
+    ) -> Bool {
+        if entry.isStaged && live[entry.appId] == nil { return false }
+        if enriched && live[entry.appId] == nil { return false }
+        return belongsToDeveloper(entry, live: live[entry.appId], expectedArtistID: expectedArtistID)
+    }
+
+    /// Same as ``build(config:)`` but keeps the host app's own entry, which the portal shows as
+    /// the "you are here" marker instead of hiding.
+    func buildIncludingHost(config: MidgarConfig) async -> [MidgarApp] {
+        var withoutExclusions = config
+        withoutExclusions.excludedBundleIDs = []
+        let own = Bundle.main.bundleIdentifier?.lowercased()
+        let extra = Set(config.excludedBundleIDs.map { $0.lowercased() })
+        let result = await build(config: withoutExclusions, ignoringOwnBundle: true)
+        return result.apps.filter { app in
+            let id = app.bundleId.lowercased()
+            return id == own || !extra.contains(id)
+        }
     }
 
     private func resolveCatalog(config: MidgarConfig) async -> CatalogResponse {
@@ -62,7 +96,7 @@ actor CatalogService {
         }
     }
 
-    private func merge(entry: CatalogEntry, live: ITunesApp?) -> MidgarApp {
+    static func merge(entry: CatalogEntry, live: ITunesApp?) -> MidgarApp {
         MidgarApp(
             appId: entry.appId,
             bundleId: entry.bundleId,
@@ -73,10 +107,15 @@ actor CatalogService {
             featured: entry.featured ?? false,
             order: entry.order ?? 999,
             iconURL: live?.artworkUrl512 ?? live?.artworkUrl100 ?? entry.icon,
-            screenshotURLs: Self.screenshots(entry: entry, live: live),
+            screenshotURLs: screenshots(entry: entry, live: live),
             rating: live?.averageUserRating,
             ratingCount: live?.userRatingCount,
-            formattedPrice: live?.formattedPrice
+            formattedPrice: live?.formattedPrice,
+            platforms: entry.platforms ?? [.ios],
+            topics: entry.topics ?? [],
+            related: entry.related ?? [],
+            family: entry.family,
+            value: entry.value ?? 0.5
         )
     }
 

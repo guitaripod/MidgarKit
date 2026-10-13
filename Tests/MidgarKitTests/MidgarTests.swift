@@ -5,8 +5,35 @@ final class MidgarTests: XCTestCase {
 
     func testBundledCatalogLoadsEveryApp() {
         let entries = CatalogService.bundledCatalog()
-        XCTAssertEqual(entries.count, 11, "Bundled fallback should ship all 11 apps")
+        XCTAssertEqual(entries.count, 16, "Bundled fallback should ship all 16 apps")
         XCTAssertTrue(entries.allSatisfy { !$0.appId.isEmpty && !$0.bundleId.isEmpty })
+        XCTAssertTrue(entries.allSatisfy { !($0.platforms ?? []).isEmpty })
+        XCTAssertTrue(entries.allSatisfy { midgarRGBA(hex: $0.accent) != nil })
+    }
+
+    func testBundledRelatedAppsExistInTheCatalog() {
+        let entries = CatalogService.bundledCatalog()
+        let bundles = Set(entries.map(\.bundleId))
+        for entry in entries {
+            for related in entry.related ?? [] {
+                XCTAssertTrue(bundles.contains(related), "\(entry.bundleId) lists unknown related app \(related)")
+            }
+        }
+    }
+
+    func testEveryBundledAppHasAFallbackIcon() async {
+        for entry in CatalogService.bundledCatalog() {
+            let icon = await midgarBundledIcon(entry.appId, maxPixel: 60, scale: 2)
+            XCTAssertNotNil(icon, "Missing bundled icon for \(entry.bundleId)")
+        }
+    }
+
+    func testBundledAppsAreAllVisibleAndMergeEveryField() {
+        let apps = CatalogService.bundledApps()
+        XCTAssertEqual(apps.count, 16)
+        let flaccyMac = apps.first { $0.bundleId == "com.midgarcorp.flaccy.mac" }
+        XCTAssertEqual(flaccyMac?.platforms, [.mac])
+        XCTAssertEqual(flaccyMac?.family, "flaccy")
     }
 
     func testBundledCatalogIdentifiersAreUnique() {
@@ -18,13 +45,6 @@ final class MidgarTests: XCTestCase {
     func testBundledCatalogHasFeaturedApps() {
         let entries = CatalogService.bundledCatalog()
         XCTAssertTrue(entries.contains { $0.featured == true })
-    }
-
-    func testInReviewAppsHaveBundledIcons() async {
-        for appId in ["6777952645", "6779927672"] {
-            let icon = await midgarBundledIcon(appId, maxPixel: 60, scale: 2)
-            XCTAssertNotNil(icon, "Missing bundled icon for \(appId)")
-        }
     }
 
     func testBundledIconIsDownsampledToTheRequestedSize() async {
@@ -110,8 +130,66 @@ final class MidgarTests: XCTestCase {
         XCTAssertEqual(CatalogService.screenshots(entry: makeEntry(), live: nil), [])
     }
 
-    private func makeEntry(appId: String = "1", screenshots: [URL]? = nil) -> CatalogEntry {
-        CatalogEntry(appId: appId, bundleId: "com.example.\(appId)", name: "X", tagline: nil, genre: nil, accent: nil, featured: nil, order: nil, icon: nil, screenshots: screenshots)
+    func testLegacyAppJSONDecodesWithDefaults() throws {
+        let json = #"{"appId":"1","bundleId":"com.example.one","name":"One"}"#
+        let app = try JSONDecoder().decode(MidgarApp.self, from: Data(json.utf8))
+        XCTAssertEqual(app.platforms, [.ios])
+        XCTAssertEqual(app.topics, [])
+        XCTAssertEqual(app.value, 0.5)
+        XCTAssertFalse(app.featured)
+    }
+
+    func testStagedEntriesAppearOnlyOnceTheStoreReturnsThem() {
+        let staged = makeEntry(appId: "9", status: "staged")
+        XCTAssertFalse(CatalogService.isVisible(staged, live: [:], enriched: false, expectedArtistID: nil))
+        XCTAssertFalse(CatalogService.isVisible(staged, live: ["1": makeITunes(artistId: nil)], enriched: true, expectedArtistID: nil))
+        XCTAssertTrue(CatalogService.isVisible(staged, live: ["9": makeITunes(artistId: nil)], enriched: true, expectedArtistID: nil))
+    }
+
+    func testEntriesTheStoreOmitsAreHiddenOnlyWhenTheStoreAnswered() {
+        let entry = makeEntry(appId: "5")
+        XCTAssertTrue(CatalogService.isVisible(entry, live: [:], enriched: false, expectedArtistID: nil))
+        XCTAssertFalse(CatalogService.isVisible(entry, live: ["1": makeITunes(artistId: nil)], enriched: true, expectedArtistID: nil))
+        XCTAssertTrue(CatalogService.isVisible(entry, live: ["5": makeITunes(artistId: nil)], enriched: true, expectedArtistID: nil))
+    }
+
+    func testCampaignTokenIsSanitisedAndShort() {
+        let config = MidgarConfig(placement: "Settings Row!")
+        XCTAssertLessThanOrEqual(config.campaignToken.count, 40)
+        XCTAssertFalse(config.campaignToken.contains(" "))
+        XCTAssertTrue(config.campaignToken.hasSuffix("-settingsrow"))
+    }
+
+    func testTelemetryPayloadCarriesHostStorefrontAndPlacement() {
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "portal"))
+        let payload = telemetry.payload(.tap, appId: "123")
+        XCTAssertEqual(payload["event"], "tap")
+        XCTAssertEqual(payload["appId"], "123")
+        XCTAssertEqual(payload["storefront"], "fi")
+        XCTAssertEqual(payload["placement"], "portal")
+        XCTAssertNotNil(payload["source"])
+        XCTAssertEqual(MidgarEvent.portalOpen.rawValue, "portal_open")
+    }
+
+    func testShortNameDropsTheMarketingSuffix() {
+        XCTAssertEqual(makeApp(name: "Psywave: AI Playlist Maker").shortName, "Psywave")
+        XCTAssertEqual(makeApp(name: "Embr \u{2014} Live Streams").shortName, "Embr")
+        XCTAssertEqual(makeApp(name: "Solar Beam").shortName, "Solar Beam")
+    }
+
+    func testURLSchemeIsTheLowercasedBundleIdentifier() {
+        XCTAssertEqual(makeApp(id: "7").urlScheme, "com.example.7")
+        let mixed = MidgarApp(appId: "1", bundleId: "com.guitaripod.Pixie", name: "P")
+        XCTAssertEqual(mixed.urlScheme, "com.guitaripod.pixie")
+        XCTAssertEqual(InstalledApps.launchURL(for: mixed)?.absoluteString, "com.guitaripod.pixie://")
+    }
+
+    private func makeEntry(appId: String = "1", screenshots: [URL]? = nil, status: String? = nil) -> CatalogEntry {
+        var object: [String: Any] = ["appId": appId, "bundleId": "com.example.\(appId)", "name": "X"]
+        if let screenshots { object["screenshots"] = screenshots.map(\.absoluteString) }
+        if let status { object["status"] = status }
+        let data = try! JSONSerialization.data(withJSONObject: object)
+        return try! JSONDecoder().decode(CatalogEntry.self, from: data)
     }
 
     private func makeITunes(artistId: Int?, phone: [URL]? = nil, ipad: [URL]? = nil) -> ITunesApp {
@@ -124,12 +202,13 @@ final class MidgarTests: XCTestCase {
         order: Int = 0,
         price: String? = nil,
         rating: Double? = nil,
-        ratingCount: Int? = nil
+        ratingCount: Int? = nil,
+        name: String? = nil
     ) -> MidgarApp {
         MidgarApp(
             appId: id,
             bundleId: "com.example.\(id)",
-            name: "Example \(id)",
+            name: name ?? "Example \(id)",
             tagline: "Tagline",
             genre: "Utilities",
             accentHex: "#7C5CFF",

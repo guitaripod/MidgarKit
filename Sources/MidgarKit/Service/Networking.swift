@@ -28,7 +28,6 @@ struct ITunesClient {
         var components = URLComponents(string: "https://itunes.apple.com/lookup")!
         var query = [
             URLQueryItem(name: "id", value: ids.joined(separator: ",")),
-            URLQueryItem(name: "entity", value: "software"),
             URLQueryItem(name: "limit", value: "200"),
         ]
         if let storefront, !storefront.isEmpty {

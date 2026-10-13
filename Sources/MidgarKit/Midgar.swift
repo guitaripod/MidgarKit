@@ -7,26 +7,24 @@ import UIKit
 import AppKit
 #endif
 
-/// Entry points for the Midgar in-app storefront. UIKit on iOS / tvOS / visionOS / Mac Catalyst,
-/// AppKit on native macOS. SwiftUI hosts use ``MidgarStoreView`` / ``SwiftUI/View/midgarStore(isPresented:config:)``.
+/// Entry points for the Midgar portal, the in-app universe of every Midgar app. UIKit on iOS / tvOS
+/// / visionOS / Mac Catalyst, AppKit on native macOS. SwiftUI hosts use ``MidgarStoreView`` /
+/// ``SwiftUI/View/midgarStore(isPresented:config:)``.
 public enum Midgar {
 
     static let log = Logger(subsystem: "com.midgar.storefront", category: "Midgar")
 
     #if canImport(UIKit)
 
-    /// Returns the storefront wrapped in a navigation controller, ready to present or embed.
+    /// Returns the portal view controller, ready to present or embed.
     @MainActor
     public static func makeStoreViewController(config: MidgarConfig = .default) -> UIViewController {
-        let store = MidgarStoreViewController(config: config)
-        let navigation = UINavigationController(rootViewController: store)
-        navigation.navigationBar.prefersLargeTitles = true
-        if let accent = config.accent { navigation.view.tintColor = accent }
-        return navigation
+        MidgarPortalViewController(config: config)
     }
 
-    /// Presents the storefront modally. Without an explicit presenter, the top-most view controller
-    /// in the active scene is used. Returns `false` (and logs) when no presenter could be found.
+    /// Presents the portal full screen with an iris opening from the middle of the screen. Without
+    /// an explicit presenter, the top-most view controller in the active scene is used. Returns
+    /// `false` (and logs) when no presenter could be found.
     @discardableResult
     @MainActor
     public static func present(from presenter: UIViewController? = nil, config: MidgarConfig = .default) -> Bool {
@@ -35,9 +33,9 @@ public enum Midgar {
             assertionFailure("Midgar.present found no view controller to present from.")
             return false
         }
-        let navigation = makeStoreViewController(config: config)
-        navigation.modalPresentationStyle = .automatic
-        host.present(navigation, animated: true)
+        let portal = makeStoreViewController(config: config)
+        portal.modalPresentationStyle = .fullScreen
+        host.present(portal, animated: true)
         return true
     }
 
@@ -60,18 +58,18 @@ public enum Midgar {
 
     #elseif canImport(AppKit)
 
-    /// Returns the storefront view controller, ready to present as a sheet or embed.
+    /// Returns the portal view controller, ready to present as a sheet or embed.
     @MainActor
     public static func makeStoreViewController(config: MidgarConfig = .default) -> NSViewController {
-        MidgarStoreViewController(config: config)
+        MidgarPortalViewController(config: config)
     }
 
-    /// Presents the storefront as a sheet from the given (or key) window. Returns `false` if no
-    /// window could be found.
+    /// Presents the portal as a sheet from the given (or key) window. Returns `false` if no window
+    /// could be found.
     @discardableResult
     @MainActor
     public static func present(from presenter: NSViewController? = nil, config: MidgarConfig = .default) -> Bool {
-        let store = MidgarStoreViewController(config: config)
+        let store = makeStoreViewController(config: config)
         if let presenter {
             presenter.presentAsSheet(store)
             return true

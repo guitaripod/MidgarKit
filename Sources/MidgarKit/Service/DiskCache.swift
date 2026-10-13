@@ -13,8 +13,8 @@ struct DiskCache {
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
-    private var snapshotURL: URL { directory.appendingPathComponent("snapshot.json") }
-    private var catalogURL: URL { directory.appendingPathComponent("catalog.json") }
+    private var snapshotURL: URL { directory.appendingPathComponent("snapshot-v3.json") }
+    private var catalogURL: URL { directory.appendingPathComponent("catalog-v3.json") }
 
     func loadSnapshot() -> [MidgarApp] {
         decode([MidgarApp].self, from: snapshotURL) ?? []

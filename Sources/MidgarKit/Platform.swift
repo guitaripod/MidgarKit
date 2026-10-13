@@ -158,3 +158,23 @@ extension MidgarColor {
         #endif
     }
 }
+
+func midgarCGImage(of image: MidgarImage) -> CGImage? {
+    #if canImport(UIKit)
+    return image.cgImage
+    #else
+    return image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+    #endif
+}
+
+/// Loads artwork as a `CGImage`, downsampled to `maxPixel` points, for the portal's textures.
+@MainActor
+func midgarLoadCGImage(_ url: URL?, maxPixel: CGFloat, scale: CGFloat) async -> CGImage? {
+    guard let image = await midgarLoadImage(url, maxPixel: maxPixel, scale: scale) else { return nil }
+    return midgarCGImage(of: image)
+}
+
+func midgarBundledCGImage(_ appId: String, maxPixel: CGFloat, scale: CGFloat) async -> CGImage? {
+    guard let image = await midgarBundledIcon(appId, maxPixel: maxPixel, scale: scale) else { return nil }
+    return midgarCGImage(of: image)
+}
