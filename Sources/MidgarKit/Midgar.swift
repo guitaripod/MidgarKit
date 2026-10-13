@@ -47,7 +47,7 @@ public enum Midgar {
         }
         let portal = MidgarPortalViewController(config: config, irisOrigin: irisOrigin(for: sourceView))
         portal.modalPresentationStyle = .fullScreen
-        host.present(portal, animated: true)
+        topMost(host).present(portal, animated: true)
         return true
     }
 

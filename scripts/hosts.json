@@ -11,7 +11,7 @@
     { "name": "Master of Inventory", "repo": "~/Dev/ios/inventory", "bundleId": "com.marcusziade.inventory", "platforms": ["ios"] },
     { "name": "Psybeam", "repo": "~/Dev/ios/psybeam", "bundleId": "com.guitaripod.psybeam", "platforms": ["ios"] },
     { "name": "Psywave", "repo": "~/Dev/ios/psywave", "bundleId": "com.marcusziade.psywave", "platforms": ["ios"] },
-    { "name": "Solar Beam", "repo": "~/Dev/apple/solarbeam", "bundleId": "com.marcusziade.solarbeam", "platforms": ["ios", "mac", "tvos", "vision"] },
+    { "name": "Solar Beam", "repo": "~/Dev/ios/solarbeam", "bundleId": "com.marcusziade.solarbeam", "platforms": ["ios", "mac", "tvos", "vision"] },
     { "name": "PixiePocket", "repo": "~/Dev/rust/pixie", "bundleId": "com.guitaripod.Pixie", "platforms": ["ios"] },
     { "name": "Master of Flags", "repo": "~/Dev/ios/master-of-flags", "bundleId": "com.marcusziade.knowtheflag", "platforms": ["ios", "mac", "tvos"] },
     { "name": "Tailscode", "repo": "~/Dev/ios/Tailscode", "bundleId": "com.guitaripod.tailscode", "platforms": ["ios", "mac"] },
