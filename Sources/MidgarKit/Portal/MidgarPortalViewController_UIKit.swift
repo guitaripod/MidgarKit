@@ -64,7 +64,9 @@ public final class MidgarPortalViewController: UIViewController {
         case .launch(let app):
             model.recordTap(app)
             model.recordLaunch(app)
-            if let url = InstalledApps.launchURL(for: app) { UIApplication.shared.open(url) }
+            if let url = InstalledApps.installedURL(for: app) ?? InstalledApps.launchURL(for: app) {
+                UIApplication.shared.open(url)
+            }
         case .share(let app):
             model.recordTap(app)
             share(app)

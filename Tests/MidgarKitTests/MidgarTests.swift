@@ -193,6 +193,48 @@ final class MidgarTests: XCTestCase {
         XCTAssertEqual(InstalledApps.launchURL(for: mixed)?.absoluteString, "com.guitaripod.pixie://")
     }
 
+    func testDetectionAcceptsTheSlotSchemeAlone() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.New", name: "New", scheme: "midgar-07")
+        let url = InstalledApps.installedURL(for: app) { $0.scheme == "midgar-07" }
+        XCTAssertEqual(url?.absoluteString, "midgar-07://")
+    }
+
+    func testDetectionAcceptsTheLegacySchemeAlone() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Old", name: "Old", scheme: "midgar-07")
+        let url = InstalledApps.installedURL(for: app) { $0.scheme == "com.example.old" }
+        XCTAssertEqual(url?.absoluteString, "com.example.old://")
+    }
+
+    func testDetectionPrefersTheSlotSchemeWhenBothAnswer() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Both", name: "Both", scheme: "midgar-07")
+        var asked: [String] = []
+        let url = InstalledApps.installedURL(for: app) { candidate in
+            asked.append(candidate.absoluteString)
+            return true
+        }
+        XCTAssertEqual(url?.absoluteString, "midgar-07://")
+        XCTAssertEqual(asked, ["midgar-07://"])
+    }
+
+    func testDetectionFindsNothingWhenNeitherSchemeAnswers() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.None", name: "None", scheme: "midgar-07")
+        var asked: [String] = []
+        let url = InstalledApps.installedURL(for: app) { candidate in
+            asked.append(candidate.absoluteString)
+            return false
+        }
+        XCTAssertNil(url)
+        XCTAssertEqual(asked, ["midgar-07://", "com.example.none://"])
+    }
+
+    func testAnAppWithoutASlotIsReachedByItsBundleIdentifierOnly() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Plain", name: "Plain")
+        XCTAssertEqual(app.urlSchemes, ["com.example.plain"])
+        var asked = 0
+        _ = InstalledApps.installedURL(for: app) { _ in asked += 1; return false }
+        XCTAssertEqual(asked, 1)
+    }
+
     private func makeEntry(appId: String = "1", screenshots: [URL]? = nil, status: String? = nil) -> CatalogEntry {
         var object: [String: Any] = ["appId": appId, "bundleId": "com.example.\(appId)", "name": "X"]
         if let screenshots { object["screenshots"] = screenshots.map(\.absoluteString) }

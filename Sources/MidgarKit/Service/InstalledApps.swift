@@ -8,8 +8,9 @@ import AppKit
 #endif
 
 /// Finds out which sibling apps are on this device without any network call or identifier. iOS
-/// asks whether the app's URL scheme (its lowercased bundle id) can be opened, which needs the
-/// scheme in the host's `LSApplicationQueriesSchemes`; macOS asks Launch Services directly.
+/// asks whether one of the app's URL schemes (its catalog slot such as `midgar-07`, or its
+/// lowercased bundle id) can be opened, which needs a scheme in the host's
+/// `LSApplicationQueriesSchemes`; macOS asks Launch Services directly.
 enum InstalledApps {
     private static let log = Logger(subsystem: "com.midgar.storefront", category: "Installed")
 
@@ -26,12 +27,28 @@ enum InstalledApps {
     @MainActor
     static func isInstalled(_ app: MidgarApp) -> Bool {
         #if canImport(UIKit)
-        guard let url = launchURL(for: app) else { return false }
-        return UIApplication.shared.canOpenURL(url)
+        return installedURL(for: app) != nil
         #else
         return NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.bundleId) != nil
         #endif
     }
+
+    /// The first URL of the app that `canOpen` accepts, trying the slot scheme before the legacy
+    /// bundle-id scheme, or `nil` when the app cannot be reached by any of them.
+    static func installedURL(for app: MidgarApp, canOpen: (URL) -> Bool) -> URL? {
+        app.urlSchemes
+            .compactMap { URL(string: "\($0)://") }
+            .first(where: canOpen)
+    }
+
+    #if canImport(UIKit)
+    /// The URL that opens `app` on this device, using whichever of its schemes is declared and
+    /// answers `canOpenURL`.
+    @MainActor
+    static func installedURL(for app: MidgarApp) -> URL? {
+        installedURL(for: app) { UIApplication.shared.canOpenURL($0) }
+    }
+    #endif
 
     static func launchURL(for app: MidgarApp) -> URL? {
         URL(string: "\(app.urlScheme)://")
@@ -44,7 +61,7 @@ enum InstalledApps {
             (Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? [])
                 .map { $0.lowercased() }
         )
-        let missing = apps.filter { !declared.contains($0.urlScheme) }
+        let missing = apps.filter { declared.isDisjoint(with: $0.urlSchemes) }
         guard !missing.isEmpty else { return }
         log.notice("LSApplicationQueriesSchemes is missing \(missing.count) Midgar schemes; installed apps cannot be detected")
         #endif

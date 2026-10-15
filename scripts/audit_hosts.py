@@ -4,14 +4,16 @@
 Two modes:
 
   audit_hosts.py --app /path/Some.app --bundle-id com.example.app
-      Reads the built Info.plist and checks the host registers its own URL scheme and lists every
-      scheme from worker/catalog.json in LSApplicationQueriesSchemes.
+      Reads the built Info.plist and checks the host registers its own URL scheme, lists every
+      scheme from midgar_schemes.py in LSApplicationQueriesSchemes, and stays within the 25-entry
+      cap iOS 27 enforces on that key.
 
   audit_hosts.py [--hosts scripts/hosts.json]
       Static pass over each host repo: which MidgarKit requirement it declares and whether Swift
       sources use MidgarEntryView or MidgarEntryCard. Exits 1 when a host is missing the entry.
 """
 import argparse
+import importlib.util
 import json
 import pathlib
 import plistlib
@@ -25,8 +27,17 @@ ENTRY_PATTERN = re.compile(r"MidgarEntry(View|Card)")
 LEGACY_PATTERN = re.compile(r"Midgar\.present|MoreAppsService|MoreAppsView")
 
 
+def query_scheme_cap():
+    """The LSApplicationQueriesSchemes cap, read from midgar_schemes.py so there is one definition."""
+    path = ROOT / "scripts" / "midgar_schemes.py"
+    spec = importlib.util.spec_from_file_location("midgar_schemes", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.QUERY_SCHEME_CAP
+
+
 def catalog_schemes():
-    """Every scheme a host should list: the apps' own schemes plus the reserved slots."""
+    """Every scheme a host should list: the legacy bundle-id schemes plus the reserved slots."""
     output = subprocess.run([sys.executable, str(ROOT / "scripts" / "midgar_schemes.py")], capture_output=True, text=True)
     return output.stdout.split()
 
@@ -36,8 +47,16 @@ def audit_app(path, bundle_id):
         plistlib.loads((pathlib.Path(path) / "Contents" / "Info.plist").read_bytes())
     own = bundle_id.lower()
     registered = {s.lower() for entry in plist.get("CFBundleURLTypes", []) for s in entry.get("CFBundleURLSchemes", [])}
-    queries = {s.lower() for s in plist.get("LSApplicationQueriesSchemes", [])}
+    declared = plist.get("LSApplicationQueriesSchemes", [])
+    queries = {s.lower() for s in declared}
     problems = []
+    cap = query_scheme_cap()
+    if len(declared) > cap:
+        problems.append(
+            f"LSApplicationQueriesSchemes lists {len(declared)} entries; apps linked on or after iOS 27 "
+            f"are limited to {cap}, so canOpenURL fails for the rest. Replace the list with the output "
+            f"of scripts/midgar_schemes.py"
+        )
     if own not in registered:
         problems.append(f"own scheme {own} missing from CFBundleURLTypes")
     missing = [s for s in catalog_schemes() if s not in queries and s != own and not s.startswith("midgar-")]

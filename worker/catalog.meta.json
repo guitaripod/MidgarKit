@@ -18,7 +18,8 @@
       "related": [],
       "value": 0.3,
       "featured": true,
-      "order": 4
+      "order": 4,
+      "scheme": "midgar-05"
     },
     {
       "appId": "6777952645",
@@ -36,7 +37,8 @@
       ],
       "value": 0.7,
       "featured": true,
-      "order": 5
+      "order": 5,
+      "scheme": "midgar-06"
     },
     {
       "appId": "6779927672",
@@ -53,7 +55,8 @@
       ],
       "value": 0.8,
       "featured": false,
-      "order": 6
+      "order": 6,
+      "scheme": "midgar-07"
     },
     {
       "appId": "6727000827",
@@ -71,7 +74,8 @@
       ],
       "value": 0.7,
       "featured": false,
-      "order": 7
+      "order": 7,
+      "scheme": "midgar-08"
     },
     {
       "appId": "6751730339",
@@ -88,7 +92,8 @@
       ],
       "value": 0.3,
       "featured": false,
-      "order": 8
+      "order": 8,
+      "scheme": "midgar-09"
     },
     {
       "appId": "6736581403",
@@ -106,7 +111,8 @@
       ],
       "value": 0.6,
       "featured": false,
-      "order": 9
+      "order": 9,
+      "scheme": "midgar-10"
     },
     {
       "appId": "6661019277",
@@ -125,7 +131,8 @@
       ],
       "value": 0.6,
       "featured": false,
-      "order": 10
+      "order": 10,
+      "scheme": "midgar-11"
     },
     {
       "appId": "6705124497",
@@ -146,7 +153,8 @@
       ],
       "value": 1.0,
       "featured": true,
-      "order": 1
+      "order": 1,
+      "scheme": "midgar-02"
     },
     {
       "appId": "6736438070",
@@ -163,7 +171,8 @@
       ],
       "value": 0.3,
       "featured": false,
-      "order": 11
+      "order": 11,
+      "scheme": "midgar-12"
     },
     {
       "appId": "6746733380",
@@ -180,7 +189,8 @@
       ],
       "value": 0.3,
       "featured": false,
-      "order": 12
+      "order": 12,
+      "scheme": "midgar-13"
     },
     {
       "appId": "1484270248",
@@ -201,7 +211,8 @@
       ],
       "value": 1.0,
       "featured": true,
-      "order": 2
+      "order": 2,
+      "scheme": "midgar-03"
     },
     {
       "appId": "1523538855",
@@ -219,7 +230,8 @@
       ],
       "value": 0.6,
       "featured": false,
-      "order": 13
+      "order": 13,
+      "scheme": "midgar-14"
     },
     {
       "appId": "6785542220",
@@ -237,7 +249,8 @@
       ],
       "value": 0.6,
       "featured": true,
-      "order": 14
+      "order": 14,
+      "scheme": "midgar-15"
     },
     {
       "appId": "6787493695",
@@ -260,7 +273,8 @@
       ],
       "value": 1.0,
       "featured": true,
-      "order": 0
+      "order": 0,
+      "scheme": "midgar-01"
     },
     {
       "appId": "6789594504",
@@ -282,7 +296,8 @@
       ],
       "value": 0.8,
       "featured": false,
-      "order": 15
+      "order": 15,
+      "scheme": "midgar-16"
     },
     {
       "appId": "6791660932",
@@ -305,7 +320,8 @@
       ],
       "value": 1.0,
       "featured": true,
-      "order": 3
+      "order": 3,
+      "scheme": "midgar-04"
     }
   ]
 }

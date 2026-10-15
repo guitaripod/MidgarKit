@@ -130,6 +130,16 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     /// in the catalog, which every host already declares.
     public var urlScheme: String { (scheme ?? bundleId).lowercased() }
 
+    /// The lowercased bundle identifier, the scheme every app registered before slots existed.
+    /// Hosts built before the 25-entry cap only list these, so detection must still try it.
+    var legacyScheme: String { bundleId.lowercased() }
+
+    /// Every scheme the app can be reached by, slot first, without duplicates.
+    var urlSchemes: [String] {
+        let primary = urlScheme
+        return primary == legacyScheme ? [primary] : [primary, legacyScheme]
+    }
+
     /// `true` when the app can be installed on the platform the package is running on.
     public var runsOnThisDevice: Bool { platforms.contains(.current) }
 
