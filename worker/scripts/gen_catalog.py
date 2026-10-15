@@ -51,6 +51,8 @@ APP_KEY_ORDER = (
     "value",
     "featured",
     "order",
+    "scheme",
+    "slot",
     "status",
     "icon",
     "screenshots",
@@ -206,14 +208,23 @@ def find_duplicates(label, values):
 
 
 def validate_schemes(apps):
-    """Returns problems with the URL schemes hosts must list: slots well formed, schemes unique."""
+    """Returns problems with the URL schemes hosts must list: slots well formed, schemes unique.
+
+    `slot` is the reserved scheme an existing app registers beside its bundle-id scheme. `scheme`
+    is for apps whose only scheme is a reserved slot, so an entry never carries both.
+    """
     problems = []
     for app in apps:
-        scheme = app.get("scheme")
-        if scheme is not None and not SLOT_PATTERN.match(scheme):
-            problems.append("{} has scheme {!r}, which is not a reserved slot midgar-01 to midgar-30".format(describe(app), scheme))
+        for key in ("scheme", "slot"):
+            value = app.get(key)
+            if value is not None and not SLOT_PATTERN.match(value):
+                problems.append("{} has {} {!r}, which is not a reserved slot midgar-01 to midgar-30".format(describe(app), key, value))
+        if app.get("scheme") and app.get("slot"):
+            problems.append("{} has both scheme and slot; use scheme only when the slot is the app's only scheme".format(describe(app)))
     effective = [(app.get("scheme") or app.get("bundleId", "")).lower() for app in apps]
     problems += find_duplicates("URL scheme", effective)
+    claimed = [app["slot"].lower() for app in apps if app.get("slot")] + [app["scheme"].lower() for app in apps if app.get("scheme")]
+    problems += find_duplicates("reserved slot", claimed)
     return problems
 
 

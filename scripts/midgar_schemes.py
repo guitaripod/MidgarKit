@@ -4,7 +4,7 @@
 iOS 27 limits apps linked against it to 25 LSApplicationQueriesSchemes entries, so the list is
 exactly that long: the lowercased bundle identifiers of the apps that shipped before reserved slots
 existed (their only scheme, which they keep registering), then as many reserved slots midgar-01,
-midgar-02, ... as still fit. Each app claims its slot in worker/catalog.meta.json and registers it
+midgar-02, ... as still fit. Each app claims its `slot` in worker/catalog.meta.json and registers it
 in CFBundleURLTypes at its next release; once every app has, hosts can drop the bundle-id schemes
 and list midgar-01 to midgar-25 only. Hosts register their own scheme in CFBundleURLTypes, which
 is how the portal tells installed apps from the rest.

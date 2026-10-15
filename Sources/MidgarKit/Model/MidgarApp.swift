@@ -56,6 +56,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     public let family: String?
     public let value: Double
     public let scheme: String?
+    public let slot: String?
 
     public var id: String { appId }
 
@@ -78,7 +79,8 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         related: [String] = [],
         family: String? = nil,
         value: Double = 0.5,
-        scheme: String? = nil
+        scheme: String? = nil,
+        slot: String? = nil
     ) {
         self.appId = appId
         self.bundleId = bundleId
@@ -99,6 +101,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         self.family = family
         self.value = value
         self.scheme = scheme
+        self.slot = slot
     }
 
     /// Public App Store product page, used as a fallback when in-app presentation is unavailable.
@@ -125,19 +128,22 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased()
     }
 
-    /// The URL scheme this app registers so sibling apps can detect and open it. Older apps use
-    /// their lowercased bundle identifier; newer ones claim a reserved slot such as `midgar-07`
-    /// in the catalog, which every host already declares.
+    /// The URL scheme releases 3.0 and 3.1 query. Older apps use their lowercased bundle
+    /// identifier; apps whose only scheme is a reserved slot such as `midgar-07` name it as
+    /// `scheme` in the catalog.
     public var urlScheme: String { (scheme ?? bundleId).lowercased() }
 
     /// The lowercased bundle identifier, the scheme every app registered before slots existed.
-    /// Hosts built before the 25-entry cap only list these, so detection must still try it.
     var legacyScheme: String { bundleId.lowercased() }
 
-    /// Every scheme the app can be reached by, slot first, without duplicates.
-    var urlSchemes: [String] {
-        let primary = urlScheme
-        return primary == legacyScheme ? [primary] : [primary, legacyScheme]
+    /// Every scheme the app can be reached by, most specific first: the `slot` it registers
+    /// beside its legacy scheme, the `scheme` it registers instead of one, then the lowercased
+    /// bundle identifier. Lowercased, without empty entries or duplicates.
+    var reachableSchemes: [String] {
+        var seen = Set<String>()
+        return [slot, scheme, bundleId]
+            .compactMap { $0?.lowercased() }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 
     /// `true` when the app can be installed on the platform the package is running on.
@@ -159,7 +165,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case appId, bundleId, name, tagline, genre, accentHex, featured, order, iconURL
         case screenshotURLs, rating, ratingCount, formattedPrice, platforms, topics, related
-        case family, value, scheme
+        case family, value, scheme, slot
     }
 
     public init(from decoder: Decoder) throws {
@@ -183,7 +189,8 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
             related: try container.decodeIfPresent([String].self, forKey: .related) ?? [],
             family: try container.decodeIfPresent(String.self, forKey: .family),
             value: try container.decodeIfPresent(Double.self, forKey: .value) ?? 0.5,
-            scheme: try container.decodeIfPresent(String.self, forKey: .scheme)
+            scheme: try container.decodeIfPresent(String.self, forKey: .scheme),
+            slot: try container.decodeIfPresent(String.self, forKey: .slot)
         )
     }
 }

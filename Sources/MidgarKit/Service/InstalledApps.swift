@@ -8,8 +8,8 @@ import AppKit
 #endif
 
 /// Finds out which sibling apps are on this device without any network call or identifier. iOS
-/// asks whether one of the app's URL schemes (its catalog slot such as `midgar-07`, or its
-/// lowercased bundle id) can be opened, which needs a scheme in the host's
+/// asks whether one of the app's URL schemes (its catalog slot such as `midgar-07`, its catalog
+/// scheme, or its lowercased bundle id) can be opened, which needs a scheme in the host's
 /// `LSApplicationQueriesSchemes`; macOS asks Launch Services directly.
 enum InstalledApps {
     private static let log = Logger(subsystem: "com.midgar.storefront", category: "Installed")
@@ -33,10 +33,10 @@ enum InstalledApps {
         #endif
     }
 
-    /// The first URL of the app that `canOpen` accepts, trying the slot scheme before the legacy
-    /// bundle-id scheme, or `nil` when the app cannot be reached by any of them.
+    /// The first URL of the app that `canOpen` accepts, trying the slot before the scheme and the
+    /// legacy bundle-id scheme, or `nil` when the app cannot be reached by any of them.
     static func installedURL(for app: MidgarApp, canOpen: (URL) -> Bool) -> URL? {
-        app.urlSchemes
+        app.reachableSchemes
             .compactMap { URL(string: "\($0)://") }
             .first(where: canOpen)
     }
@@ -61,7 +61,7 @@ enum InstalledApps {
             (Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? [])
                 .map { $0.lowercased() }
         )
-        let missing = apps.filter { declared.isDisjoint(with: $0.urlSchemes) }
+        let missing = apps.filter { declared.isDisjoint(with: $0.reachableSchemes) }
         guard !missing.isEmpty else { return }
         log.notice("LSApplicationQueriesSchemes is missing \(missing.count) Midgar schemes; installed apps cannot be detected")
         #endif

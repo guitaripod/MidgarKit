@@ -108,7 +108,8 @@ actor CatalogService {
             related: entry.related ?? [],
             family: entry.family,
             value: entry.value ?? 0.5,
-            scheme: entry.scheme
+            scheme: entry.scheme,
+            slot: entry.slot
         )
     }
 

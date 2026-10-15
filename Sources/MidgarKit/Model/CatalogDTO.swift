@@ -30,6 +30,7 @@ struct CatalogEntry: Codable {
     let value: Double?
     let status: String?
     let scheme: String?
+    let slot: String?
 
     /// Staged entries are listed in the catalog ahead of their release and only appear once the
     /// App Store itself starts returning them.

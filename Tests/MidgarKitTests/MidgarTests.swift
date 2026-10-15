@@ -193,46 +193,63 @@ final class MidgarTests: XCTestCase {
         XCTAssertEqual(InstalledApps.launchURL(for: mixed)?.absoluteString, "com.guitaripod.pixie://")
     }
 
-    func testDetectionAcceptsTheSlotSchemeAlone() {
-        let app = MidgarApp(appId: "9", bundleId: "com.example.New", name: "New", scheme: "midgar-07")
-        let url = InstalledApps.installedURL(for: app) { $0.scheme == "midgar-07" }
-        XCTAssertEqual(url?.absoluteString, "midgar-07://")
+    func testASlotIsDecodedBesideTheLegacySchemeAndUrlSchemeKeepsItsMeaning() throws {
+        let json = #"{"appId":"9","bundleId":"com.example.Old","name":"Old","slot":"midgar-05"}"#
+        let app = try JSONDecoder().decode(MidgarApp.self, from: Data(json.utf8))
+        XCTAssertEqual(app.slot, "midgar-05")
+        XCTAssertNil(app.scheme)
+        XCTAssertEqual(app.urlScheme, "com.example.old")
+        XCTAssertEqual(app.reachableSchemes, ["midgar-05", "com.example.old"])
+        let entry = try JSONDecoder().decode(CatalogEntry.self, from: Data(json.utf8))
+        XCTAssertEqual(CatalogService.merge(entry: entry, live: nil).slot, "midgar-05")
     }
 
-    func testDetectionAcceptsTheLegacySchemeAlone() {
-        let app = MidgarApp(appId: "9", bundleId: "com.example.Old", name: "Old", scheme: "midgar-07")
-        let url = InstalledApps.installedURL(for: app) { $0.scheme == "com.example.old" }
-        XCTAssertEqual(url?.absoluteString, "com.example.old://")
+    func testSlotAndLegacySchemesAreBothChecked() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Old", name: "Old", slot: "midgar-05")
+        XCTAssertEqual(InstalledApps.installedURL(for: app) { $0.scheme == "midgar-05" }?.absoluteString, "midgar-05://")
+        XCTAssertEqual(InstalledApps.installedURL(for: app) { $0.scheme == "com.example.old" }?.absoluteString, "com.example.old://")
     }
 
-    func testDetectionPrefersTheSlotSchemeWhenBothAnswer() {
-        let app = MidgarApp(appId: "9", bundleId: "com.example.Both", name: "Both", scheme: "midgar-07")
+    func testDetectionPrefersTheSlotWhenBothAnswer() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Both", name: "Both", slot: "midgar-05")
         var asked: [String] = []
         let url = InstalledApps.installedURL(for: app) { candidate in
             asked.append(candidate.absoluteString)
             return true
         }
-        XCTAssertEqual(url?.absoluteString, "midgar-07://")
-        XCTAssertEqual(asked, ["midgar-07://"])
+        XCTAssertEqual(url?.absoluteString, "midgar-05://")
+        XCTAssertEqual(asked, ["midgar-05://"])
     }
 
-    func testDetectionFindsNothingWhenNeitherSchemeAnswers() {
-        let app = MidgarApp(appId: "9", bundleId: "com.example.None", name: "None", scheme: "midgar-07")
+    func testANewAppWithOnlyASchemeIsReachedBySchemeThenBundleIdentifier() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.New", name: "New", scheme: "midgar-07")
+        XCTAssertEqual(app.reachableSchemes, ["midgar-07", "com.example.new"])
+        XCTAssertEqual(InstalledApps.installedURL(for: app) { $0.scheme == "midgar-07" }?.absoluteString, "midgar-07://")
+    }
+
+    func testAnAppWithoutASlotOrSchemeIsReachedByItsBundleIdentifierOnly() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.Plain", name: "Plain")
+        XCTAssertEqual(app.reachableSchemes, ["com.example.plain"])
+        var asked = 0
+        let url = InstalledApps.installedURL(for: app) { _ in asked += 1; return true }
+        XCTAssertEqual(url?.absoluteString, "com.example.plain://")
+        XCTAssertEqual(asked, 1)
+    }
+
+    func testDetectionFindsNothingWhenNoSchemeAnswers() {
+        let app = MidgarApp(appId: "9", bundleId: "com.example.None", name: "None", scheme: "midgar-07", slot: "midgar-05")
         var asked: [String] = []
         let url = InstalledApps.installedURL(for: app) { candidate in
             asked.append(candidate.absoluteString)
             return false
         }
         XCTAssertNil(url)
-        XCTAssertEqual(asked, ["midgar-07://", "com.example.none://"])
+        XCTAssertEqual(asked, ["midgar-05://", "midgar-07://", "com.example.none://"])
     }
 
-    func testAnAppWithoutASlotIsReachedByItsBundleIdentifierOnly() {
-        let app = MidgarApp(appId: "9", bundleId: "com.example.Plain", name: "Plain")
-        XCTAssertEqual(app.urlSchemes, ["com.example.plain"])
-        var asked = 0
-        _ = InstalledApps.installedURL(for: app) { _ in asked += 1; return false }
-        XCTAssertEqual(asked, 1)
+    func testReachableSchemesDropDuplicates() {
+        let app = MidgarApp(appId: "9", bundleId: "Midgar-05", name: "Odd", scheme: "midgar-05", slot: "MIDGAR-05")
+        XCTAssertEqual(app.reachableSchemes, ["midgar-05"])
     }
 
     private func makeEntry(appId: String = "1", screenshots: [URL]? = nil, status: String? = nil) -> CatalogEntry {
