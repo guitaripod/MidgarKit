@@ -5,6 +5,7 @@ WORKER_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PORT=8799
 BASE="http://127.0.0.1:$PORT"
 STATS_KEY_VALUE=smoketest
+KNOWN_SOURCE=com.guitaripod.embr
 APP_ID="9$(date +%s)"
 FAILURES=0
 SERVER_PID=""
@@ -83,12 +84,12 @@ stats_equals() {
 }
 
 impression_counts_two() {
-  post_event 204 "{\"event\":\"impression\",\"appId\":\"$APP_ID\"}" &&
+  post_event 204 "{\"event\":\"impression\",\"appId\":\"$APP_ID\",\"source\":\"$KNOWN_SOURCE\"}" &&
     stats_equals "by=app" "$APP_ID" impression 2
 }
 
 tap_with_source_and_storefront() {
-  post_event 204 "{\"event\":\"tap\",\"appId\":\"$APP_ID\",\"source\":\"com.example.host\",\"storefront\":\"US\"}"
+  post_event 204 "{\"event\":\"tap\",\"appId\":\"$APP_ID\",\"source\":\"$KNOWN_SOURCE\",\"storefront\":\"US\"}"
 }
 
 catalog_has_apps() {
@@ -132,15 +133,18 @@ else
   exit 1
 fi
 
-check "valid event returns 204" post_event 204 "{\"event\":\"impression\",\"appId\":\"$APP_ID\"}"
-check "invalid event returns 400" post_event 400 "{\"event\":\"bogus\",\"appId\":\"$APP_ID\"}"
-check "portal_open with appId 0 returns 204" post_event 204 '{"event":"portal_open","appId":"0"}'
+check "valid event returns 204" post_event 204 "{\"event\":\"impression\",\"appId\":\"$APP_ID\",\"source\":\"$KNOWN_SOURCE\"}"
+check "invalid event returns 400" post_event 400 "{\"event\":\"bogus\",\"appId\":\"$APP_ID\",\"source\":\"$KNOWN_SOURCE\"}"
+check "event without source returns 400" post_event 400 "{\"event\":\"impression\",\"appId\":\"$APP_ID\"}"
+check "event from a bundle id not in the catalog returns 400" post_event 400 "{\"event\":\"impression\",\"appId\":\"$APP_ID\",\"source\":\"com.example.host\"}"
+check "portal_open with appId 0 returns 204" post_event 204 "{\"event\":\"portal_open\",\"appId\":\"0\",\"source\":\"$KNOWN_SOURCE\"}"
 check "two events with same dimensions give n=2 by app" impression_counts_two
 check "event with source and storefront returns 204" tap_with_source_and_storefront
-check "source dimension shows the tap" stats_equals "by=source&app=$APP_ID" com.example.host tap 1
+check "source dimension shows the tap" stats_equals "by=source&app=$APP_ID" "$KNOWN_SOURCE" tap 1
 check "storefront dimension shows lowercase us" stats_equals "by=storefront&app=$APP_ID" us tap 1
 check "stats without key returns 401" status_is 401 "$BASE/v1/stats"
-check "stats accepts ?key= query" status_is 200 "$BASE/v1/stats?key=$STATS_KEY_VALUE"
+check "stats rejects ?key= query with 401" status_is 401 "$BASE/v1/stats?key=$STATS_KEY_VALUE"
+check "stats accepts bearer header" status_is 200 -H "authorization: Bearer $STATS_KEY_VALUE" "$BASE/v1/stats"
 check "catalog returns 200 with apps array" catalog_has_apps
 
 HELIA=com.guitaripod.helia

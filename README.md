@@ -57,7 +57,7 @@ Product pages open with a campaign token `<host>-<placement>` and the provider t
 | `GET /v1/catalog` | The curated catalog (from `catalog.json`, overridable through the `catalog` KV key) plus auto-discovered apps |
 | `GET /v1/discovered` | The apps the scheduled lookup found, as stored in the `discovered` KV key |
 | `POST /v1/event` | Anonymous counters: `portal_open`, `impression`, `tap`, `loaded`, `launch`, by host, storefront, placement and day |
-| `GET /v1/stats?by=app\|source\|storefront\|placement\|day&since=YYYY-MM-DD` | Aggregates, guarded by the stats key |
+| `GET /v1/stats?by=app\|source\|storefront\|placement\|day&since=YYYY-MM-DD` | Aggregates; send the stats key as `Authorization: Bearer <key>` |
 
 Apps live on the App Store appear in every host automatically: a scheduled run every 6 hours looks up the developer's apps and adds any that the curated catalog lacks, with sensible defaults (`auto: true`; inspect them at `GET /v1/discovered`). `catalog.meta.json` is only needed to improve them (tagline, accent, topics, related, platforms, value, featured/order) or to add `hide` (an array of bundle ids kept out of the portal) or `staged` entries; curated entries always win.
 

@@ -15,5 +15,8 @@
       "database_id": "05d39b0c-333c-4c8c-a603-e8b9aa6ebd8d",
       "migrations_dir": "migrations"
     }
+  ],
+  "ratelimits": [
+    { "name": "EVENT_LIMITER", "namespace_id": "2001", "simple": { "limit": 120, "period": 60 } }
   ]
 }

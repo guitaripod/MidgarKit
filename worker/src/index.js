@@ -22,10 +22,10 @@ const DISCOVERED_ORDER_BASE = 100;
 const DISCOVERED_VALUE = 0.4;
 const ACCENT_SATURATION = 0.62;
 const ACCENT_LIGHTNESS = 0.58;
-const UNKNOWN_SOURCE = "unknown";
+const UNKNOWN_CLIENT = "unknown";
 const EMPTY_STOREFRONT = "";
 const DEFAULT_PLACEMENT = "settings";
-const SOURCE_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
+const BUNDLE_ID_CACHE_MS = 5 * 60 * 1000;
 const STOREFRONT_PATTERN = /^[A-Za-z]{2}$/;
 const PLACEMENT_PATTERN = /^[a-z0-9_-]{1,24}$/;
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -78,6 +78,7 @@ export default {
 };
 
 let bootstrapStarted = false;
+let bundleIdCache = null;
 
 /**
  * Returns the curated catalog: the `catalog` KV override when it has an apps array,
@@ -163,7 +164,7 @@ async function handleCatalog(request, url, env, ctx) {
  */
 async function handleDiscoveredRefresh(request, url, env) {
   if (!env || !env.STATS_KEY) return json({ error: "stats_unconfigured" }, 503);
-  if (!authorized(request, url, env)) return json({ error: "unauthorized" }, 401);
+  if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
   const report = {};
   const stored = await refreshDiscovered(env, report);
   return json({ stored: Boolean(stored), report }, 200, { "cache-control": "no-store" });
@@ -301,6 +302,7 @@ function hslToHex(h, s, l) {
 }
 
 async function handleEvent(request, env, ctx) {
+  if (!(await withinEventLimit(request, env))) return json({ error: "rate_limited" }, 429);
   let body;
   try {
     body = await request.json();
@@ -309,25 +311,53 @@ async function handleEvent(request, env, ctx) {
   }
   const counter = parseCounter(body);
   if (!counter) return json({ error: "invalid_event" }, 400);
+  if (!(await catalogBundleIds(env)).has(counter.source)) return json({ error: "unknown_source" }, 400);
   if (env && env.DB) ctx.waitUntil(recordCounter(env.DB, counter));
   return new Response(null, { status: 204, headers: JSON_HEADERS });
 }
 
 /**
- * Validates a telemetry body and normalises its optional dimensions. Returns null when
- * the event name or app id is unusable; an unusable source, storefront or placement
- * falls back to its default instead of rejecting the event.
+ * Spends one unit of the per-client event budget, keyed by CF-Connecting-IP. Without the
+ * EVENT_LIMITER binding (local dev) every event is allowed.
+ */
+async function withinEventLimit(request, env) {
+  if (!env || !env.EVENT_LIMITER) return true;
+  const { success } = await env.EVENT_LIMITER.limit({
+    key: request.headers.get("cf-connecting-ip") || UNKNOWN_CLIENT,
+  });
+  return success;
+}
+
+/**
+ * Returns the bundle ids of every app the catalog serves, curated and discovered, which are
+ * the only sources telemetry is accepted from. Cached per isolate for BUNDLE_ID_CACHE_MS.
+ */
+async function catalogBundleIds(env) {
+  const now = Date.now();
+  if (bundleIdCache && bundleIdCache.expires > now) return bundleIdCache.ids;
+  const catalog = await loadCatalog(env);
+  const ids = new Set(catalog.apps.map((app) => String(app.bundleId)));
+  bundleIdCache = { ids, expires: now + BUNDLE_ID_CACHE_MS };
+  return ids;
+}
+
+/**
+ * Validates a telemetry body and normalises its optional dimensions. Returns null when the
+ * event name, app id or source is missing or unusable; the source must still be checked
+ * against the catalog's bundle ids. An unusable storefront or placement falls back to its
+ * default instead of rejecting the event.
  */
 function parseCounter(body) {
   const fields = body && typeof body === "object" ? body : {};
   const event = String(fields.event || "").toLowerCase();
   const appId = String(fields.appId || "").replace(/[^0-9]/g, "");
-  if (!VALID_EVENTS.has(event) || !appId || appId.length > MAX_APP_ID_LENGTH) return null;
+  const source = typeof fields.source === "string" ? fields.source : "";
+  if (!VALID_EVENTS.has(event) || !appId || appId.length > MAX_APP_ID_LENGTH || !source) return null;
   return {
     day: utcDay(),
     event,
     appId,
-    source: matchOrDefault(fields.source, SOURCE_PATTERN, UNKNOWN_SOURCE),
+    source,
     storefront: normalizeStorefront(fields.storefront),
     placement: matchOrDefault(fields.placement, PLACEMENT_PATTERN, DEFAULT_PLACEMENT),
   };
@@ -358,17 +388,20 @@ async function recordCounter(db, counter) {
   }
 }
 
-function authorized(request, url, env) {
+/**
+ * Accepts the stats key only as `Authorization: Bearer <key>`. A key in the query string
+ * would end up in access logs.
+ */
+function authorized(request, env) {
   const header = request.headers.get("authorization") || "";
-  const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
-  const key = bearer || url.searchParams.get("key") || "";
+  const key = header.startsWith("Bearer ") ? header.slice(7) : "";
   return key.length > 0 && key === env.STATS_KEY;
 }
 
 async function handleStats(request, url, env) {
   if (!env || !env.DB) return json({ error: "no_storage" }, 503);
   if (!env.STATS_KEY) return json({ error: "stats_unconfigured" }, 503);
-  if (!authorized(request, url, env)) return json({ error: "unauthorized" }, 401);
+  if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
 
   const query = parseStatsQuery(url);
   if (!query) return json({ error: "invalid_query" }, 400);
