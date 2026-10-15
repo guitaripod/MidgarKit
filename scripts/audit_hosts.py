@@ -15,6 +15,7 @@ Two modes:
 import argparse
 import importlib.util
 import json
+import os
 import pathlib
 import plistlib
 import re
@@ -27,13 +28,31 @@ ENTRY_PATTERN = re.compile(r"MidgarEntry(View|Card)")
 LEGACY_PATTERN = re.compile(r"Midgar\.present|MoreAppsService|MoreAppsView")
 
 
-def query_scheme_cap():
-    """The LSApplicationQueriesSchemes cap, read from midgar_schemes.py so there is one definition."""
-    path = ROOT / "scripts" / "midgar_schemes.py"
-    spec = importlib.util.spec_from_file_location("midgar_schemes", path)
+def load_script(name):
+    """Imports a sibling script by path, because `python3 -I` does not put its folder on sys.path."""
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.QUERY_SCHEME_CAP
+    return module
+
+
+SYNC = load_script("sync_schemes")
+
+
+def query_scheme_cap():
+    """The LSApplicationQueriesSchemes cap, read from midgar_schemes.py so there is one definition."""
+    return SYNC.MIDGAR.QUERY_SCHEME_CAP
+
+
+def query_list_summary(repo):
+    """Describes the host's LSApplicationQueriesSchemes lists: non-Midgar entry count and total size."""
+    lists = [entries for path in SYNC.host_files(repo) for entries in SYNC.file_lists(path)]
+    if not lists:
+        return "no LSApplicationQueriesSchemes declared"
+    others = max(sum(not SYNC.is_midgar(entry) for entry in entries) for entries in lists)
+    total = max(len(entries) for entries in lists)
+    over = f", OVER the cap of {query_scheme_cap()}" if total > query_scheme_cap() else ""
+    return f"{others} non-Midgar scheme entries, {total} in total{over}"
 
 
 def catalog_schemes():
@@ -72,9 +91,11 @@ def audit_app(path, bundle_id):
 
 
 def swift_files(repo):
-    for path in repo.rglob("*.swift"):
-        if SKIP_DIRS.isdisjoint(path.parts):
-            yield path
+    for folder, dirs, names in os.walk(repo):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for name in names:
+            if name.endswith(".swift"):
+                yield pathlib.Path(folder) / name
 
 
 def requirement_in(path, text):
@@ -95,18 +116,24 @@ def requirement_in(path, text):
     return f"{path.name}:{value.group(1)}={value.group(2)}" if value else f"{path.name}:declared"
 
 
+def manifest_files(repo):
+    """The project.yml, Package.swift and project.pbxproj files of `repo`, skipping build folders."""
+    for folder, dirs, names in os.walk(repo):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith(".")]
+        for name in names:
+            if name in ("project.yml", "Package.swift") or name.endswith(".pbxproj"):
+                yield pathlib.Path(folder) / name
+
+
 def requirement(repo):
     found = []
-    for pattern in ("project.yml", "Package.swift", "*.pbxproj"):
-        for path in repo.rglob(pattern):
-            if not SKIP_DIRS.isdisjoint(path.parts):
-                continue
-            text = path.read_text(errors="ignore")
-            if "MidgarKit" not in text:
-                continue
-            result = requirement_in(path, text)
-            if result:
-                found.append(result)
+    for path in manifest_files(repo):
+        text = path.read_text(errors="ignore")
+        if "MidgarKit" not in text:
+            continue
+        result = requirement_in(path, text)
+        if result:
+            found.append(result)
     return found
 
 
@@ -145,7 +172,8 @@ def main():
         problems = audit_repo(host)
         status = "OK  " if not problems else "FAIL"
         failed += bool(problems)
-        print(f"{status} {host['name']}" + ("" if not problems else ": " + "; ".join(problems)))
+        summary = query_list_summary(pathlib.Path(host["repo"]).expanduser())
+        print(f"{status} {host['name']} [{summary}]" + ("" if not problems else ": " + "; ".join(problems)))
     sys.exit(1 if failed else 0)
 
 
