@@ -12,10 +12,25 @@ The doorway between Midgar apps. One card in a host app's Settings opens the **p
 ## Install
 
 ```swift
-.package(url: "https://github.com/guitaripod/MidgarKit", from: "3.0.0")
+.package(url: "https://github.com/guitaripod/MidgarKit", from: "4.0.0")
 ```
 
-Add `MidgarKit` to every app target that ships.
+Add `MidgarKit` to every app target that ships. MidgarKit 4.0.0 is one package with several products. `import MidgarKit` keeps working for every 3.x host: the `MidgarKit` product is an umbrella that re-exports all the others, so `MidgarEntryView`, `MidgarEntryCard`, `MidgarStoreView`, `Midgar.present` and `MidgarConfig` are unchanged.
+
+## Products
+
+| Product | Holds | May import |
+| --- | --- | --- |
+| `MidgarKit` | Umbrella: `@_exported import` of every product below | all products |
+| `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit |
+| `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
+| `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
+| `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding; re-exports the system UI frameworks | MidgarCore, UIKit, AppKit, SwiftUI |
+| `MidgarPortal` | The portal: catalog, entry card and view, `Midgar.present`, telemetry, resources, privacy manifest | MidgarUI, MidgarCore, StoreKit |
+| `MidgarIntelligence` | On-device and cloud model access, FoundationModels behind `#if canImport(FoundationModels)` | MidgarCore, FoundationModels |
+| `MidgarDemo` | Demo mode and seeded data | MidgarCore |
+
+A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. Commerce, account, UI, intelligence and demo are placeholders until roadmap tasks P2.02 to P2.06 fill them. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
 
 ## Integrate a host app
 
@@ -65,11 +80,11 @@ Edit `worker/catalog.meta.json` (taglines, accents, topics, related apps, platfo
 
 ## Developing
 
-- `swift test` runs the engine tests (lattice, lens, camera physics, ranking, controller).
-- `MIDGAR_SNAPSHOT_DIR=/tmp/shots swift test --filter PortalSnapshotTests` renders the portal and the entry card to PNGs on the Mac (`MIDGAR_SNAPSHOT_SIZE=393x852`, `MIDGAR_SNAPSHOT_PLATFORM=mac`, `MIDGAR_SNAPSHOT_HOST=<bundle id>`).
+- `swift test` runs the portal engine tests (lattice, lens, camera physics, ranking, controller) in `MidgarPortalTests` and a module test per product.
+- `MIDGAR_SNAPSHOT_DIR=/tmp/shots swift test --filter MidgarPortalTests.PortalSnapshotTests` renders the portal and the entry card to PNGs on the Mac (`MIDGAR_SNAPSHOT_SIZE=393x852`, `MIDGAR_SNAPSHOT_PLATFORM=mac`, `MIDGAR_SNAPSHOT_HOST=<bundle id>`).
 - `scripts/install-demo.sh` builds `Examples/MidgarDemo`, installs it on the iPhone Air, runs a scripted self test (frame pacing and screenshots, Debug builds only) and collects the report.
 - `scripts/check_strings.py` validates the string catalog.
 
 ## Requirements
 
-iOS 16, macOS 13, tvOS 16, visionOS 1, Swift 5.9. Liquid Glass is used on iOS, macOS and tvOS 26 and later.
+iOS 16, macOS 13, tvOS 16, visionOS 1, Swift 6.0 (the package builds in Swift 6 language mode). Liquid Glass is used on iOS, macOS and tvOS 26 and later.

@@ -21,8 +21,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKER_DIR = ROOT / "worker"
 CATALOG_PATH = WORKER_DIR / "catalog.json"
 META_PATH = WORKER_DIR / "catalog.meta.json"
-FALLBACK_PATH = ROOT / "Sources" / "MidgarKit" / "Resources" / "catalog.fallback.json"
-ICON_DIR = ROOT / "Sources" / "MidgarKit" / "Resources" / "fallback-icons"
+FALLBACK_PATH = ROOT / "Sources" / "MidgarPortal" / "Resources" / "catalog.fallback.json"
+ICON_DIR = ROOT / "Sources" / "MidgarPortal" / "Resources" / "fallback-icons"
 
 LOOKUP_URL = "https://itunes.apple.com/lookup"
 LOOKUP_KINDS = ("software", "mac-software")

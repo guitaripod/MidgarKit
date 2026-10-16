@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validates Sources/MidgarKit/Resources/Localizable.xcstrings.
+"""Validates Sources/MidgarPortal/Resources/Localizable.xcstrings.
 
 Every key must carry every locale in LOCALES, with the same printf placeholders as the English
 source and no leftover English for languages that are not Latin script. Exits 1 on any problem.
@@ -9,7 +9,7 @@ import pathlib
 import re
 import sys
 
-CATALOG = pathlib.Path(__file__).resolve().parent.parent / "Sources" / "MidgarKit" / "Resources" / "Localizable.xcstrings"
+CATALOG = pathlib.Path(__file__).resolve().parent.parent / "Sources" / "MidgarPortal" / "Resources" / "Localizable.xcstrings"
 LOCALES = ["ar", "cs", "da", "de", "es", "fi", "fr", "it", "ja", "ko", "nb", "nl", "pl", "pt-BR", "pt-PT",
            "ru", "sv", "tr", "uk", "vi", "zh-Hans", "zh-Hant"]
 NON_LATIN = {"ar", "ja", "ko", "ru", "uk", "zh-Hans", "zh-Hant"}
