@@ -17,7 +17,7 @@ public enum MidgarConfigRefreshResult: Sendable, Equatable {
 /// Rules, in order:
 /// - A document that fails verification, names another app, or has a `version` below the highest one accepted is rejected, logged without the JWS, and the current snapshot stays. An equal version is a no-op.
 /// - 304 keeps the current snapshot. Offline, timeouts and any other HTTP error keep it too.
-/// - 404 means nothing is published for the app: the in-memory snapshot falls back to compiled defaults, but the cache file and the anti-rollback floor stay. A transient misroute therefore heals on the next successful refresh or launch, and a replay of an older document is still refused.
+/// - 404 means nothing is published for the app. The last good document, its cache file and the anti-rollback floor all stay, so a misrouted 404 never lifts a kill switch. An app with no document keeps its compiled defaults.
 public actor MidgarConfigStore {
     /// The default gap between network refreshes, 15 minutes.
     public static let defaultMinimumRefreshInterval: TimeInterval = 15 * 60
@@ -134,7 +134,7 @@ public actor MidgarConfigStore {
             return .unchanged
         case .notFound:
             lastAnswer = now()
-            return fallBackToDefaults()
+            return noConfigPublished()
         default:
             logger("config \(slug) refresh failed: \(error.logName)")
             return .failed(error)
@@ -168,12 +168,9 @@ public actor MidgarConfigStore {
         }
     }
 
-    private func fallBackToDefaults() -> MidgarConfigRefreshResult {
-        if activeDocument != nil {
-            activeDocument = nil
-            box.publish(MidgarConfig(defaults: defaults))
-            logger("config \(slug) not published, using compiled defaults")
-        }
+    /// 404 says nothing is published. The last good document stays active, so a misrouted 404 cannot lift a kill switch; config changes only by publishing a newer document.
+    private func noConfigPublished() -> MidgarConfigRefreshResult {
+        logger("config \(slug) not published, keeping \(activeDocument == nil ? "compiled defaults" : "the last good document")")
         return .noConfig
     }
 

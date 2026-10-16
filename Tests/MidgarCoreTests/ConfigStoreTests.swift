@@ -105,33 +105,28 @@ import Testing
         #expect(fixture.host.requests.last?.headers["If-None-Match"] == "\"1800000000\"")
     }
 
-    @Test func noConfigFallsBackToDefaultsButKeepsFileAndFloor() async throws {
+    @Test func noConfigKeepsTheLastGoodDocumentAndItsKillSwitches() async throws {
         let fixture = ConfigFixture()
         defer { fixture.cleanUp() }
-        let good = try fixture.signer.jws(version: 20, values: ["limit": 7])
+        let good = try fixture.signer.jws(version: 20, values: ["limit": 7], kill: ["uploads"])
         let older = try fixture.signer.jws(version: 5, values: ["limit": 1])
         fixture.host.enqueue([
             fixture.ok(good),
             .json(404, "{\"error\":{\"code\":\"no_config\",\"message\":\"none\"}}"),
-            fixture.ok(older),
-            fixture.ok(good)
+            fixture.ok(older)
         ])
         let store = fixture.store(defaults: ["limit": 3])
-        var changes = store.updates().makeAsyncIterator()
 
         _ = await store.refresh()
-        #expect(await changes.next()?.version == 20)
         #expect(await store.refresh(force: true) == .noConfig)
-        let fallback = await changes.next()
-        #expect(fallback?.version == nil)
-        #expect(store.current.int("limit", default: 0) == 3)
+        #expect(store.current.version == 20)
+        #expect(store.current.int("limit", default: 0) == 7)
+        #expect(store.current.isKilled("uploads"))
         #expect(FileManager.default.fileExists(atPath: fixture.cacheFile.path))
 
         #expect(await store.refresh(force: true) == .rejected(.rolledBack(version: 5, lastGood: 20)))
-        #expect(store.current.version == nil)
-        #expect(await store.refresh(force: true) == .updated(version: 20))
-        #expect(store.current.int("limit", default: 0) == 7)
-        #expect(fixture.host.requests[2].headers["If-None-Match"] == nil)
+        #expect(store.current.version == 20)
+        #expect(fixture.host.requests[2].headers["If-None-Match"] == "\"20\"")
     }
 
     @Test func noConfigWithoutDocumentStaysOnDefaults() async {
