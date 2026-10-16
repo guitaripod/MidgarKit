@@ -41,6 +41,8 @@ public struct MidgarTheme: Sendable, Hashable {
     public var secondaryLabel: MidgarColor
     public var separator: MidgarColor
     public var destructive: MidgarColor
+    public var success: MidgarColor
+    public var warning: MidgarColor
     public var fontDesign: MidgarFontDesign
     public var spacing: MidgarSpacing
     public var radius: MidgarRadius
@@ -59,6 +61,8 @@ public struct MidgarTheme: Sendable, Hashable {
             dark: MidgarColor.RGBA(hex: 0x545458, alpha: 0.6)
         ),
         destructive: MidgarColor = MidgarColor(lightHex: 0xFF3B30, darkHex: 0xFF453A),
+        success: MidgarColor = MidgarColor(lightHex: 0x34C759, darkHex: 0x30D158),
+        warning: MidgarColor = MidgarColor(lightHex: 0xFF9500, darkHex: 0xFF9F0A),
         fontDesign: MidgarFontDesign = .standard,
         spacing: MidgarSpacing = MidgarSpacing(),
         radius: MidgarRadius = MidgarRadius()
@@ -70,6 +74,8 @@ public struct MidgarTheme: Sendable, Hashable {
         self.secondaryLabel = secondaryLabel
         self.separator = separator
         self.destructive = destructive
+        self.success = success
+        self.warning = warning
         self.fontDesign = fontDesign
         self.spacing = spacing
         self.radius = radius
@@ -100,6 +106,8 @@ extension MidgarTheme {
     public var uiSecondaryLabel: UIColor { secondaryLabel.uiColor }
     public var uiSeparator: UIColor { separator.uiColor }
     public var uiDestructive: UIColor { destructive.uiColor }
+    public var uiSuccess: UIColor { success.uiColor }
+    public var uiWarning: UIColor { warning.uiColor }
 
     public func uiFont(_ style: MidgarTextStyle) -> UIFont {
         style.uiFont(design: fontDesign)
@@ -116,6 +124,8 @@ extension MidgarTheme {
     public var nsSecondaryLabel: NSColor { secondaryLabel.nsColor }
     public var nsSeparator: NSColor { separator.nsColor }
     public var nsDestructive: NSColor { destructive.nsColor }
+    public var nsSuccess: NSColor { success.nsColor }
+    public var nsWarning: NSColor { warning.nsColor }
 
     public func nsFont(_ style: MidgarTextStyle) -> NSFont {
         style.nsFont(design: fontDesign)

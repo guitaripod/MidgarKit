@@ -37,7 +37,7 @@ import Testing
 
     @Test func semanticColorsDifferBetweenAppearances() {
         let theme = MidgarTheme.standard
-        for color in [theme.background, theme.surface, theme.label, theme.destructive] {
+        for color in [theme.background, theme.surface, theme.label, theme.destructive, theme.success, theme.warning] {
             #expect(color.light != color.dark)
         }
     }

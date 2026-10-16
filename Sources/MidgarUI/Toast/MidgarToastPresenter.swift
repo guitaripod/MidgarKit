@@ -119,8 +119,8 @@ final class MidgarToastUIView: UIView {
     private func tint(theme: MidgarTheme) -> UIColor {
         switch toast.style {
         case .info: theme.uiAccent
-        case .success: .systemGreen
-        case .warning: .systemOrange
+        case .success: theme.uiSuccess
+        case .warning: theme.uiWarning
         case .error: theme.uiDestructive
         }
     }

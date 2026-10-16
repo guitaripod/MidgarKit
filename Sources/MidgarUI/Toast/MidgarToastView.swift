@@ -29,8 +29,8 @@ public struct MidgarToastView: View {
     private var tint: Color {
         switch toast.style {
         case .info: theme.accent.color
-        case .success: .green
-        case .warning: .orange
+        case .success: theme.success.color
+        case .warning: theme.warning.color
         case .error: theme.destructive.color
         }
     }
