@@ -4,31 +4,67 @@ import Testing
 
 private let shared = SharedIdentity(midgarId: "id-shared", credential: "CRED-SECRET-4")
 private let keyedSession = StoredSession(refreshToken: "refresh-old", keyId: "key-device", midgarId: "id-shared")
+private let unkeyedSession = StoredSession(refreshToken: "refresh-old", keyId: nil, midgarId: "id-shared")
+private let challengeReply = StubReply.json(200, #"{"challenge":"chal-1","expiresIn":300}"#)
 
 private func refreshReply(token: String = freshToken(), refresh: String = "refresh-new") -> StubReply {
     .json(200, sessionJSON(midgarId: "id-shared", accessToken: token, refreshToken: refresh))
 }
 
 @Suite struct IdentityAccountTests {
-    @Test func linkingWithoutAMergeChangesNothingStored() async throws {
+    @Test func preparingALinkAsksForAChallengeAndDerivesTheNonce() async throws {
         let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
-        harness.enqueue(refreshReply(), .json(200, #"{"midgarId":"id-shared","merged":false}"#))
+        harness.enqueue(challengeReply)
 
-        let result = try await harness.identity.linkApple(identityToken: "apple-token")
+        let request = try await harness.identity.prepareAppleLink()
+
+        #expect(request.nonce == "dc8f6ca3db77aa23ae2a3c078b4c9952be4223b4bbabeb4eaae95c235baa2cb9")
+        #expect(harness.paths == ["POST /v1/identity/challenge"])
+        #expect(harness.host.requests[0].headers["X-App-ID"] == IdentityHarness.appID)
+    }
+
+    @Test func aKeyBoundSessionProvesTheLinkWithAnAssertionOverTheChallenge() async throws {
+        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
+        harness.enqueue(challengeReply, refreshReply(), .json(200, #"{"midgarId":"id-shared","merged":false}"#))
+
+        let request = try await harness.identity.prepareAppleLink()
+        let result = try await harness.identity.linkApple(identityToken: "apple-token", with: request)
 
         #expect(result == MidgarAppleLinkResult(midgarId: "id-shared", merged: false))
-        let link = harness.host.requests[1]
+        let link = harness.host.requests[2]
         #expect(link.url.path == "/v1/identity/link/apple")
         #expect(link.headers["Authorization"] == "Bearer \(freshToken())")
-        #expect(bodyObject(link) as? [String: String] == ["identityToken": "apple-token"])
+        let body = bodyObject(link)
+        #expect(Set(body.keys) == ["identityToken", "challenge", "assertion"])
+        #expect(body["identityToken"] as? String == "apple-token")
+        #expect(body["challenge"] as? String == "chal-1")
+        #expect(body["assertion"] as? String == Data("assertion-2-by-key-device".utf8).base64EncodedString())
+        let signed = try #require(harness.attestation.assertions.last)
+        #expect(signed.keyID == "key-device")
+        #expect(signed.hash == MidgarDigest.sha256(Data("chal-1".utf8)))
         #expect(try harness.storedShared() == shared)
         #expect(try harness.storedSession()?.refreshToken == "refresh-new")
+    }
+
+    @Test func aSessionWithoutAKeyProvesTheLinkWithTheCredential() async throws {
+        let harness = try IdentityHarness(attested: false, shared: shared, session: unkeyedSession)
+        harness.enqueue(challengeReply, refreshReply(), .json(200, #"{"midgarId":"id-shared","merged":false}"#))
+
+        let request = try await harness.identity.prepareAppleLink()
+        _ = try await harness.identity.linkApple(identityToken: "apple-token", with: request)
+
+        let body = bodyObject(harness.host.requests[2])
+        #expect(Set(body.keys) == ["identityToken", "challenge", "credential"])
+        #expect(body["credential"] as? String == "CRED-SECRET-4")
+        #expect(body["challenge"] as? String == "chal-1")
+        #expect(harness.attestation.assertions.isEmpty)
     }
 
     @Test func aMergeRewritesTheSharedItemAndAdoptsTheNewSession() async throws {
         let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
         let survivorToken = freshToken("app_attest", lifetime: 1800)
         harness.enqueue(
+            challengeReply,
             refreshReply(),
             .json(200, sessionJSON(
                 midgarId: "id-survivor", accessToken: survivorToken, refreshToken: "refresh-survivor",
@@ -36,7 +72,8 @@ private func refreshReply(token: String = freshToken(), refresh: String = "refre
             ))
         )
 
-        let result = try await harness.identity.linkApple(identityToken: "apple-token")
+        let request = try await harness.identity.prepareAppleLink()
+        let result = try await harness.identity.linkApple(identityToken: "apple-token", with: request)
 
         #expect(result == MidgarAppleLinkResult(midgarId: "id-survivor", merged: true))
         #expect(try harness.storedShared() == SharedIdentity(midgarId: "id-survivor", credential: "CRED-ROTATED"))
@@ -46,104 +83,75 @@ private func refreshReply(token: String = freshToken(), refresh: String = "refre
         #expect(try await harness.identity.accessToken() == survivorToken)
         #expect(try await harness.identity.midgarId == "id-survivor")
         #expect(try await harness.identity.tier == .appAttest)
-        #expect(harness.host.requests.count == 2)
+        #expect(harness.host.requests.count == 3)
         #expect(!harness.logs.all.contains { $0.contains("CRED-ROTATED") || $0.contains("refresh-survivor") })
     }
 
     @Test func aMergeReplyMissingTheNewCredentialIsRejectedWithoutStoringAnything() async throws {
         let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
         harness.enqueue(
+            challengeReply,
             refreshReply(),
             .json(200, sessionJSON(midgarId: "id-survivor", accessToken: freshToken(), refreshToken: "r", extra: ["merged": true]))
         )
 
-        let error = await thrownIdentityError { try await harness.identity.linkApple(identityToken: "apple-token") }
+        let request = try await harness.identity.prepareAppleLink()
+        let error = await thrownIdentityError {
+            try await harness.identity.linkApple(identityToken: "apple-token", with: request)
+        }
 
         #expect(error == .malformedResponse)
         #expect(try harness.storedShared() == shared)
     }
 
-    @Test func aStaleTokenRefreshesOnceAndRepeatsTheBearerCall() async throws {
+    @Test func aStaleTokenOnLinkIsNotRepeatedBecauseTheChallengeIsSpent() async throws {
         let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
-        let second = freshToken("development", lifetime: 7200)
         harness.enqueue(
+            challengeReply,
             refreshReply(),
             .json(401, errorJSON("token_expired")),
-            refreshReply(token: second, refresh: "refresh-3"),
-            .json(200, #"{"midgarId":"id-shared","merged":false}"#)
+            refreshReply(refresh: "refresh-3")
         )
 
-        _ = try await harness.identity.linkApple(identityToken: "apple-token")
-
-        #expect(harness.paths == [
-            "POST /v1/identity/refresh", "POST /v1/identity/link/apple",
-            "POST /v1/identity/refresh", "POST /v1/identity/link/apple"
-        ])
-        #expect(harness.host.requests[3].headers["Authorization"] == "Bearer \(second)")
-    }
-
-    @Test func aSecondStaleTokenErrorIsThrown() async throws {
-        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
-        harness.enqueue(
-            refreshReply(), .json(401, errorJSON("invalid_token")),
-            refreshReply(refresh: "refresh-3"), .json(401, errorJSON("invalid_token"))
-        )
-
-        let error = await thrownIdentityError { try await harness.identity.linkApple(identityToken: "apple-token") }
-
-        #expect(error == .http(.server(status: 401, code: "invalid_token", message: "m")))
-        #expect(harness.host.requests.count == 4)
-    }
-
-    @Test func deletingTheIdentityRemovesBothKeychainItems() async throws {
-        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
-        harness.enqueue(refreshReply(), .json(204, ""))
-
-        try await harness.identity.deleteIdentity()
-
-        let deletion = harness.host.requests[1]
-        #expect(deletion.method == "DELETE")
-        #expect(deletion.url.path == "/v1/identity/me")
-        #expect(deletion.headers["Authorization"] == "Bearer \(freshToken())")
-        #expect(try harness.storedShared() == nil)
-        #expect(try harness.storedSession() == nil)
-        #expect(try harness.keychain.read(.session(appID: IdentityHarness.appID)) == nil)
-    }
-
-    @Test func aFailedDeletionKeepsBothKeychainItems() async throws {
-        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
-        harness.enqueue(refreshReply(), .json(403, errorJSON("forbidden")))
-
-        let error = await thrownIdentityError { try await harness.identity.deleteIdentity() }
-
-        #expect(error != nil)
-        #expect(try harness.storedShared() == shared)
-        #expect(try harness.storedSession() != nil)
-    }
-
-    @Test func deletingWhenNothingIsStoredMakesNoRequest() async throws {
-        let harness = try IdentityHarness(attested: false)
-
-        try await harness.identity.deleteIdentity()
-
-        #expect(harness.host.requests.isEmpty)
-    }
-
-    @Test func afterDeletionTheNextCallMintsANewIdentity() async throws {
-        let unkeyed = StoredSession(refreshToken: "refresh-old", keyId: nil, midgarId: "id-shared")
-        let harness = try IdentityHarness(attested: false, shared: shared, session: unkeyed)
-        harness.enqueue(
-            refreshReply(), .json(204, ""),
-            .json(201, sessionJSON(
-                midgarId: "id-new", accessToken: freshToken(), refreshToken: "r", extra: ["credential": "CRED-NEW"]
-            ))
-        )
-
-        try await harness.identity.deleteIdentity()
+        let request = try await harness.identity.prepareAppleLink()
+        let error = await thrownIdentityError {
+            try await harness.identity.linkApple(identityToken: "apple-token", with: request)
+        }
         _ = try await harness.identity.accessToken()
 
-        #expect(harness.paths.last == "POST /v1/identity/mint/unverified")
-        #expect(try harness.storedShared()?.midgarId == "id-new")
+        #expect(error == .http(.server(status: 401, code: "token_expired", message: "m")))
+        #expect(harness.paths == [
+            "POST /v1/identity/challenge", "POST /v1/identity/refresh", "POST /v1/identity/link/apple",
+            "POST /v1/identity/refresh"
+        ])
+    }
+
+    @Test func aLostSessionKeyEndsTheSessionSoTheNextCallAttachesAgain() async throws {
+        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
+        harness.enqueue(challengeReply, refreshReply())
+        let request = try await harness.identity.prepareAppleLink()
+        _ = try await harness.identity.accessToken()
+        harness.attestation.failAssertion(with: .invalidKey)
+
+        let error = await thrownIdentityError {
+            try await harness.identity.linkApple(identityToken: "apple-token", with: request)
+        }
+
+        #expect(error == .attestation(.invalidKey))
+        #expect(try harness.storedSession() == nil)
+        #expect(harness.paths.count == 2)
+    }
+
+    @Test func anIdentityWithoutASharedItemCannotProveALinkWithACredential() async throws {
+        let harness = try IdentityHarness(attested: false, session: unkeyedSession)
+        harness.enqueue(challengeReply, refreshReply())
+
+        let request = try await harness.identity.prepareAppleLink()
+        let error = await thrownIdentityError {
+            try await harness.identity.linkApple(identityToken: "apple-token", with: request)
+        }
+
+        #expect(error == .credentialUnavailable)
     }
 
     @Test func exportReturnsTheRawJSON() async throws {

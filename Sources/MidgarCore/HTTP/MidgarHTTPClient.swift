@@ -47,18 +47,23 @@ public final class MidgarHTTPClient: Sendable {
         }
     }
 
-    /// Runs the attempts for one request. Only retryable requests get more than one attempt.
+    /// Runs the attempts for one request. Only retryable requests get more than one attempt, and a token the service rejects gets one more attempt with a new token whatever the method, because a rejected request was never processed.
     private func execute(_ request: MidgarRequest, requestID: String) async throws(MidgarHTTPError) -> (Data, HTTPURLResponse) {
         let urlRequest = try prepare(request, requestID: requestID)
         let maximumAttempts = request.isRetryable ? retryPolicy.maximumAttempts : 1
         var attempt = 1
+        var replacedRejectedToken = false
         while true {
-            let authorizedRequest = await authorized(urlRequest)
+            let (authorizedRequest, token) = try await authorized(urlRequest)
             let exchange = await transmit(authorizedRequest, preservesUnauthorizedCode: request.preservesUnauthorizedCode)
             switch exchange.result {
             case .success(let pair):
                 return pair
             case .failure(let error):
+                if !replacedRejectedToken, let token, await discardRejectedToken(token, after: error) {
+                    replacedRejectedToken = true
+                    continue
+                }
                 guard attempt < maximumAttempts,
                       error.isRetryable,
                       let delay = retryPolicy.delay(afterAttempt: attempt, retryAfter: exchange.retryAfter)
@@ -70,6 +75,21 @@ public final class MidgarHTTPClient: Sendable {
             }
         }
     }
+
+    /// Tells the configuration's invalidator that the service refused this token as expired or invalid, and reports whether the request should be sent again with whatever the provider returns next.
+    private func discardRejectedToken(_ token: String, after error: MidgarHTTPError) async -> Bool {
+        guard error.httpStatus == 401,
+              let code = error.serverCode,
+              Self.rejectedTokenCodes.contains(code),
+              let invalidator = configuration.tokenInvalidator
+        else {
+            return false
+        }
+        await invalidator(token)
+        return true
+    }
+
+    private static let rejectedTokenCodes: Set<String> = ["token_expired", "invalid_token"]
 
     private struct Exchange: Sendable {
         let result: Result<(Data, HTTPURLResponse), MidgarHTTPError>
@@ -115,14 +135,23 @@ public final class MidgarHTTPClient: Sendable {
         return urlRequest
     }
 
-    /// Asks the token provider on every attempt, so a token refreshed between retries is used.
-    private func authorized(_ urlRequest: URLRequest) async -> URLRequest {
-        guard let token = await configuration.tokenProvider?(), !token.isEmpty else {
-            return urlRequest
+    /// Asks the token provider on every attempt, so a token refreshed between retries is used. A provider that throws fails the request instead of sending it without `Authorization`; a provider that returns nothing sends it without. Returns the token it attached.
+    private func authorized(_ urlRequest: URLRequest) async throws(MidgarHTTPError) -> (URLRequest, String?) {
+        guard let provider = configuration.tokenProvider else {
+            return (urlRequest, nil)
+        }
+        let provided: String?
+        do {
+            provided = try await provider()
+        } catch {
+            throw MidgarHTTPError(tokenFailure: error)
+        }
+        guard let token = provided, !token.isEmpty else {
+            return (urlRequest, nil)
         }
         var request = urlRequest
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        return request
+        return (request, token)
     }
 
     private func encode(_ body: any Encodable & Sendable) throws(MidgarHTTPError) -> Data {

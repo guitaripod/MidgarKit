@@ -1,21 +1,23 @@
 import Foundation
 
 /// Every way a ``MidgarIdentity`` call can fail. Nothing stored changes when one is thrown, except where a flow documents it.
-public enum MidgarIdentityError: Error, Sendable, Equatable, LocalizedError {
+public enum MidgarIdentityError: Error, Sendable, Equatable, LocalizedError, MidgarTransientError {
     case http(MidgarHTTPError)
     case keychain(status: Int32)
     case attestation(MidgarAttestationError)
     case corruptSharedItem
     case malformedResponse
+    case credentialPendingSync
+    case credentialUnavailable
 
-    /// True for failures that a later attempt can fix without any other change: offline, timeout, rate limiting, server errors and Apple's attestation service being unreachable.
+    /// True for failures that a later attempt can fix without any other change: offline, timeout, rate limiting, server errors, Apple's attestation service being unreachable and a shared credential that other devices have not synced yet.
     public var isTransient: Bool {
         switch self {
-        case .http(.offline), .http(.timeout), .http(.rateLimited), .attestation(.unavailable):
+        case .http(let error):
+            return error.isTransient
+        case .attestation(.unavailable), .credentialPendingSync:
             return true
-        case .http(.server(let status, _, _)):
-            return status >= 500
-        case .http, .keychain, .attestation, .corruptSharedItem, .malformedResponse:
+        case .keychain, .attestation, .corruptSharedItem, .malformedResponse, .credentialUnavailable:
             return false
         }
     }
@@ -48,6 +50,18 @@ public enum MidgarIdentityError: Error, Sendable, Equatable, LocalizedError {
                 bundle: .module,
                 comment: "Shown when a Midgar server response does not match what the app expects"
             )
+        case .credentialPendingSync:
+            return NSLocalizedString(
+                "Your Midgar ID is still syncing from your other devices. Try again later.",
+                bundle: .module,
+                comment: "Shown when the shared Midgar ID credential on this device was rejected and may be waiting for iCloud Keychain to deliver a newer one"
+            )
+        case .credentialUnavailable:
+            return NSLocalizedString(
+                "Your Midgar ID could not be confirmed on this device. Restart the app and try again.",
+                bundle: .module,
+                comment: "Shown when an account change needs the Midgar ID credential and this device has none stored"
+            )
         }
     }
 
@@ -67,15 +81,5 @@ public enum MidgarIdentityError: Error, Sendable, Equatable, LocalizedError {
         default:
             return MidgarIdentityError.attestation(.failed)
         }
-    }
-}
-
-extension MidgarHTTPError {
-    /// The envelope's error code when the failure is a ``server(status:code:message:)``, which is how identity requests report a 401 that carries a code.
-    var serverCode: String? {
-        guard case .server(_, let code, _) = self else {
-            return nil
-        }
-        return code
     }
 }

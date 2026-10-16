@@ -20,11 +20,21 @@ public struct MidgarOnboarding: View {
         showsSkip: Bool = true,
         onFinish: @escaping @MainActor () -> Void
     ) {
+        self.init(pages: pages, store: store, showsSkip: showsSkip, startingAt: 0, onFinish: onFinish)
+    }
+
+    init(
+        pages: [MidgarOnboardingPage],
+        store: MidgarOnboardingStore?,
+        showsSkip: Bool,
+        startingAt index: Int,
+        onFinish: @escaping @MainActor () -> Void
+    ) {
         self.pages = pages
         self.store = store
         self.showsSkip = showsSkip
         self.onFinish = onFinish
-        _progress = State(initialValue: MidgarOnboardingProgress(count: pages.count))
+        _progress = State(initialValue: MidgarOnboardingProgress(count: pages.count, index: index))
     }
 
     public var body: some View {
@@ -41,7 +51,7 @@ public struct MidgarOnboarding: View {
             footer
         }
         .background(theme.background.color.ignoresSafeArea())
-        .gesture(swipe)
+        .midgarSwipeNavigation(forward: goForward, back: goBack, isEnabled: !isRunningAction)
         .animation(reduceMotion ? nil : .snappy, value: progress.index)
         .accessibilityElement(children: .contain)
     }
@@ -52,12 +62,19 @@ public struct MidgarOnboarding: View {
             : .asymmetric(insertion: .move(edge: .leading), removal: .move(edge: .trailing)).combined(with: .opacity)
     }
 
+    /// Back on the leading side and Skip on the trailing side. Back is a real control, so VoiceOver, Switch Control and keyboards can leave a page without the swipe. Both wait while a page's primary action runs: a Skip then would finish the onboarding, and the action's own finish after it would call `onFinish` a second time.
     private var skipBar: some View {
         HStack {
+            if !progress.isFirst {
+                Button(MidgarUIStrings.back) { goBack() }
+                    .midgarFont(.body)
+                    .disabled(isRunningAction)
+            }
             Spacer()
             if showsSkip && !progress.isLast {
                 Button(MidgarUIStrings.skip) { finish() }
                     .midgarFont(.body)
+                    .disabled(isRunningAction)
             }
         }
         .frame(minHeight: 44)
@@ -105,14 +122,8 @@ public struct MidgarOnboarding: View {
         return progress.isLast ? MidgarUIStrings.getStarted : MidgarUIStrings.continueButton
     }
 
-    private var swipe: some Gesture {
-        DragGesture(minimumDistance: 30).onEnded { value in
-            if value.translation.width < -60 { goForward() }
-            if value.translation.width > 60 { goBack() }
-        }
-    }
-
     private func tapPrimary() async {
+        guard !isRunningAction else { return }
         guard pages.indices.contains(progress.index) else { return finish() }
         isRunningAction = true
         await pages[progress.index].primaryAction?()
@@ -140,6 +151,9 @@ private struct MidgarOnboardingPageView: View {
     let page: MidgarOnboardingPage
 
     @Environment(\.midgarTheme) private var theme
+    @ScaledMetric(relativeTo: .largeTitle) private var symbolSize: CGFloat = 88
+    @ScaledMetric(relativeTo: .largeTitle) private var symbolHeight: CGFloat = 120
+    @ScaledMetric(relativeTo: .largeTitle) private var imageHeight: CGFloat = 280
 
     var body: some View {
         ScrollView {
@@ -171,16 +185,16 @@ private struct MidgarOnboardingPageView: View {
             EmptyView()
         case .symbol(let name):
             Image(systemName: name)
-                .font(.system(size: 88, weight: .regular))
+                .font(.system(size: symbolSize, weight: .regular))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(theme.accent.color)
-                .frame(minHeight: 120)
+                .frame(minHeight: symbolHeight)
                 .accessibilityHidden(true)
         case .image(let image):
             image
                 .resizable()
                 .scaledToFit()
-                .frame(maxHeight: 280)
+                .frame(maxHeight: imageHeight)
                 .accessibilityHidden(true)
         case .custom(let view):
             view
@@ -189,13 +203,19 @@ private struct MidgarOnboardingPageView: View {
 }
 
 extension View {
-    /// A filled button in the accent: glass-prominent on 26 and later, bordered-prominent before that.
+    /// Moves between pages with a horizontal swipe, where the platform has drag gestures. tvOS has none and moves with the focus engine and the Back button.
     @ViewBuilder
-    fileprivate func midgarProminentButtonStyle() -> some View {
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            buttonStyle(.glassProminent)
-        } else {
-            buttonStyle(.borderedProminent)
-        }
+    fileprivate func midgarSwipeNavigation(forward: @escaping () -> Void, back: @escaping () -> Void, isEnabled: Bool) -> some View {
+        #if os(tvOS)
+        self
+        #else
+        gesture(
+            DragGesture(minimumDistance: 30).onEnded { value in
+                guard isEnabled else { return }
+                if value.translation.width < -60 { forward() }
+                if value.translation.width > 60 { back() }
+            }
+        )
+        #endif
     }
 }

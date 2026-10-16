@@ -8,8 +8,7 @@ public struct MidgarSettings<PortalCard: View>: View {
     private let portalCard: PortalCard
 
     @Environment(\.midgarTheme) private var theme
-    @State private var engine = MidgarSettingsEngine()
-    @State private var state = MidgarSettingsEngine.State()
+    @StateObject private var model = MidgarSettingsModel()
 
     public init(
         title: String? = nil,
@@ -33,7 +32,12 @@ public struct MidgarSettings<PortalCard: View>: View {
             ForEach(sections) { section in
                 Section {
                     ForEach(section.rows) { row in
-                        MidgarSettingsRowView(row: row, isBusy: state.busyRowIDs.contains(row.id), revision: state.revision, engine: engine)
+                        MidgarSettingsRowView(
+                            row: row,
+                            isBusy: model.state.busyRowIDs.contains(row.id),
+                            revision: model.state.revision,
+                            engine: model.engine
+                        )
                     }
                 } header: {
                     if let title = section.title { Text(verbatim: title) }
@@ -43,42 +47,54 @@ public struct MidgarSettings<PortalCard: View>: View {
             }
         }
         .midgarSettingsListStyle()
-        .scrollContentBackground(.hidden)
+        .midgarHidingListBackground()
         .background(theme.background.color)
         .navigationTitle(title)
         .midgarToast(toastBinding)
         .alert(pendingTitle, isPresented: pendingBinding) {
-            Button(pendingConfirmTitle, role: .destructive) { Task { await engine.confirmPending() } }
-            Button(MidgarUIStrings.cancel, role: .cancel) { engine.cancelPending() }
+            Button(pendingConfirmTitle, role: .destructive) { model.engine.beginConfirmedAction() }
+            Button(MidgarUIStrings.cancel, role: .cancel) { model.engine.cancelPending() }
         } message: {
-            Text(verbatim: state.pending?.confirmation.message ?? "")
+            Text(verbatim: model.state.pending?.confirmation.message ?? "")
         }
         .alert(MidgarUIStrings.failureTitle, isPresented: failureBinding) {
-            Button(MidgarUIStrings.ok, role: .cancel) { engine.dismissFailure() }
+            Button(MidgarUIStrings.ok, role: .cancel) { model.engine.dismissFailure() }
         } message: {
-            Text(verbatim: state.failureMessage ?? "")
+            Text(verbatim: model.state.failureMessage ?? "")
         }
-        .onAppear { engine.onChange = { state = $0 } }
     }
 
     private var pendingTitle: String {
-        state.pending?.confirmation.title ?? ""
+        model.state.pending?.confirmation.title ?? ""
     }
 
     private var pendingConfirmTitle: String {
-        state.pending?.confirmation.confirmTitle ?? ""
+        model.state.pending?.confirmation.confirmTitle ?? ""
     }
 
     private var pendingBinding: Binding<Bool> {
-        Binding(get: { state.pending != nil }, set: { if !$0 { engine.cancelPending() } })
+        Binding(get: { model.state.pending != nil }, set: { if !$0 { model.engine.cancelPending() } })
     }
 
     private var failureBinding: Binding<Bool> {
-        Binding(get: { state.failureMessage != nil }, set: { if !$0 { engine.dismissFailure() } })
+        Binding(get: { model.state.failureMessage != nil }, set: { if !$0 { model.engine.dismissFailure() } })
     }
 
     private var toastBinding: Binding<MidgarToast?> {
-        Binding(get: { state.toast }, set: { if $0 == nil { engine.dismissToast() } })
+        Binding(get: { model.state.toast }, set: { if $0 == nil { model.engine.dismissToast() } })
+    }
+}
+
+/// Owns the engine for a SwiftUI settings screen and republishes its state. The engine reports to the model through a weak reference, so the two never keep each other alive; the package targets iOS 16, which predates `@Observable`.
+@MainActor
+final class MidgarSettingsModel: ObservableObject {
+    let engine: MidgarSettingsEngine
+    @Published private(set) var state: MidgarSettingsEngine.State
+
+    init(engine: MidgarSettingsEngine = MidgarSettingsEngine()) {
+        self.engine = engine
+        self.state = engine.state
+        engine.onChange = { [weak self] state in self?.state = state }
     }
 }
 
@@ -89,6 +105,16 @@ extension MidgarSettings where PortalCard == EmptyView {
 }
 
 extension View {
+    /// Lets the screen's own background show through the list, where the platform allows it.
+    @ViewBuilder
+    fileprivate func midgarHidingListBackground() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        scrollContentBackground(.hidden)
+        #endif
+    }
+
     /// Inset grouped lists where the platform has them, the closest list style elsewhere.
     @ViewBuilder
     fileprivate func midgarSettingsListStyle() -> some View {

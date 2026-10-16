@@ -1,6 +1,6 @@
 import Foundation
 
-/// The verified payload of a config JWS.
+/// The verified payload of a config JWS. `values` entries of an unsupported type (null, objects, arrays) are dropped one by one, but `minVersion` and `kill` guard behaviour, so a wrong type there fails the whole document instead of quietly losing the restriction.
 struct MidgarConfigDocument: Sendable, Equatable, Decodable {
     let app: String
     let version: Int
@@ -18,11 +18,11 @@ struct MidgarConfigDocument: Sendable, Equatable, Decodable {
         app = try container.decode(String.self, forKey: .app)
         version = try container.decode(Int.self, forKey: .version)
         issuedAt = try container.decodeIfPresent(Int.self, forKey: .issuedAt)
-        minVersion = try? container.decodeIfPresent(String.self, forKey: .minVersion)
+        minVersion = try container.decodeIfPresent(String.self, forKey: .minVersion)
         let rawValues = try container.decodeIfPresent([String: LenientConfigValue].self, forKey: .values) ?? [:]
         values = rawValues.compactMapValues(\.value)
-        let rawKill = try container.decodeIfPresent([String: LenientConfigValue].self, forKey: .kill) ?? [:]
-        kill = Set(rawKill.filter { $0.value.value == .bool(true) }.keys)
+        let rawKill = try container.decodeIfPresent([String: Bool].self, forKey: .kill) ?? [:]
+        kill = Set(rawKill.filter(\.value).keys)
     }
 }
 

@@ -110,6 +110,14 @@ import UIKit
         try check("onboarding") { host(RenderFixtures.onboarding()) }
     }
 
+    @Test func onboardingSecondPageShowsBack() throws {
+        try check("onboarding-back") { host(RenderFixtures.onboardingOnSecondPage()) }
+    }
+
+    @Test func settingsRendersAtAnAccessibilityTextSize() throws {
+        try check("settings-accessibility") { host(RenderFixtures.accessibilitySettings()) }
+    }
+
     @Test func whatsNewRenders() throws {
         try check("whats-new") { host(RenderFixtures.whatsNew()) }
     }

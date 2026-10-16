@@ -98,9 +98,18 @@ public enum MidgarFontDesign: String, Sendable, Hashable, CaseIterable {
 
 #if canImport(UIKit)
 extension MidgarTextStyle {
+    /// tvOS has no large title text style, so it uses the first title style.
+    private static var uiKitLargeTitle: UIFont.TextStyle {
+        #if os(tvOS)
+        .title1
+        #else
+        .largeTitle
+        #endif
+    }
+
     var uiKit: UIFont.TextStyle {
         switch self {
-        case .largeTitle: .largeTitle
+        case .largeTitle: Self.uiKitLargeTitle
         case .title: .title1
         case .title2: .title2
         case .title3: .title3

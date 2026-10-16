@@ -74,13 +74,27 @@ final class MidgarToastUIView: UIView {
         }
     }
 
-    /// Glass on 26 and later, a system material before that.
-    private func configureEffect() {
-        if #available(iOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            effectView.effect = UIGlassEffect()
+    /// Glass on iOS and tvOS 26 and later, a system material before that and on visionOS, which has no glass effect view. tvOS has no thin material, so it uses the regular blur.
+    private var backgroundEffect: UIVisualEffect {
+        #if os(visionOS)
+        UIBlurEffect(style: .systemThinMaterial)
+        #elseif os(tvOS)
+        if #available(tvOS 26.0, *) {
+            UIGlassEffect()
         } else {
-            effectView.effect = UIBlurEffect(style: .systemThinMaterial)
+            UIBlurEffect(style: .regular)
         }
+        #else
+        if #available(iOS 26.0, *) {
+            UIGlassEffect()
+        } else {
+            UIBlurEffect(style: .systemThinMaterial)
+        }
+        #endif
+    }
+
+    private func configureEffect() {
+        effectView.effect = backgroundEffect
         effectView.translatesAutoresizingMaskIntoConstraints = false
         effectView.clipsToBounds = true
         addSubview(effectView)

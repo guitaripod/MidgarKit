@@ -14,6 +14,10 @@ public enum MidgarIntelligenceError: Error, Sendable, Equatable, LocalizedError 
     case onDeviceUnavailable(MidgarOnDeviceUnavailableReason)
     /// The on-device model failed and the cloud may not answer instead. `errorType` is the failing type's name, never message text.
     case onDeviceFailed(errorType: String)
+    /// The on-device model declined the prompt (a guardrail or a refusal). The cloud is never asked instead: a refusal is an answer, not an outage.
+    case onDeviceRefused
+    /// The on-device stream rewrote text it had already delivered, so its snapshots no longer add up to one answer. Text that reached the caller cannot be taken back, so the stream stops with this error instead of ending as if it were complete.
+    case onDeviceOutputRewritten
     /// The cloud call failed for a reason other than credits or rate limits.
     case cloudFailed(MidgarHTTPError)
     /// The model returned no text.
@@ -45,7 +49,7 @@ public enum MidgarIntelligenceError: Error, Sendable, Equatable, LocalizedError 
                 bundle: .module,
                 comment: "Shown when the on-device model cannot answer and the cloud is not allowed to"
             )
-        case .onDeviceFailed, .cloudFailed, .emptyResponse:
+        case .onDeviceFailed, .onDeviceRefused, .onDeviceOutputRewritten, .cloudFailed, .emptyResponse:
             return NSLocalizedString(
                 "The AI request could not be completed. Try again.",
                 bundle: .module,

@@ -1,9 +1,10 @@
 import Foundation
 
-/// The two keychain items of the Midgar ID (D12): one shared by every Midgar app of an Apple Account, one per app and device.
+/// The keychain items of the Midgar ID (D12): one shared by every Midgar app of an Apple Account, one per app and device, and the app-local stand-in for the shared one that is used when the app lacks the keychain access group entitlement.
 public enum MidgarKeychainSlot: Sendable, Hashable {
     case shared
     case session(appID: String)
+    case local(appID: String)
 }
 
 /// The fixed names of the keychain layout. They are part of the contract between every Midgar app, so they never vary per app.
@@ -11,6 +12,7 @@ public enum MidgarKeychainLayout {
     public static let sharedService = "cc.midgarcorp.identity"
     public static let sharedAccount = "midgar-id"
     public static let sessionService = "cc.midgarcorp.identity.session"
+    public static let localService = "cc.midgarcorp.identity.local"
     public static let defaultAccessGroup = "P4DQK6SRKR.cc.midgarcorp.shared"
 }
 

@@ -35,6 +35,14 @@ enum RenderFixtures {
         MidgarOnboarding(pages: onboardingPages, showsSkip: true) {}
     }
 
+    static func onboardingOnSecondPage() -> some View {
+        MidgarOnboarding(pages: onboardingPages, store: nil, showsSkip: true, startingAt: 1) {}
+    }
+
+    static func accessibilitySettings() -> some View {
+        settings().environment(\.dynamicTypeSize, .accessibility3)
+    }
+
     static let whatsNewItems: [MidgarWhatsNewItem] = [
         MidgarWhatsNewItem(title: "Faster search", body: "Results appear as you type.", systemImage: "magnifyingglass"),
         MidgarWhatsNewItem(title: "New widgets", body: "Glance at your day.", systemImage: "rectangle.3.group")

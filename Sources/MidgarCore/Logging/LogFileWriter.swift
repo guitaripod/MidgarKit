@@ -47,12 +47,17 @@ final class LogFileWriter: @unchecked Sendable {
     }
 
     private func write(_ record: LogRecord) {
+        dropHandleIfFileWasRemoved()
         let line = record.line(timestamp: timestamps.string(from: record.date), processID: processID)
         let data = Data(line.utf8)
         if currentSize > 0, currentSize + UInt64(data.count) > maxBytes {
             rotate()
         }
-        guard let openedHandle = openHandle(), (try? openedHandle.write(contentsOf: data)) != nil else {
+        guard let openedHandle = openHandle() else {
+            return
+        }
+        guard (try? openedHandle.write(contentsOf: data)) != nil else {
+            discardHandle()
             return
         }
         currentSize += UInt64(data.count)
@@ -65,12 +70,36 @@ final class LogFileWriter: @unchecked Sendable {
         try? handle?.synchronize()
     }
 
+    /// A log file that was deleted while the app runs leaves the handle writing into an unlinked inode, so every later line would be lost. Dropping the handle makes the next write create the file again.
+    private func dropHandleIfFileWasRemoved() {
+        if handle != nil, !FileManager.default.fileExists(atPath: currentURL.path) {
+            discardHandle()
+        }
+    }
+
+    private func discardHandle() {
+        try? handle?.close()
+        handle = nil
+        currentSize = 0
+    }
+
+    /// Keeps the log directory out of iCloud and device backups: the files are diagnostics, they can be large and they may hold what a person did in the app. Called whenever the directory is created, so a directory that was deleted and recreated is excluded again.
+    private func excludeDirectoryFromBackup() {
+        #if canImport(Darwin)
+        var url = directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? url.setResourceValues(values)
+        #endif
+    }
+
     private func openHandle() -> FileHandle? {
         if let handle {
             return handle
         }
         let manager = FileManager.default
         try? manager.createDirectory(at: directory, withIntermediateDirectories: true)
+        excludeDirectoryFromBackup()
         if !manager.fileExists(atPath: currentURL.path), !manager.createFile(atPath: currentURL.path, contents: nil) {
             return nil
         }

@@ -8,6 +8,8 @@ struct MidgarSettingsRowView: View {
     let engine: MidgarSettingsEngine
 
     @Environment(\.midgarTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 24
 
     var body: some View {
         Group {
@@ -15,7 +17,7 @@ struct MidgarSettingsRowView: View {
                 Toggle(isOn: Binding(get: { get() }, set: { engine.setToggle(row, to: $0) })) {
                     label
                 }
-                .toggleStyle(.switch)
+                .midgarSwitchToggleStyle()
             } else if row.isInteractive {
                 Button {
                     Task { await engine.activate(row) }
@@ -53,27 +55,48 @@ struct MidgarSettingsRowView: View {
             if let image = row.systemImage {
                 Image(systemName: image)
                     .foregroundStyle(tint)
-                    .frame(width: 24)
+                    .frame(width: iconWidth)
                     .accessibilityHidden(true)
             }
-            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
-                Text(verbatim: row.title)
-                    .midgarFont(.body)
-                    .foregroundStyle(row.role == .destructive ? theme.destructive.color : theme.label.color)
-                if let subtitle = row.subtitle {
-                    Text(verbatim: subtitle)
-                        .midgarFont(.footnote)
-                        .foregroundStyle(theme.secondaryLabel.color)
-                }
+            textStack
+            if !stacksDetailBelowTitle {
+                Spacer(minLength: theme.spacing.s)
+                detailText
             }
-            Spacer(minLength: theme.spacing.s)
-            if let detail = row.detail {
-                Text(verbatim: detail)
-                    .midgarFont(.body)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// At accessibility text sizes the detail drops under the title, because side by side the two would squeeze each other into a column of one word per line.
+    private var stacksDetailBelowTitle: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var textStack: some View {
+        VStack(alignment: .leading, spacing: theme.spacing.xxs) {
+            Text(verbatim: row.title)
+                .midgarFont(.body)
+                .foregroundStyle(row.role == .destructive ? theme.destructive.color : theme.label.color)
+            if let subtitle = row.subtitle {
+                Text(verbatim: subtitle)
+                    .midgarFont(.footnote)
                     .foregroundStyle(theme.secondaryLabel.color)
-                    .multilineTextAlignment(.trailing)
-                    .textSelection(.disabled)
             }
+            if stacksDetailBelowTitle {
+                detailText
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var detailText: some View {
+        if let detail = row.detail {
+            Text(verbatim: detail)
+                .midgarFont(.body)
+                .foregroundStyle(theme.secondaryLabel.color)
+                .multilineTextAlignment(stacksDetailBelowTitle ? .leading : .trailing)
+                .midgarSelectionDisabled()
         }
     }
 
@@ -91,5 +114,27 @@ struct MidgarSettingsRowView: View {
 
     private var tint: Color {
         row.role == .destructive ? theme.destructive.color : theme.accent.color
+    }
+}
+
+extension View {
+    /// The switch style where the platform has one; tvOS before 18 draws its own toggle.
+    @ViewBuilder
+    fileprivate func midgarSwitchToggleStyle() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        toggleStyle(.switch)
+        #endif
+    }
+
+    /// Keeps a value from being selected as text, where text selection exists.
+    @ViewBuilder
+    fileprivate func midgarSelectionDisabled() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        textSelection(.disabled)
+        #endif
     }
 }

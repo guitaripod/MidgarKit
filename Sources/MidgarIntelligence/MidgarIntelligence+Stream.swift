@@ -1,7 +1,7 @@
 import Foundation
 
 extension MidgarIntelligence {
-    /// Streams from the planned route. An on-device failure falls back to the cloud only before the first delta: after text reached the caller, a second answer would splice two models together, so the failure is thrown.
+    /// Streams from the planned route. An on-device infrastructure failure falls back to the cloud only before the first delta, and a stream that ends with no text at all is an `emptyResponse`, not a reason to ask the cloud: after text reached the caller, a second answer would splice two models together, so the failure is thrown.
     func stream(_ prompt: MidgarPrompt, into continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         switch try plan(for: prompt) {
         case .cloud:
@@ -13,6 +13,9 @@ extension MidgarIntelligence {
                 for try await delta in onDevice.streamResponse(to: prompt) {
                     delivered = true
                     continuation.yield(delta)
+                }
+                if !delivered {
+                    throw MidgarIntelligenceError.emptyResponse
                 }
             } catch {
                 try rethrowIfCancelled(error)

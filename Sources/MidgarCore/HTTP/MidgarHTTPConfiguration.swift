@@ -10,7 +10,8 @@ public struct MidgarHTTPConfiguration: Sendable {
     public let baseURL: URL
     public let appID: String
     public let session: URLSession
-    public let tokenProvider: (@Sendable () async -> String?)?
+    public let tokenProvider: (@Sendable () async throws -> String?)?
+    public let tokenInvalidator: (@Sendable (_ rejectedToken: String) async -> Void)?
     public let userAgent: String
     public let timeout: TimeInterval
     public let logger: (@Sendable (String) -> Void)?
@@ -19,7 +20,8 @@ public struct MidgarHTTPConfiguration: Sendable {
         baseURL: URL = MidgarHTTPConfiguration.defaultBaseURL,
         appID: String,
         session: URLSession = .shared,
-        tokenProvider: (@Sendable () async -> String?)? = nil,
+        tokenProvider: (@Sendable () async throws -> String?)? = nil,
+        tokenInvalidator: (@Sendable (_ rejectedToken: String) async -> Void)? = nil,
         userAgent: String? = nil,
         timeout: TimeInterval = 30,
         logger: (@Sendable (String) -> Void)? = nil
@@ -28,18 +30,23 @@ public struct MidgarHTTPConfiguration: Sendable {
         self.appID = appID
         self.session = session
         self.tokenProvider = tokenProvider
+        self.tokenInvalidator = tokenInvalidator
         self.userAgent = userAgent ?? Self.defaultUserAgent()
         self.timeout = timeout
         self.logger = logger
     }
 
-    /// The same configuration with another token provider. Pass nil for a client that must never authorize itself, such as the identity client, whose own calls would otherwise wait on the token they are fetching.
-    public func settingTokenProvider(_ tokenProvider: (@Sendable () async -> String?)?) -> MidgarHTTPConfiguration {
+    /// The same configuration with another token provider and the closure that discards a token the service rejected. Pass nil for a client that must never authorize itself, such as the identity client, whose own calls would otherwise wait on the token they are fetching.
+    public func settingTokenProvider(
+        _ tokenProvider: (@Sendable () async throws -> String?)?,
+        invalidator tokenInvalidator: (@Sendable (_ rejectedToken: String) async -> Void)? = nil
+    ) -> MidgarHTTPConfiguration {
         MidgarHTTPConfiguration(
             baseURL: baseURL,
             appID: appID,
             session: session,
             tokenProvider: tokenProvider,
+            tokenInvalidator: tokenInvalidator,
             userAgent: userAgent,
             timeout: timeout,
             logger: logger

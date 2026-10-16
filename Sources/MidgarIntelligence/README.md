@@ -23,10 +23,11 @@ for try await delta in intelligence.streamResponse(to: prompt) { ... }
 
 1. Kill switch `intelligence` on: every call throws `.disabled`.
 2. `requirement == .cloudOnly`, or the prompt carries an image: cloud. With `intelligence.cloud` killed it throws `.cloudDisabled`.
-3. On-device model available: it answers. If it fails with anything but cancellation, the cloud answers instead. With `intelligence.cloud` killed the failure throws as `.onDeviceFailed`.
+3. On-device model available: it answers. If it fails because the infrastructure failed (`.onDeviceUnavailable`, which includes missing model assets, or a timeout), the cloud answers instead. With `intelligence.cloud` killed the failure throws.
+   Everything else is thrown, never sent to the cloud: a guardrail violation or refusal (`.onDeviceRefused`), an empty answer (`.emptyResponse`), a stream that rewrote text it had already delivered (`.onDeviceOutputRewritten`) and any other failure (`.onDeviceFailed(errorType:)`). Asking the cloud the same prompt after a refusal would dodge it, and an empty or rewritten answer says something about the answer, not the device. Cancellation is never retried.
 4. On-device model unavailable (`.deviceNotEligible`, `.appleIntelligenceNotEnabled`, `.modelNotReady`, `.operatingSystemTooOld`, `.platformUnsupported`, `.unknown`): cloud. With `intelligence.cloud` killed it throws `.onDeviceUnavailable(reason)`.
 
-The kill switch snapshot is read on every call. A cancelled call never falls back. A stream falls back only before its first delta, because splicing two models into one answer is worse than an error.
+The kill switch snapshot is read on every call. A cancelled call never falls back. A stream falls back only before its first delta, because splicing two models into one answer is worse than an error. An on-device stream that finishes without any text throws `.emptyResponse`.
 
 ## The cloud
 

@@ -67,6 +67,50 @@ import Testing
         #expect(fixture.store().current.version == nil)
     }
 
+    @Test func deletingTheCacheFileDoesNotLowerTheFloor() async throws {
+        let fixture = ConfigFixture()
+        defer { fixture.cleanUp() }
+        fixture.host.enqueue([
+            fixture.ok(try fixture.signer.jws(version: 40, kill: ["ai"])),
+            fixture.ok(try fixture.signer.jws(version: 39))
+        ])
+        _ = await fixture.store().refresh()
+        try FileManager.default.removeItem(at: fixture.cacheFile)
+
+        let relaunched = fixture.store()
+        let result = await relaunched.refresh()
+
+        #expect(result == .rejected(.rolledBack(version: 39, lastGood: 40)))
+        #expect(relaunched.current.version == nil)
+    }
+
+    @Test func aCacheFileSwappedForAnOlderDocumentIsIgnored() async throws {
+        let fixture = ConfigFixture()
+        defer { fixture.cleanUp() }
+        fixture.host.enqueue([fixture.ok(try fixture.signer.jws(version: 40, kill: ["ai"]))])
+        _ = await fixture.store().refresh()
+        try fixture.signer.jws(version: 30).write(to: fixture.cacheFile, atomically: true, encoding: .utf8)
+
+        let relaunched = fixture.store()
+
+        #expect(relaunched.current.version == nil)
+        #expect(fixture.logs.lines.contains { $0.contains("cache ignored: rolledBack") })
+    }
+
+    @Test func theFloorLivesPerSlugInItsOwnDefaults() {
+        let suite = "midgar-floor-test-\(UUID().uuidString)"
+        defer { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+        let defaults = UserDefaults(suiteName: suite)
+        let first = MidgarConfigFloor(defaults: defaults, slug: "solar-beam")
+        let other = MidgarConfigFloor(defaults: defaults, slug: "psywave")
+
+        first.raise(to: 12)
+        first.raise(to: 5)
+
+        #expect(first.version == 12)
+        #expect(other.version == 0)
+    }
+
     @Test func defaultCacheDirectoryIsApplicationSupportMidgar() {
         let url = MidgarConfigCache(directory: nil, slug: "solar-beam").fileURL
         #expect(url.lastPathComponent == "config-solar-beam.jws")

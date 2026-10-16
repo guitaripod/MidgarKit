@@ -46,10 +46,16 @@ final class MidgarSettingsEngine {
         system.play(.selection)
     }
 
-    func confirmPending() async {
-        guard let pending = state.pending else { return }
+    /// Confirms the pending action in this very turn and returns the task that runs its handler, or nil when nothing is pending. A confirmation button must call this directly: the alert reports its dismissal right after the button, and that dismissal cancels whatever is still pending, so a confirmation that waits for a later turn finds nothing to run.
+    @discardableResult
+    func beginConfirmedAction() -> Task<Void, Never>? {
+        guard let pending = state.pending else { return nil }
         state.pending = nil
-        await run(pending.handler, rowID: pending.row.id, successMessage: pending.row.successMessage)
+        return Task { await run(pending.handler, rowID: pending.row.id, successMessage: pending.row.successMessage) }
+    }
+
+    func confirmPending() async {
+        await beginConfirmedAction()?.value
     }
 
     func cancelPending() {

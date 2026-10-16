@@ -1,17 +1,51 @@
 import Foundation
 
+/// A failure that says whether trying again later can fix it without any other change.
+public protocol MidgarTransientError: Error {
+    var isTransient: Bool { get }
+}
+
 /// Every way a call through `MidgarHTTPClient` can fail. Each case has a user-facing description.
-public enum MidgarHTTPError: Error, Sendable, Equatable, LocalizedError {
+///
+/// The cases for 401, 402, 404 and 429 carry the `code` of the server's error envelope (nil when the body had none); ``serverCode`` reads it for every case that has one. Match them without their payload (`case .unauthorized:`) to ignore it. Switch with `@unknown default`: cases are added in minor releases.
+public enum MidgarHTTPError: Error, Sendable, Equatable, LocalizedError, MidgarTransientError {
     case offline
     case timeout
-    case unauthorized
-    case paymentRequired
-    case rateLimited(retryAfter: TimeInterval?)
-    case notFound
+    case unauthorized(code: String?)
+    case paymentRequired(code: String?)
+    case rateLimited(retryAfter: TimeInterval?, code: String?)
+    case notFound(code: String?)
     case server(status: Int, code: String?, message: String)
     case decoding(String)
     case invalidRequest(String)
     case cancelled
+    case tokenUnavailable(isTransient: Bool)
+
+    /// The envelope's error code for any case that carries one.
+    public var serverCode: String? {
+        switch self {
+        case .unauthorized(let code), .paymentRequired(let code), .notFound(let code), .rateLimited(_, let code):
+            return code
+        case .server(_, let code, _):
+            return code
+        case .offline, .timeout, .decoding, .invalidRequest, .cancelled, .tokenUnavailable:
+            return nil
+        }
+    }
+
+    /// True for failures that a later attempt can fix without any other change: offline, timeout, rate limiting, server errors and a token provider that failed transiently.
+    public var isTransient: Bool {
+        switch self {
+        case .offline, .timeout, .rateLimited:
+            return true
+        case .server(let status, _, _):
+            return status >= 500
+        case .tokenUnavailable(let isTransient):
+            return isTransient
+        case .unauthorized, .paymentRequired, .notFound, .decoding, .invalidRequest, .cancelled:
+            return false
+        }
+    }
 
     public var errorDescription: String? {
         switch self {
@@ -74,6 +108,12 @@ public enum MidgarHTTPError: Error, Sendable, Equatable, LocalizedError {
                 "The request was cancelled.",
                 bundle: .module,
                 comment: "Shown when a request to Midgar's servers was cancelled before it finished"
+            )
+        case .tokenUnavailable:
+            return NSLocalizedString(
+                "Your Midgar ID is not ready yet. Try again in a moment.",
+                bundle: .module,
+                comment: "Shown when a request could not be sent because the app could not get an access token for the Midgar ID"
             )
         }
     }

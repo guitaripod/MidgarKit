@@ -30,6 +30,7 @@ public final class MidgarSettingsViewController: UIViewController {
     private var lastToastID: UUID?
 
     private static let rowIdentifier = "MidgarSettingsRow"
+    private static let toggleIdentifier = "MidgarSettingsToggleRow"
 
     /// Settings with a UIKit view as the portal card, or none.
     public init(
@@ -70,6 +71,7 @@ public final class MidgarSettingsViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.rowIdentifier)
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.toggleIdentifier)
         tableView.estimatedRowHeight = 52
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
@@ -156,8 +158,16 @@ public final class MidgarSettingsViewController: UIViewController {
         cell.isUserInteractionEnabled = !engine.state.busyRowIDs.contains(row.id)
         cell.accessoryView = nil
         cell.accessoryType = .none
-        cell.accessibilityTraits = row.isInteractive ? .button : .staticText
+        applyAccessibilityTraits(to: cell, for: row)
         applyAccessory(to: cell, for: row)
+    }
+
+    /// Buttons and static text get their trait. A toggle row has its own reuse identifier and keeps the traits UIKit derives from its switch, so VoiceOver announces a switch and not a button.
+    private func applyAccessibilityTraits(to cell: UITableViewCell, for row: MidgarSettingsRow) {
+        if case .toggle = row.kind {
+            return
+        }
+        cell.accessibilityTraits = row.isInteractive ? .button : .staticText
     }
 
     private func applyAccessory(to cell: UITableViewCell, for row: MidgarSettingsRow) {
@@ -217,7 +227,7 @@ public final class MidgarSettingsViewController: UIViewController {
         })
         alert.addAction(UIAlertAction(title: pending.confirmation.confirmTitle, style: .destructive) { [weak self] _ in
             self?.isShowingAlert = false
-            Task { await self?.engine.confirmPending() }
+            self?.engine.beginConfirmedAction()
         })
         present(alert, animated: true)
     }
@@ -253,8 +263,15 @@ extension MidgarSettingsViewController: UITableViewDataSource, UITableViewDelega
 
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if isPortalSection(indexPath.section) { return makePortalCell() }
-        let cell = tableView.dequeueReusableCell(withIdentifier: Self.rowIdentifier, for: indexPath)
-        configure(cell, with: row(at: indexPath))
+        let row = self.row(at: indexPath)
+        let identifier: String
+        if case .toggle = row.kind {
+            identifier = Self.toggleIdentifier
+        } else {
+            identifier = Self.rowIdentifier
+        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath)
+        configure(cell, with: row)
         return cell
     }
 

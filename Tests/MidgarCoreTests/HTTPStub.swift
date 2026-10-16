@@ -180,7 +180,8 @@ func makeStubSession() -> URLSession {
 
 func makeStubClient(
     _ host: HTTPTestHost,
-    tokenProvider: (@Sendable () async -> String?)? = nil,
+    tokenProvider: (@Sendable () async throws -> String?)? = nil,
+    tokenInvalidator: (@Sendable (String) async -> Void)? = nil,
     userAgent: String? = "TestApp/1.0 MidgarKit/4.0.0",
     logger: (@Sendable (String) -> Void)? = nil,
     sleeps: SleepRecorder = SleepRecorder()
@@ -190,6 +191,7 @@ func makeStubClient(
         appID: "app-test",
         session: makeStubSession(),
         tokenProvider: tokenProvider,
+        tokenInvalidator: tokenInvalidator,
         userAgent: userAgent,
         timeout: 5,
         logger: logger

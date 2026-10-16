@@ -11,7 +11,7 @@ private struct Empty: Codable, Sendable {}
         let client = makeStubClient(host)
 
         let error = await thrownError { try await client.sendRaw(MidgarRequest(service: "catalog")) }
-        #expect(error == .unauthorized)
+        #expect(error == .unauthorized(code: "unauthorized"))
     }
 
     @Test func paymentRequiredMapsFrom402() async throws {
@@ -23,7 +23,7 @@ private struct Empty: Codable, Sendable {}
             try await client.sendRaw(MidgarRequest(service: "intelligence", method: .post, body: Empty()))
         }
 
-        #expect(error == .paymentRequired)
+        #expect(error == .paymentRequired(code: nil))
     }
 
     @Test func notFoundMapsFrom404() async throws {
@@ -32,7 +32,7 @@ private struct Empty: Codable, Sendable {}
         let client = makeStubClient(host)
 
         let error = await thrownError { try await client.sendRaw(MidgarRequest(service: "catalog")) }
-        #expect(error == .notFound)
+        #expect(error == .notFound(code: "not_found"))
     }
 
     @Test func rateLimitedWithoutRetryAfterMapsFrom429() async throws {
@@ -44,7 +44,7 @@ private struct Empty: Codable, Sendable {}
             try await client.sendRaw(MidgarRequest(service: "intelligence", method: .post, body: Empty()))
         }
 
-        #expect(error == .rateLimited(retryAfter: nil))
+        #expect(error == .rateLimited(retryAfter: nil, code: "rate_limited"))
     }
 
     @Test func rateLimitedCarriesRetryAfterSeconds() async throws {
@@ -56,7 +56,7 @@ private struct Empty: Codable, Sendable {}
             try await client.sendRaw(MidgarRequest(service: "intelligence", method: .post, body: Empty()))
         }
 
-        #expect(error == .rateLimited(retryAfter: 12))
+        #expect(error == .rateLimited(retryAfter: 12, code: nil))
     }
 
     @Test func gatewayEnvelopeIsParsed() async throws {
@@ -174,13 +174,13 @@ private struct Empty: Codable, Sendable {}
 
     @Test func onlyTransientFailuresAreRetryable() {
         let retryable: [MidgarHTTPError] = [
-            .offline, .timeout, .rateLimited(retryAfter: nil),
+            .offline, .timeout, .rateLimited(retryAfter: nil, code: nil),
             .server(status: 502, code: nil, message: ""),
             .server(status: 503, code: nil, message: ""),
             .server(status: 504, code: nil, message: ""),
         ]
         let fatal: [MidgarHTTPError] = [
-            .unauthorized, .paymentRequired, .notFound, .cancelled, .decoding(""), .invalidRequest(""),
+            .unauthorized(code: nil), .paymentRequired(code: nil), .notFound(code: nil), .cancelled, .tokenUnavailable(isTransient: true), .decoding(""), .invalidRequest(""),
             .server(status: 400, code: nil, message: ""), .server(status: 500, code: nil, message: ""),
         ]
         #expect(retryable.allSatisfy { $0.isRetryable })
@@ -189,8 +189,9 @@ private struct Empty: Codable, Sendable {}
 
     @Test func everyCaseHasADescriptionAndLogName() {
         let cases: [MidgarHTTPError] = [
-            .offline, .timeout, .unauthorized, .paymentRequired, .rateLimited(retryAfter: 5), .notFound,
+            .offline, .timeout, .unauthorized(code: nil), .paymentRequired(code: nil), .rateLimited(retryAfter: 5, code: nil), .notFound(code: nil),
             .server(status: 500, code: "c", message: "m"), .decoding("d"), .invalidRequest("i"), .cancelled,
+            .tokenUnavailable(isTransient: false),
         ]
         for error in cases {
             let description = error.errorDescription ?? ""

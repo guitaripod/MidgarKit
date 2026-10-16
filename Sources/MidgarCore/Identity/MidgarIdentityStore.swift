@@ -32,12 +32,24 @@ struct MidgarIdentityStore: Sendable {
     }
 
     /// The per-app item. One that cannot be decoded is removed: it holds nothing the server cannot reissue through an attach.
-    func readSession() throws -> StoredSession? {
+    func readPerApp() throws -> PerAppItem? {
         guard let data = try keychain.read(sessionSlot) else {
             return nil
         }
-        guard let session = try? JSONDecoder().decode(StoredSession.self, from: data) else {
-            try keychain.delete(sessionSlot)
+        let decoder = JSONDecoder()
+        if let session = try? decoder.decode(StoredSession.self, from: data) {
+            return .session(session)
+        }
+        if let pending = try? decoder.decode(PendingSync.self, from: data) {
+            return .pendingSync(pending)
+        }
+        try keychain.delete(sessionSlot)
+        return nil
+    }
+
+    /// The stored session, or nil when the per-app item is empty or records a pending sync instead.
+    func readSession() throws -> StoredSession? {
+        guard case .session(let session) = try readPerApp() else {
             return nil
         }
         return session
@@ -45,6 +57,10 @@ struct MidgarIdentityStore: Sendable {
 
     func writeSession(_ session: StoredSession) throws {
         try keychain.write(try encode(session), to: sessionSlot)
+    }
+
+    func writePendingSync(_ pending: PendingSync) throws {
+        try keychain.write(try encode(pending), to: sessionSlot)
     }
 
     func deleteSession() throws {

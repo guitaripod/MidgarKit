@@ -20,6 +20,25 @@ import Testing
         #expect(document.minVersion == "2.0")
     }
 
+    @Test(arguments: [
+        #"{"minVersion": 2}"#,
+        #"{"minVersion": {"x": 1}}"#,
+        #"{"kill": ["ai"]}"#,
+        #"{"kill": "ai"}"#,
+        #"{"kill": {"ai": "yes"}}"#,
+        #"{"kill": {"ai": 1}}"#
+    ])
+    func aWrongTypeForMinVersionOrKillRejectsTheDocument(overridesJSON: String) throws {
+        let overrides = try #require(JSONSerialization.jsonObject(with: Data(overridesJSON.utf8)) as? [String: Any])
+        let jws = try signer.jws(version: 7, payloadOverrides: overrides)
+        #expect(throws: MidgarConfigError.malformed) { try verifier().verify(jws) }
+    }
+
+    @Test func aFalseKillEntryIsNotKilled() throws {
+        let jws = try signer.jws(version: 7, payloadOverrides: ["kill": ["ai": false, "share": true]])
+        #expect(try verifier().verify(jws).kill == ["share"])
+    }
+
     @Test func tamperedPayloadFailsSignature() throws {
         let jws = try signer.jws(version: 7, values: ["a": 1])
         let parts = jws.split(separator: ".").map(String.init)

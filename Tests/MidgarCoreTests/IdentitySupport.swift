@@ -232,6 +232,13 @@ struct IdentityHarness: Sendable {
     func storedSession() throws -> StoredSession? {
         try store.readSession()
     }
+
+    func storedPendingSync() throws -> PendingSync? {
+        guard case .pendingSync(let pending) = try store.readPerApp() else {
+            return nil
+        }
+        return pending
+    }
 }
 
 func freshToken(_ tier: String = "unverified", lifetime: TimeInterval = 3600) -> String {
