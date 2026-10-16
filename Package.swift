@@ -38,7 +38,7 @@ let package = Package(
             ]
         ),
         .target(name: "MidgarIntelligence", dependencies: ["MidgarCore"]),
-        .target(name: "MidgarDemo", dependencies: ["MidgarCore"]),
+        .target(name: "MidgarDemo", dependencies: ["MidgarCore"], exclude: ["README.md"]),
         .target(
             name: "MidgarKit",
             dependencies: [
