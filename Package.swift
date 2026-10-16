@@ -22,7 +22,11 @@ let package = Package(
         ),
         .target(name: "MidgarCommerce", dependencies: ["MidgarCore"]),
         .target(name: "MidgarAccount", dependencies: ["MidgarCore"]),
-        .target(name: "MidgarUI", dependencies: ["MidgarCore"]),
+        .target(
+            name: "MidgarUI",
+            dependencies: ["MidgarCore"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
         .target(
             name: "MidgarPortal",
             dependencies: ["MidgarCore", "MidgarUI"],

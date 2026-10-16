@@ -1,14 +1,4 @@
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
-
-#if canImport(SwiftUI)
-import SwiftUI
-#endif
-
-/// Identifies the MidgarUI module: shared UIKit, AppKit and SwiftUI scaffolding lands here.
+/// Identifies the MidgarUI module: the shared theme, settings, onboarding, What's New, haptics and toasts of every Midgar app.
 public enum MidgarUIModule {
     public static let name = "MidgarUI"
 }
