@@ -60,7 +60,7 @@ let package = Package(
         .testTarget(name: "MidgarCommerceTests", dependencies: ["MidgarCommerce"]),
         .testTarget(name: "MidgarAccountTests", dependencies: ["MidgarAccount"]),
         .testTarget(name: "MidgarUITests", dependencies: ["MidgarUI"]),
-        .testTarget(name: "MidgarPortalTests", dependencies: ["MidgarPortal"]),
+        .testTarget(name: "MidgarPortalTests", dependencies: ["MidgarPortal", "MidgarCore"]),
         .testTarget(name: "MidgarIntelligenceTests", dependencies: ["MidgarIntelligence"]),
         .testTarget(name: "MidgarDemoTests", dependencies: ["MidgarDemo"]),
         .testTarget(name: "MidgarKitTests", dependencies: ["MidgarKit"])

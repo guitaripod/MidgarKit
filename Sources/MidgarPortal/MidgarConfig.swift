@@ -26,7 +26,8 @@ public struct MidgarConfig: Sendable {
     /// Bundle identifiers never shown in the portal. The host app's own identifier is not affected.
     public var excludedBundleIDs: [String]
 
-    /// When `true`, anonymous impression/tap counts are reported to the catalog service.
+    /// When `true`, anonymous impression/tap counts are reported through ``MidgarSignals``. Nothing is
+    /// sent until the host app configures ``MidgarSignals/configure(configuration:config:directory:appVersion:)``.
     public var enableTelemetry: Bool
 
     /// Two-letter App Store country override (e.g. `"us"`). `nil` uses the device region.

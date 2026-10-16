@@ -30,7 +30,7 @@ Hosts use `from: "3.2.0"` until MidgarKit 4.0.0 is tagged (roadmap P2.18); after
 | `MidgarIntelligence` | On-device and cloud model access, FoundationModels behind `#if canImport(FoundationModels)` | MidgarCore, FoundationModels |
 | `MidgarDemo` | Demo mode and seeded data | MidgarCore |
 
-No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. `MidgarUI`, `MidgarIntelligence` and `MidgarDemo` are built. `MidgarCommerce` and `MidgarAccount` are still stubs (one placeholder type each) until their roadmap tasks (P2.07 and P2.08 for Commerce, P2.10 for Account) fill them; `MidgarCore` has Logging, HTTP, Config and Identity, and Signals is not built yet. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
+No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. `MidgarUI`, `MidgarIntelligence` and `MidgarDemo` are built. `MidgarCommerce` and `MidgarAccount` are still stubs (one placeholder type each) until their roadmap tasks (P2.07 and P2.08 for Commerce, P2.10 for Account) fill them; `MidgarCore` has Logging, HTTP, Config, Identity and Signals. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
 
 ## Integrate a host app
 
@@ -93,6 +93,29 @@ MidgarDemo enters demo mode only in DEBUG builds, or in a release build whose In
 
 `MidgarConfigStore` verifies every document against the pinned keys, rejects a document whose `minVersion` or `kill` has the wrong type, and keeps the highest accepted version in a `UserDefaults` suite (`cc.midgarcorp.midgarkit.config`) apart from the cache file, so deleting or swapping the cache cannot roll the app back. On Linux verification still fails closed, because it needs CryptoKit; follow-up: add swift-crypto so Linux clients can verify.
 
+## Signals
+
+`MidgarSignals` (in MidgarCore) is the anonymous analytics client (D7): no vendor SDK, no Midgar ID, no device id, no `Authorization` header. It queues named events with a few props and sends them in batches to `POST /v1/signals/events`; the server (`services/signals`) keeps daily counts per app, event and platform.
+
+```swift
+MidgarSignals.configure(
+    configuration: MidgarHTTPConfiguration(appID: "dream-eater"),
+    config: { configStore.current }
+)
+await MidgarSignals.shared?.record("paywall.view", props: ["placement": "settings"])
+```
+
+- Props are `String`, `Int`, `Double` or `Bool` (`MidgarSignalValue` takes literals). Strings are cut to 64 characters. Only names and props from the server schema are kept; the server drops an event with an unknown name or prop and counts it.
+- Events go out when 20 are queued, every 60 seconds while any wait, and at least 10 seconds apart, in batches of at most 50 events and 32 KB. The queue holds 500 events (oldest dropped first) and is saved to `Application Support/Midgar/signals-<app>.json`, so unsent events survive a relaunch.
+- Offline, a timeout and 5xx keep the events. 429 keeps them and waits for `Retry-After` (60 seconds without one). Any other 4xx drops the batch and logs once.
+- Call `await MidgarSignals.shared?.flush()` when the app moves to the background (for example on `scenePhase == .background`): the OS may suspend the app before the next timer. `flush()` sends everything queued and ignores the 10 second spacing, but still waits out a `Retry-After`.
+- The `signals` key in the app's remote config `kill` list turns `record` into a no-op and empties the queue. Pass `config: { store.current }` so the client reads it.
+- `X-Platform` comes from the OS (`ios`, `ipados`, `macos`, `tvos`, `visionos`, `watchos`, `android`, `linux`) and `X-App-Version` from `CFBundleShortVersionString`.
+- iOS and macOS: `await MidgarSignals.shared?.startCollectingMetrics()` subscribes to MetricKit. Each daily metrics payload becomes one `metrics.daily` event (`coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds`, `peakMemoryMB`) and each diagnostic payload one `metrics.diagnostics` event (`crashes`, `hangs`, `diskWrites`, `cpuExceptions`).
+- The portal reports `portal_open`, `impression`, `tap`, `loaded` and `launch` through `MidgarSignals.shared` with the props `appId`, `storefront` and `placement`. It sends nothing, and keeps working, until the host calls `MidgarSignals.configure`. The host app is identified by the client's `X-App-ID`, so a host must configure signals with its registry slug.
+
+Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter SignalsLive` sends one real `app.launch` for `dream-eater` to production, which leaves a row in `daily` that must be deleted afterwards.
+
 ## Logging
 
 Logs go to `Library/Logs/app.log` with rotation. A log file that is deleted while the app runs is created again on the next write, and the `Library/Logs` directory is excluded from iCloud and device backups.
@@ -101,9 +124,9 @@ Logs go to `Library/Logs/app.log` with rotation. A log file that is deleted whil
 
 ```swift
 MidgarConfig(
-    endpoint: MidgarConfig.defaultEndpoint, // catalog and telemetry service
+    endpoint: MidgarConfig.defaultEndpoint, // catalog service
     excludedBundleIDs: [],                  // apps to leave out of the portal
-    enableTelemetry: true,                  // anonymous counts
+    enableTelemetry: true,                  // anonymous counts, sent through MidgarSignals
     storefront: nil,                        // nil uses the device region
     placement: "settings",                  // reported with every event and the App Store campaign token
     providerToken: MidgarConfig.defaultProviderToken

@@ -160,14 +160,12 @@ final class MidgarTests: XCTestCase {
         XCTAssertTrue(config.campaignToken.hasSuffix("-settingsrow"))
     }
 
-    func testTelemetryPayloadCarriesHostStorefrontAndPlacement() {
+    func testTelemetryPropsCarryStorefrontPlacementAndPromotedApp() {
         let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "portal"))
-        let payload = telemetry.payload(.tap, appId: "123")
-        XCTAssertEqual(payload["event"], "tap")
-        XCTAssertEqual(payload["appId"], "123")
-        XCTAssertEqual(payload["storefront"], "fi")
-        XCTAssertEqual(payload["placement"], "portal")
-        XCTAssertNotNil(payload["source"])
+        XCTAssertEqual(
+            telemetry.props(.tap, appId: "123"),
+            ["appId": "123", "storefront": "fi", "placement": "portal"]
+        )
         XCTAssertEqual(MidgarEvent.portalOpen.rawValue, "portal_open")
     }
 

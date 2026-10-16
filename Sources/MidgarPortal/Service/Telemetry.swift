@@ -1,4 +1,5 @@
 import Foundation
+import MidgarCore
 
 enum MidgarEvent: String {
     case portalOpen = "portal_open"
@@ -8,34 +9,36 @@ enum MidgarEvent: String {
     case launch
 }
 
-/// Fire-and-forget, anonymous cross-promo telemetry. Sends nothing identifying: only the promoted
-/// app id, the promoting app's bundle id, the placement and the storefront. Honors
-/// ``MidgarConfig/enableTelemetry``.
+/// Fire-and-forget, anonymous cross-promo telemetry, sent through ``MidgarSignals``. Each event carries the
+/// promoted app id, the storefront and the placement; the host app is identified by the signals client's
+/// `X-App-ID`. Nothing is sent while the host has not configured ``MidgarSignals/shared`` or when
+/// ``MidgarConfig/enableTelemetry`` is off.
 struct Telemetry {
-    static let noApp = "0"
-
     let config: MidgarConfig
-    var session: URLSession = .midgar
+    var signals: @Sendable () -> MidgarSignals? = { MidgarSignals.shared }
 
-    func send(_ event: MidgarEvent, appId: String = Telemetry.noApp) {
-        guard config.enableTelemetry else { return }
-        var request = URLRequest(url: config.eventURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: payload(event, appId: appId))
-        let session = session
+    func send(_ event: MidgarEvent, appId: String? = nil) {
+        let telemetry = self
         Task.detached(priority: .background) {
-            _ = try? await session.data(for: request)
+            await telemetry.record(event, appId: appId)
         }
     }
 
-    func payload(_ event: MidgarEvent, appId: String) -> [String: String] {
-        [
-            "event": event.rawValue,
-            "appId": appId,
-            "source": config.sourceBundleID,
-            "storefront": config.resolvedStorefront ?? "",
-            "placement": config.placement,
-        ]
+    func record(_ event: MidgarEvent, appId: String? = nil) async {
+        guard config.enableTelemetry, let signals = signals() else { return }
+        await signals.record(event.rawValue, props: props(event, appId: appId))
+    }
+
+    /// The props the signals schema lists for the event: `portal_open` has no promoted app, the others
+    /// carry its id. The storefront is left out when it is unknown.
+    func props(_ event: MidgarEvent, appId: String?) -> [String: MidgarSignalValue] {
+        var props: [String: MidgarSignalValue] = ["placement": .string(config.placement)]
+        if let storefront = config.resolvedStorefront, !storefront.isEmpty {
+            props["storefront"] = .string(storefront)
+        }
+        if event != .portalOpen, let appId {
+            props["appId"] = .string(appId)
+        }
+        return props
     }
 }
