@@ -22,7 +22,7 @@ Add `MidgarKit` to every app target that ships. MidgarKit 4.0.0 is one package w
 | Product | Holds | May import |
 | --- | --- | --- |
 | `MidgarKit` | Umbrella: `@_exported import` of every product below | all products |
-| `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit |
+| `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
 | `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
 | `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
 | `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding | MidgarCore, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
