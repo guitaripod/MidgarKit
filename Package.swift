@@ -37,7 +37,12 @@ let package = Package(
                 .copy("PrivacyInfo.xcprivacy")
             ]
         ),
-        .target(name: "MidgarIntelligence", dependencies: ["MidgarCore"]),
+        .target(
+            name: "MidgarIntelligence",
+            dependencies: ["MidgarCore"],
+            exclude: ["README.md"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
         .target(name: "MidgarDemo", dependencies: ["MidgarCore"], exclude: ["README.md"]),
         .target(
             name: "MidgarKit",

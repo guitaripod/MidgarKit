@@ -1,0 +1,66 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "This feature is turned off for now. Try again later.": {
+      "comment": "Shown when an AI feature was switched off remotely",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This feature is turned off for now. Try again later."
+          }
+        }
+      }
+    },
+    "This needs more credits or an active subscription.": {
+      "comment": "Shown when an AI request needs credits or a subscription the user does not have",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This needs more credits or an active subscription."
+          }
+        }
+      }
+    },
+    "Too many requests. Try again in a moment.": {
+      "comment": "Shown when the AI service asks the app to slow down",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many requests. Try again in a moment."
+          }
+        }
+      }
+    },
+    "On-device intelligence is not available on this device right now.": {
+      "comment": "Shown when the on-device model cannot answer and the cloud is not allowed to",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device intelligence is not available on this device right now."
+          }
+        }
+      }
+    },
+    "The AI request could not be completed. Try again.": {
+      "comment": "Shown when an AI request failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI request could not be completed. Try again."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
