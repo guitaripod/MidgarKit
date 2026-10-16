@@ -33,6 +33,19 @@ public struct MidgarHTTPConfiguration: Sendable {
         self.logger = logger
     }
 
+    /// The same configuration with another token provider. Pass nil for a client that must never authorize itself, such as the identity client, whose own calls would otherwise wait on the token they are fetching.
+    public func settingTokenProvider(_ tokenProvider: (@Sendable () async -> String?)?) -> MidgarHTTPConfiguration {
+        MidgarHTTPConfiguration(
+            baseURL: baseURL,
+            appID: appID,
+            session: session,
+            tokenProvider: tokenProvider,
+            userAgent: userAgent,
+            timeout: timeout,
+            logger: logger
+        )
+    }
+
     /// `<app>/<version> MidgarKit/<version>`, read from the host app's bundle.
     private static func defaultUserAgent(bundle: Bundle = .main) -> String {
         let info = bundle.infoDictionary

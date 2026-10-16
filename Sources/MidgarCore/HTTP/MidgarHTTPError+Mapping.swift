@@ -24,10 +24,10 @@ extension MidgarHTTPError {
         }
     }
 
-    /// Maps a non-2xx response. Reads the `{"error":{"code","message"}}` envelope and mako's legacy shapes.
-    init(response: HTTPURLResponse, data: Data) {
+    /// Maps a non-2xx response. Reads the `{"error":{"code","message"}}` envelope and mako's legacy shapes. A 401 becomes ``unauthorized`` unless `preservesUnauthorizedCode` keeps its envelope as a ``server(status:code:message:)``.
+    init(response: HTTPURLResponse, data: Data, preservesUnauthorizedCode: Bool = false) {
         switch response.statusCode {
-        case 401:
+        case 401 where !preservesUnauthorizedCode:
             self = .unauthorized
         case 402:
             self = .paymentRequired
