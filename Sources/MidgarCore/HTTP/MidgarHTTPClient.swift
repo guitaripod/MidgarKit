@@ -54,7 +54,7 @@ public final class MidgarHTTPClient: Sendable {
         var attempt = 1
         while true {
             let authorizedRequest = await authorized(urlRequest)
-            let exchange = await transmit(authorizedRequest)
+            let exchange = await transmit(authorizedRequest, preservesUnauthorizedCode: request.preservesUnauthorizedCode)
             switch exchange.result {
             case .success(let pair):
                 return pair
@@ -76,7 +76,7 @@ public final class MidgarHTTPClient: Sendable {
         let retryAfter: TimeInterval?
     }
 
-    private func transmit(_ urlRequest: URLRequest) async -> Exchange {
+    private func transmit(_ urlRequest: URLRequest, preservesUnauthorizedCode: Bool) async -> Exchange {
         do {
             let (data, response) = try await configuration.session.data(for: urlRequest)
             guard let http = response as? HTTPURLResponse else {
@@ -84,7 +84,7 @@ public final class MidgarHTTPClient: Sendable {
             }
             guard (200...299).contains(http.statusCode) else {
                 return Exchange(
-                    result: .failure(MidgarHTTPError(response: http, data: data)),
+                    result: .failure(MidgarHTTPError(response: http, data: data, preservesUnauthorizedCode: preservesUnauthorizedCode)),
                     retryAfter: http.midgarRetryAfter
                 )
             }

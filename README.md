@@ -48,6 +48,19 @@ To open the portal from your own button: `Midgar.present(from: viewController, c
 
 Migration path: today each of the 16 apps has a `slot` in `worker/catalog.meta.json` (`midgar-01` to `midgar-16`, a separate key so older hosts keep querying the bundle-id scheme) but still answers on its bundle-id scheme. Each app registers its own slot in `CFBundleURLTypes` at its next release. Hosts list the 16 legacy schemes plus `midgar-01` to `midgar-09` until every app has shipped that; after that, hosts list `midgar-01` to `midgar-25` only and the legacy schemes drop out.
 
+## Identity (MidgarCore)
+
+`MidgarIdentity` is the client of the Midgar ID (D12). Create one per app and let it authorize the app's HTTP client:
+
+```swift
+let http = MidgarHTTPConfiguration(appID: "solar-beam")
+let identity = MidgarIdentity(httpConfiguration: http, bundleID: "com.midgarcorp.solarbeam")
+let client = MidgarHTTPClient(configuration: identity.authorizing(http))
+let appAccountToken = UUID(uuidString: try await identity.midgarId)
+```
+
+`appID` is the registry slug. The first call anywhere mints the ID (App Attest where supported, unverified otherwise), later apps and devices attach to it through the synchronizable keychain item, and refresh tokens are signed with an App Attest assertion. Add `registry/generated/identity.entitlements` (written by `midgar gen`) to the app's entitlements. `linkApple(identityToken:)`, `deleteIdentity()` and `export()` cover Sign in with Apple merging, erasure and the data export.
+
 ## Configuration
 
 ```swift

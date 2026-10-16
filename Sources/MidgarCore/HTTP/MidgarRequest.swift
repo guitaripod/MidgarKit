@@ -29,12 +29,14 @@ public struct MidgarRequest: Sendable {
     public let headers: [String: String]
     public let body: (any Encodable & Sendable)?
     public let idempotent: Bool
+    public let preservesUnauthorizedCode: Bool
 
     /// - Parameters:
     ///   - service: The gateway service name, such as `catalog`. Use `health` for `/v1/health`.
     ///   - path: The path after the service, such as `apps/42`. Empty for the service root.
     ///   - body: Encoded as JSON with `Content-Type: application/json`.
     ///   - idempotent: Opts a non-idempotent method (POST, PATCH) into retries. GET, HEAD, PUT and DELETE always retry.
+    ///   - preservesUnauthorizedCode: Reports a 401 as ``MidgarHTTPError/server(status:code:message:)`` with the envelope's code instead of ``MidgarHTTPError/unauthorized``, for callers such as the identity flows that act on the code.
     public init(
         service: String,
         path: String = "",
@@ -42,7 +44,8 @@ public struct MidgarRequest: Sendable {
         query: [URLQueryItem] = [],
         headers: [String: String] = [:],
         body: (any Encodable & Sendable)? = nil,
-        idempotent: Bool = false
+        idempotent: Bool = false,
+        preservesUnauthorizedCode: Bool = false
     ) {
         self.service = service
         self.path = path
@@ -51,6 +54,7 @@ public struct MidgarRequest: Sendable {
         self.headers = headers
         self.body = body
         self.idempotent = idempotent
+        self.preservesUnauthorizedCode = preservesUnauthorizedCode
     }
 
     var isRetryable: Bool {

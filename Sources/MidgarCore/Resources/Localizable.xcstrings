@@ -120,6 +120,42 @@
           }
         }
       }
+    },
+    "Your Midgar ID could not be saved or read on this device.": {
+      "comment": "Shown when the keychain refuses to store or return the Midgar ID",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Midgar ID could not be saved or read on this device."
+          }
+        }
+      }
+    },
+    "This device could not be verified. Try again later.": {
+      "comment": "Shown when App Attest fails while the Midgar ID is being set up",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device could not be verified. Try again later."
+          }
+        }
+      }
+    },
+    "Your saved Midgar ID could not be read. Update the app and try again.": {
+      "comment": "Shown when the shared Midgar ID in the keychain has a format this app version cannot read",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your saved Midgar ID could not be read. Update the app and try again."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

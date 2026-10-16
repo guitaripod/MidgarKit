@@ -9,6 +9,13 @@ struct StubReply: Sendable {
     let headers: [String: String]
     let body: Data
     let failure: URLError.Code?
+    var delay: TimeInterval = 0
+
+    func delayed(by seconds: TimeInterval) -> StubReply {
+        var copy = self
+        copy.delay = seconds
+        return copy
+    }
 
     static func json(_ status: Int, _ text: String, headers: [String: String] = [:]) -> StubReply {
         StubReply(status: status, headers: headers, body: Data(text.utf8), failure: nil)
@@ -78,6 +85,9 @@ final class StubURLProtocol: URLProtocol {
             body: Self.body(of: request)
         )
         let reply = StubRegistry.shared.nextReply(for: host, request: captured)
+        if reply.delay > 0 {
+            Thread.sleep(forTimeInterval: reply.delay)
+        }
         if let failure = reply.failure {
             client?.urlProtocol(self, didFailWithError: URLError(failure))
             return
