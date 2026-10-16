@@ -26,6 +26,10 @@ Rules:
 
 `DemoLaunch.current` reads the process. `DemoLaunch.parse(arguments:environment:)` is the pure form the tests use.
 
+## Gating
+
+Demo mode fakes data and freezes the clock, so a shipping build must never enter it because of a launch argument or an environment variable. `activate` only honours the contract when `DemoGate.isPermitted` is true: always in DEBUG builds, and in a release build only when the app's Info.plist sets `MidgarDemoEnabled` to `YES`. Give the screenshot configuration of an app that key (an xcconfig-driven `INFOPLIST_KEY_MidgarDemoEnabled` or a plist merge) and leave it out of the App Store configuration. A build that is not permitted ignores the contract, writes one notice to the log and returns nil, so the app starts normally.
+
 ## Worlds, scenes and context
 
 ```swift
@@ -67,7 +71,7 @@ let activation = try await registry.activate()
 
 `activate()` returns a `DemoActivation` (the world, the scene and the context), or nil outside demo mode.
 Each call first clears the frozen clock, so a failed or non-demo activation never leaves a stale date
-behind. Call it once, at launch, before the first scene is built.
+behind. The clock freezes only after `prepare` succeeds, and a `prepare` that throws leaves it live, so `prepare` reads its date from `context.date`, never from `DemoClock`. Call it once, at launch, before the first scene is built.
 
 Errors name the bad input and the valid choices:
 

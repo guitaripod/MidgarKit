@@ -22,19 +22,29 @@ public struct DemoRegistry: Sendable {
         try await activate(launch: DemoLaunch.current, now: now)
     }
 
-    /// Activates a parsed contract: freezes `DemoClock`, prepares the chosen scene and returns what was chosen.
-    /// Every call first clears the frozen clock, so a failed or non-demo activation never leaves a stale date behind.
-    public func activate(launch: DemoLaunch, now: Date = Date()) async throws -> DemoActivation? {
+    /// Activates a parsed contract: prepares the chosen scene, freezes `DemoClock` once that succeeded and returns what was chosen.
+    /// Every call first clears the frozen clock, so a failed or non-demo activation never leaves a stale date behind. The clock freezes only after `prepare` returns, so `prepare` reads its date from `context.date`.
+    ///
+    /// - Parameter isPermitted: Whether this build may enter demo mode, ``DemoGate/isPermitted`` by default. A build that may not ignores the contract, logs one notice and returns nil.
+    public func activate(
+        launch: DemoLaunch,
+        now: Date = Date(),
+        isPermitted: Bool = DemoGate.isPermitted
+    ) async throws -> DemoActivation? {
         DemoClockStore.shared.freeze(nil)
         guard let worldID = launch.world else { return nil }
+        guard isPermitted else {
+            DemoGate.logRefusal()
+            return nil
+        }
         let world = try resolveWorld(worldID)
         let scene = try resolveScene(launch.scene, in: world)
         let context = DemoContext(
             date: launch.date ?? now,
             locale: launch.locale.map { Locale(identifier: $0) } ?? Locale.current
         )
-        DemoClockStore.shared.freeze(context.date)
         try await world.prepare(scene, context: context)
+        DemoClockStore.shared.freeze(context.date)
         return DemoActivation(world: world, scene: scene, context: context)
     }
 

@@ -190,4 +190,83 @@ struct FixtureWorld: DemoWorld {
         let error = DemoError.unknownWorld("daily", valid: [])
         #expect(error.errorDescription == "Unknown demo world \"daily\". Valid worlds: none.")
     }
+
+    @Test func theClockStaysLiveWhenPrepareThrows() async throws {
+        var registry = DemoRegistry()
+        try registry.register(ThrowingWorld())
+        await #expect(throws: PrepareFailure.self) {
+            try await registry.activate(launch: Self.launch(world: "daily", date: Self.frozenDate), now: Self.fixedNow)
+        }
+        #expect(abs(DemoClock.now.timeIntervalSinceNow) < 5)
+    }
+
+    @Test func theClockFreezesOnlyAfterPrepareReturns() async throws {
+        let observed = ClockObservation()
+        var registry = DemoRegistry()
+        try registry.register(ObservingWorld(observed: observed))
+        _ = try await registry.activate(launch: Self.launch(world: "observing", date: Self.frozenDate), now: Self.fixedNow)
+        #expect(abs(await observed.clockDuringPrepare.timeIntervalSinceNow) < 5)
+        #expect(DemoClock.now == Self.frozenDate)
+    }
+
+    @Test func aPreviousFrozenClockIsClearedWhenPrepareThrows() async throws {
+        var registry = DemoRegistry()
+        try registry.register(ThrowingWorld())
+        try registry.register(FixtureWorld(id: "ok", scenes: [DemoScene(id: "s")], log: PrepareLog()))
+        _ = try await registry.activate(launch: Self.launch(world: "ok", date: Self.frozenDate), now: Self.fixedNow)
+        #expect(DemoClock.now == Self.frozenDate)
+
+        await #expect(throws: PrepareFailure.self) {
+            try await registry.activate(launch: Self.launch(world: "daily", date: Self.frozenDate), now: Self.fixedNow)
+        }
+
+        #expect(abs(DemoClock.now.timeIntervalSinceNow) < 5)
+    }
+
+    @Test func aBuildThatIsNotPermittedIgnoresTheContract() async throws {
+        let log = PrepareLog()
+        let registry = try Self.makeRegistry(log: log)
+        let activation = try await registry.activate(launch: Self.launch(date: Self.frozenDate), now: Self.fixedNow, isPermitted: false)
+        #expect(activation == nil)
+        #expect(await log.scenes.isEmpty)
+        #expect(abs(DemoClock.now.timeIntervalSinceNow) < 5)
+    }
+
+    @Test func releaseBuildsNeedTheInfoPlistFlag() {
+        #expect(DemoGate.isPermitted(isDebugBuild: true, infoDictionary: nil))
+        #expect(!DemoGate.isPermitted(isDebugBuild: false, infoDictionary: nil))
+        #expect(!DemoGate.isPermitted(isDebugBuild: false, infoDictionary: ["MidgarDemoEnabled": false]))
+        #expect(!DemoGate.isPermitted(isDebugBuild: false, infoDictionary: ["MidgarDemoEnabled": "NO"]))
+        #expect(DemoGate.isPermitted(isDebugBuild: false, infoDictionary: ["MidgarDemoEnabled": true]))
+        #expect(DemoGate.isPermitted(isDebugBuild: false, infoDictionary: ["MidgarDemoEnabled": "YES"]))
+    }
+}
+
+struct PrepareFailure: Error {}
+
+struct ThrowingWorld: DemoWorld {
+    let id = "daily"
+    let scenes = [DemoScene(id: "play")]
+
+    func prepare(_ scene: DemoScene, context: DemoContext) async throws {
+        throw PrepareFailure()
+    }
+}
+
+actor ClockObservation {
+    private(set) var clockDuringPrepare = Date.distantPast
+
+    func record(_ date: Date) {
+        clockDuringPrepare = date
+    }
+}
+
+struct ObservingWorld: DemoWorld {
+    let id = "observing"
+    let scenes = [DemoScene(id: "play")]
+    let observed: ClockObservation
+
+    func prepare(_ scene: DemoScene, context: DemoContext) async throws {
+        await observed.record(DemoClock.now)
+    }
 }
