@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// The one HTTP client Midgar apps use to reach `api.midgarcorp.cc`. Requests go to `/v1/<service>/<path>`.
 public final class MidgarHTTPClient: Sendable {

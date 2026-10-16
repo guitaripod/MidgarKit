@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 extension MidgarHTTPError {
     /// Maps a failure that happened before any HTTP status arrived.

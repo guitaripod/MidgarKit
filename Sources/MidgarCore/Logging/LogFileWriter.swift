@@ -71,8 +71,8 @@ final class LogFileWriter: @unchecked Sendable {
         }
         let manager = FileManager.default
         try? manager.createDirectory(at: directory, withIntermediateDirectories: true)
-        if !manager.fileExists(atPath: currentURL.path) {
-            manager.createFile(atPath: currentURL.path, contents: nil)
+        if !manager.fileExists(atPath: currentURL.path), !manager.createFile(atPath: currentURL.path, contents: nil) {
+            return nil
         }
         guard let opened = try? FileHandle(forWritingTo: currentURL) else {
             return nil

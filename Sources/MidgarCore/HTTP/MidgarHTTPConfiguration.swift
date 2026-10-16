@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Everything `MidgarHTTPClient` needs to reach the Midgar gateway for one app.
 public struct MidgarHTTPConfiguration: Sendable {

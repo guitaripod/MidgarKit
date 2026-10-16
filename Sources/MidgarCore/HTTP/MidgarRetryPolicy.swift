@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// How `MidgarHTTPClient` retries an idempotent request. `standard` is what production uses.
 struct MidgarRetryPolicy: Sendable {
