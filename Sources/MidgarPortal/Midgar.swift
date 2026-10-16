@@ -1,6 +1,11 @@
 import Foundation
 import os
-import MidgarUI
+
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Entry points for the Midgar portal, the in-app universe of every Midgar app. UIKit on iOS / tvOS
 /// / visionOS / Mac Catalyst, AppKit on native macOS. SwiftUI hosts use ``MidgarStoreView`` /

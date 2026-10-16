@@ -1,4 +1,4 @@
-import MidgarUI
+import CoreGraphics
 
 /// One spot in the portal: the Midgar core at the centre, or an app on the lattice around it.
 struct PortalCell: Hashable, Sendable {

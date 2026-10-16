@@ -1,4 +1,4 @@
-import MidgarUI
+import SwiftUI
 
 /// Bridges the platform canvas view into SwiftUI and keeps it in step with the model.
 @MainActor

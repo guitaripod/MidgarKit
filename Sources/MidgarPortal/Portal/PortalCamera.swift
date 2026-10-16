@@ -1,4 +1,4 @@
-import MidgarUI
+import CoreGraphics
 
 /// The camera that pans across the portal. All motion is plain arithmetic on a clock so it can be
 /// stepped by a display link, a test, or a snapshot renderer alike: finger drags with rubber-band

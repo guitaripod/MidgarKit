@@ -1,4 +1,4 @@
-import MidgarUI
+import CoreGraphics
 
 /// Where a world-space offset from the camera lands on screen, and how large it is drawn.
 struct PortalProjection: Sendable {

@@ -1,6 +1,6 @@
 #if DEBUG && canImport(UIKit) && !os(tvOS) && !os(visionOS)
 import StoreKit
-import MidgarUI
+import UIKit
 
 /// A scripted run of the portal for devices nobody is touching: it opens the portal, flicks the
 /// camera around, records frame pacing, and writes screenshots and a JSON report into the app's

@@ -1,5 +1,6 @@
+import CoreGraphics
 import Foundation
-import MidgarUI
+import QuartzCore
 
 /// Which edges of the canvas are covered by chrome, so the honeycomb centres itself in what is
 /// left instead of behind the header and the card.

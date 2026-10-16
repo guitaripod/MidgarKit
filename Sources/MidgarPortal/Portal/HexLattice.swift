@@ -1,4 +1,4 @@
-import MidgarUI
+import CoreGraphics
 
 /// An axial coordinate on a pointy-top hexagonal lattice, the same arrangement as the original
 /// watchOS home screen: rows of circles, every other row offset by half a cell.

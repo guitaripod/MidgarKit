@@ -1,5 +1,5 @@
-import MidgarUI
 #if canImport(SwiftUI)
+import SwiftUI
 
 /// SwiftUI form of ``MidgarEntryView``: the card with the live miniature of the portal. Place it in
 /// a `List` section or a form; tapping it opens the portal.

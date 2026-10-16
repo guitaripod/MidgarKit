@@ -1,5 +1,6 @@
-import MidgarUI
 #if canImport(AppKit) && !canImport(UIKit)
+import AppKit
+import QuartzCore
 
 /// The portal canvas on macOS. Mouse drags, trackpad scrolls and the arrow keys all move the same
 /// camera the touch version does; the layers are shared with iOS through ``PortalRenderer``.

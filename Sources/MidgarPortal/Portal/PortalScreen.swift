@@ -1,4 +1,4 @@
-import MidgarUI
+import SwiftUI
 
 extension Color {
     init(_ color: PortalColor) {

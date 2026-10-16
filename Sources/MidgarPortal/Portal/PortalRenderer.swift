@@ -1,5 +1,6 @@
+import CoreGraphics
 import Foundation
-import MidgarUI
+import QuartzCore
 
 /// Where a cell was drawn on the last frame, in the canvas's top-left coordinate space.
 struct PortalCellFrame: Sendable {

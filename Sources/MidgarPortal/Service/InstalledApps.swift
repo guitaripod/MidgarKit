@@ -1,6 +1,11 @@
 import Foundation
 import os
-import MidgarUI
+
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Finds out which sibling apps are on this device without any network call or identifier. iOS
 /// asks whether one of the app's URL schemes (its catalog slot such as `midgar-07`, its catalog

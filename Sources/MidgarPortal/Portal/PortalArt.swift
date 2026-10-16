@@ -1,5 +1,6 @@
+import CoreGraphics
+import CoreText
 import Foundation
-import MidgarUI
 
 /// An sRGB colour used by the portal's drawing code, independent of UIKit and AppKit.
 struct PortalColor: Equatable, Sendable {

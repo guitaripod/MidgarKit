@@ -1,5 +1,6 @@
-import MidgarUI
 #if canImport(AppKit) && !canImport(UIKit)
+import AppKit
+import SwiftUI
 
 /// The portal as a sheet on macOS: hosts the SwiftUI screen and hands App Store pages and
 /// installed apps off to the system.

@@ -1,7 +1,8 @@
 #if canImport(SwiftUI)
-import MidgarUI
+import SwiftUI
 
 #if canImport(UIKit)
+import UIKit
 
 /// A SwiftUI wrapper around the Midgar portal, for embedding in SwiftUI hosts.
 public struct MidgarStoreView: UIViewControllerRepresentable {
@@ -12,6 +13,7 @@ public struct MidgarStoreView: UIViewControllerRepresentable {
 }
 
 #elseif canImport(AppKit)
+import AppKit
 
 /// A SwiftUI wrapper around the Midgar portal, for embedding in SwiftUI hosts.
 public struct MidgarStoreView: NSViewControllerRepresentable {

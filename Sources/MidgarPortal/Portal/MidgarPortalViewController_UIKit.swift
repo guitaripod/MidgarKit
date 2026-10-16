@@ -1,6 +1,7 @@
 #if canImport(UIKit)
 import StoreKit
-import MidgarUI
+import SwiftUI
+import UIKit
 
 /// The portal as a view controller: hosts the SwiftUI screen, presents App Store product pages,
 /// launches installed apps and shares links to apps that live on another platform.

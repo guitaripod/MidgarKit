@@ -1,5 +1,5 @@
-import MidgarUI
 #if canImport(UIKit)
+import UIKit
 
 /// The portal canvas on iOS, iPadOS, tvOS and visionOS: a plain view that hosts the renderer's
 /// layers, turns touches into camera motion and runs a display link only while something moves.

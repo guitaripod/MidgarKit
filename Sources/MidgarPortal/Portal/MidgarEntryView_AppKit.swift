@@ -1,5 +1,5 @@
-import MidgarUI
 #if canImport(AppKit) && !canImport(UIKit)
+import AppKit
 
 /// The doorway into the portal on macOS: a card with a live miniature of the honeycomb. Click it
 /// to open the portal as a sheet.

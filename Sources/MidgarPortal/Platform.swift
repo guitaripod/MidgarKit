@@ -1,13 +1,17 @@
 import Foundation
-import MidgarUI
 
 #if canImport(UIKit)
+import UIKit
 public typealias MidgarColor = UIColor
 typealias MidgarImage = UIImage
 #elseif canImport(AppKit)
+import AppKit
 public typealias MidgarColor = NSColor
 typealias MidgarImage = NSImage
 #endif
+
+import CoreGraphics
+import ImageIO
 
 enum MidgarImageCache {
     /// Bounded by decoded byte cost rather than object count. App Store screenshots are ~1290×2796;

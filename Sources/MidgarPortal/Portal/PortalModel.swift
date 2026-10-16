@@ -1,5 +1,5 @@
 import Foundation
-import MidgarUI
+import SwiftUI
 
 /// What the bottom card is describing.
 enum PortalSelection: Hashable {

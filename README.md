@@ -25,12 +25,12 @@ Add `MidgarKit` to every app target that ships. MidgarKit 4.0.0 is one package w
 | `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit |
 | `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
 | `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
-| `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding; re-exports the system UI frameworks | MidgarCore, UIKit, AppKit, SwiftUI |
-| `MidgarPortal` | The portal: catalog, entry card and view, `Midgar.present`, telemetry, resources, privacy manifest | MidgarUI, MidgarCore, StoreKit |
+| `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding | MidgarCore, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
+| `MidgarPortal` | The portal: catalog, entry card and view, `Midgar.present`, telemetry, resources, privacy manifest | MidgarUI, MidgarCore, StoreKit, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
 | `MidgarIntelligence` | On-device and cloud model access, FoundationModels behind `#if canImport(FoundationModels)` | MidgarCore, FoundationModels |
 | `MidgarDemo` | Demo mode and seeded data | MidgarCore |
 
-A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. Commerce, account, UI, intelligence and demo are placeholders until roadmap tasks P2.02 to P2.06 fill them. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
+No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. Commerce, account, UI, intelligence and demo are placeholders until roadmap tasks P2.02 to P2.06 fill them. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
 
 ## Integrate a host app
 

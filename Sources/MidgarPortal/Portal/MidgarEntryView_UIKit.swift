@@ -1,5 +1,5 @@
-import MidgarUI
 #if canImport(UIKit)
+import UIKit
 
 /// The doorway into the portal: a card that shows a live miniature of the honeycomb, with the
 /// host's closest relatives nearest the middle. Drop it into a settings screen; tapping it opens
