@@ -12,17 +12,17 @@ The doorway between Midgar apps. One card in a host app's Settings opens the **p
 ## Install
 
 ```swift
-.package(url: "https://github.com/guitaripod/MidgarKit", from: "4.0.0")
+.package(url: "https://github.com/guitaripod/MidgarKit", from: "3.2.0")
 ```
 
-Add `MidgarKit` to every app target that ships. MidgarKit 4.0.0 is one package with several products. `import MidgarKit` keeps working for every 3.x host: the `MidgarKit` product is an umbrella that re-exports all the others, so `MidgarEntryView`, `MidgarEntryCard`, `MidgarStoreView`, `Midgar.present` and `MidgarConfig` are unchanged.
+Hosts use `from: "3.2.0"` until MidgarKit 4.0.0 is tagged (roadmap P2.18); after that, `from: "4.0.0"`. Add `MidgarKit` to every app target that ships. From 4.0.0 on, MidgarKit is one package with several products (the layout below is the monorepo's). `import MidgarKit` keeps working for every 3.x host: the `MidgarKit` product is an umbrella that re-exports all the others, so `MidgarEntryView`, `MidgarEntryCard`, `MidgarStoreView`, `Midgar.present` and `MidgarConfig` are unchanged.
 
 ## Products
 
 | Product | Holds | May import |
 | --- | --- | --- |
 | `MidgarKit` | Umbrella: `@_exported import` of every product below | all products |
-| `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
+| `MidgarCore` | Logging, config, HTTP, identity, `MidgarKitVersion` (signals planned, P2.06) | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
 | `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
 | `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
 | `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding | MidgarCore, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
@@ -30,7 +30,7 @@ Add `MidgarKit` to every app target that ships. MidgarKit 4.0.0 is one package w
 | `MidgarIntelligence` | On-device and cloud model access, FoundationModels behind `#if canImport(FoundationModels)` | MidgarCore, FoundationModels |
 | `MidgarDemo` | Demo mode and seeded data | MidgarCore |
 
-No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. Commerce, account, UI, intelligence and demo are placeholders until roadmap tasks P2.02 to P2.06 fill them. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
+No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. `MidgarUI`, `MidgarIntelligence` and `MidgarDemo` are built. `MidgarCommerce` and `MidgarAccount` are still stubs (one placeholder type each) until their roadmap tasks (P2.07 and P2.08 for Commerce, P2.10 for Account) fill them; `MidgarCore` has Logging, HTTP, Config and Identity, and Signals is not built yet. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
 
 ## Integrate a host app
 
