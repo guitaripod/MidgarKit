@@ -32,6 +32,7 @@ extension MidgarLog.Category {
     public static let network = MidgarLog.Category("network")
     public static let commerce = MidgarLog.Category("commerce")
     public static let account = MidgarLog.Category("account")
+    public static let config = MidgarLog.Category("config")
     public static let portal = MidgarLog.Category("portal")
     public static let ui = MidgarLog.Category("ui")
 }
