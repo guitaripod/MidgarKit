@@ -16,7 +16,10 @@ let package = Package(
         .library(name: "MidgarDemo", targets: ["MidgarDemo"])
     ],
     targets: [
-        .target(name: "MidgarCore"),
+        .target(
+            name: "MidgarCore",
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
         .target(name: "MidgarCommerce", dependencies: ["MidgarCore"]),
         .target(name: "MidgarAccount", dependencies: ["MidgarCore"]),
         .target(name: "MidgarUI", dependencies: ["MidgarCore"]),

@@ -1,0 +1,126 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "You appear to be offline. Check your connection and try again.": {
+      "comment": "Shown when Midgar cannot reach its servers because the device has no usable network",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You appear to be offline. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "The request timed out. Try again.": {
+      "comment": "Shown when a request to Midgar's servers took longer than the allowed time",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The request timed out. Try again."
+          }
+        }
+      }
+    },
+    "Your session has expired. Sign in again.": {
+      "comment": "Shown when Midgar rejects the signed-in credentials",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session has expired. Sign in again."
+          }
+        }
+      }
+    },
+    "This needs more credits or an active subscription.": {
+      "comment": "Shown when an action needs credits or a subscription the user does not have",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This needs more credits or an active subscription."
+          }
+        }
+      }
+    },
+    "Too many requests. Try again in a moment.": {
+      "comment": "Shown when Midgar's servers ask the app to slow down",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many requests. Try again in a moment."
+          }
+        }
+      }
+    },
+    "The requested item could not be found.": {
+      "comment": "Shown when the item a request asked for does not exist on Midgar's servers",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The requested item could not be found."
+          }
+        }
+      }
+    },
+    "Midgar could not complete the request. Try again later.": {
+      "comment": "Shown when Midgar's servers fail with an error the app cannot act on",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midgar could not complete the request. Try again later."
+          }
+        }
+      }
+    },
+    "The server response could not be read.": {
+      "comment": "Shown when a Midgar server response does not match what the app expects",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server response could not be read."
+          }
+        }
+      }
+    },
+    "The request could not be prepared.": {
+      "comment": "Shown when the app cannot build a request to Midgar's servers",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The request could not be prepared."
+          }
+        }
+      }
+    },
+    "The request was cancelled.": {
+      "comment": "Shown when a request to Midgar's servers was cancelled before it finished",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The request was cancelled."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
