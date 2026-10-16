@@ -59,7 +59,43 @@ let client = MidgarHTTPClient(configuration: identity.authorizing(http))
 let appAccountToken = UUID(uuidString: try await identity.midgarId)
 ```
 
-`appID` is the registry slug. The first call anywhere mints the ID (App Attest where supported, unverified otherwise), later apps and devices attach to it through the synchronizable keychain item, and refresh tokens are signed with an App Attest assertion. Add `registry/generated/identity.entitlements` (written by `midgar gen`) to the app's entitlements. `linkApple(identityToken:)`, `deleteIdentity()` and `export()` cover Sign in with Apple merging, erasure and the data export.
+`appID` is the registry slug. The first call anywhere mints the ID (App Attest where supported, unverified otherwise), later apps and devices attach to it through the synchronizable keychain item, and refresh tokens are signed with an App Attest assertion. Add `registry/generated/identity.entitlements` (written by `midgar gen`) to the app's entitlements.
+
+- **Wrong credential.** When `/attach` answers `identity_not_found` or `credential_expired`, the shared item is dead and a new identity replaces it. `invalid_credential` means another device rotated the credential and keychain sync is behind: the shared item stays, the call throws the transient `MidgarIdentityError.credentialPendingSync`, and the attach is retried on a later call, at most once an hour (earlier if sync delivers a different credential). The first failure time lives in the per-app item; only seven days of continuous `invalid_credential` mint a new identity, with a warning in the log.
+- **Linking Sign in with Apple** takes two steps, because the identity token must carry the nonce of a server challenge. `prepareAppleLink()` returns a `MidgarAppleLinkRequest`; put its `nonce` into `ASAuthorizationAppleIDRequest.nonce`, run the sheet, then call `linkApple(identityToken:with:)`. The link is proved with an App Attest assertion for a key-bound session and with the ID credential otherwise. The challenge is spent by the attempt, so a failed link needs a new `prepareAppleLink()`.
+- **`deleteIdentity()`** proves itself the same way and is sent exactly once. When the answer is lost, a later call that finds the identity gone counts the deletion as done and clears both keychain items.
+- **Tokens.** `identity.authorizing(configuration)` wires the identity in as the token provider and invalidator. A request the service rejects with `token_expired` or `invalid_token` is sent again once with a fresh token; a provider that cannot produce a token fails the request with `MidgarHTTPError.tokenUnavailable(isTransient:)` instead of sending it without `Authorization`. Call `invalidateAccessToken()` yourself when a service outside `MidgarHTTPClient` rejects the token. Expiry is counted from the reply's `expiresIn` on the device clock, so a skewed clock cannot cause a refresh on every call.
+- **`midgarId`** is the ID the service last returned to this app's session, and it follows the service after a merge or a recovery. It is not the shared item's ID: after a merge on another device the shared item still names the merged-away ID for up to seven days.
+- **Keychain entitlement.** Without the keychain access group entitlement (`errSecMissingEntitlement`, -34018) the identity falls back to an app-local item for that run and logs one warning; such an app has an identity of its own until the entitlement is added. App extensions pass their host app's bundle id as `bundleID`, because the service checks it against the host app's registry entry and App Attest binds to it.
+
+`deleteIdentity()` and `export()` cover erasure and the data export.
+
+## Errors and public enums
+
+`MidgarHTTPError` keeps the envelope's `code` for 401, 402, 404 and 429 (`.unauthorized(code:)`, `.paymentRequired(code:)`, `.notFound(code:)`, `.rateLimited(retryAfter:code:)`); `serverCode` reads it for every case that has one, and a pattern without the payload (`case .unauthorized:`) ignores it.
+
+MidgarKit adds cases to its public enums in minor releases (`MidgarHTTPError`, `MidgarIdentityError`, `MidgarIntelligenceError`, `MidgarConfigError`, `MidgarAttestationError`, `MidgarKeychainSlot`, the demo and routing enums). Clients must switch over them with `@unknown default`:
+
+```swift
+switch error {
+case .offline, .timeout:
+    retryLater()
+@unknown default:
+    show(error.localizedDescription)
+}
+```
+
+## Demo mode
+
+MidgarDemo enters demo mode only in DEBUG builds, or in a release build whose Info.plist sets `MidgarDemoEnabled` to `YES`. Any other build ignores the launch contract. Details in `Sources/MidgarDemo/README.md`.
+
+## Config
+
+`MidgarConfigStore` verifies every document against the pinned keys, rejects a document whose `minVersion` or `kill` has the wrong type, and keeps the highest accepted version in a `UserDefaults` suite (`cc.midgarcorp.midgarkit.config`) apart from the cache file, so deleting or swapping the cache cannot roll the app back. On Linux verification still fails closed, because it needs CryptoKit; follow-up: add swift-crypto so Linux clients can verify.
+
+## Logging
+
+Logs go to `Library/Logs/app.log` with rotation. A log file that is deleted while the app runs is created again on the next write, and the `Library/Logs` directory is excluded from iCloud and device backups.
 
 ## Configuration
 
