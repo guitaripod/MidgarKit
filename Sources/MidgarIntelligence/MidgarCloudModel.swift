@@ -118,7 +118,7 @@ public struct MidgarCloudModel: MidgarLanguageModel {
         switch http {
         case .paymentRequired:
             return MidgarIntelligenceError.needsCredits
-        case .rateLimited(let retryAfter):
+        case .rateLimited(let retryAfter, _):
             return MidgarIntelligenceError.rateLimited(retryAfter: retryAfter)
         case .cancelled:
             return CancellationError()

@@ -23,24 +23,41 @@ private let attachAgainCodes: Set<String> = [
 
 private let retryableEvidenceCodes: Set<String> = ["key_already_attested", "invalid_challenge"]
 
+private let identityGoneCodes: Set<String> = ["identity_not_found", "credential_expired"]
+
+/// Raised inside the session flow when the identity no longer exists and the caller asked for no new one to be minted.
+struct MidgarIdentityGone: Error {}
+
 extension MidgarIdentity {
-    /// Steps 1 to 3 of the session flow: refresh the stored session, else attach to the shared identity, else mint.
-    func establishSession() async throws -> LiveSession {
-        if let stored = try store.readSession() {
+    static let pendingSyncRetryInterval: TimeInterval = 3600
+    static let pendingSyncPatience: TimeInterval = 7 * 24 * 3600
+
+    /// Steps 1 to 3 of the session flow: refresh the stored session, else attach to the shared identity, else mint. With `allowMint` false the flow throws ``MidgarIdentityGone`` where it would mint.
+    func establishSession(allowMint: Bool) async throws -> LiveSession {
+        switch try store.readPerApp() {
+        case .session(let stored):
             switch try await refresh(stored) {
             case .refreshed(let session):
                 return session
             case .attachAgain(let reason):
                 log.info("identity: stored session unusable (\(reason)), attaching again")
+                dropCachedSession()
                 try store.deleteSession()
             }
+            return try await joinOrMint(pending: nil, allowMint: allowMint)
+        case .pendingSync(let pending):
+            return try await joinOrMint(pending: pending, allowMint: allowMint)
+        case nil:
+            return try await joinOrMint(pending: nil, allowMint: allowMint)
         }
-        return try await joinOrMint()
     }
 
-    private func joinOrMint() async throws -> LiveSession {
+    private func joinOrMint(pending: PendingSync?, allowMint: Bool) async throws -> LiveSession {
         if let shared = try store.readShared() {
-            return try await attach(shared)
+            return try await attach(shared, pending: pending, allowMint: allowMint)
+        }
+        guard allowMint else {
+            throw MidgarIdentityGone()
         }
         return try await mint(replacingShared: false)
     }
@@ -84,8 +101,13 @@ extension MidgarIdentity {
         }
     }
 
-    /// Step 2: joins the shared identity with a session of this app. Step 4: a credential the service no longer accepts forks a new identity.
-    private func attach(_ shared: SharedIdentity) async throws -> LiveSession {
+    /// Step 2: joins the shared identity with a session of this app. Step 4: what the service answers to a rejected attach decides whether the shared item survives (see ``rejectedAttach(_:shared:pending:allowMint:)``).
+    private func attach(_ shared: SharedIdentity, pending: PendingSync?, allowMint: Bool) async throws -> LiveSession {
+        let credentialDigest = MidgarDigest.sha256Hex(utf8: shared.credential)
+        let pending = pending.flatMap { $0.credentialDigest == credentialDigest ? $0 : nil }
+        if let pending, isWaitingForSync(pending) {
+            throw MidgarIdentityError.credentialPendingSync
+        }
         do {
             let (reply, keyID) = try await withEvidence { evidence in
                 let session: SessionReply = try await self.post(
@@ -107,10 +129,50 @@ extension MidgarIdentity {
                 log.info("identity: the shared identity was merged, adopted the surviving ID for this session")
             }
             return LiveSession(reply: reply, now: clock())
-        } catch let error as MidgarHTTPError where error.serverCode == "invalid_credential" {
-            log.warning("identity: the shared credential was rejected, minting a new identity that Sign in with Apple can merge later")
+        } catch let error as MidgarHTTPError {
+            return try await rejectedAttach(error, shared: shared, pending: pending, allowMint: allowMint)
+        }
+    }
+
+    /// True while the last attempt with this credential is less than an hour old. A clock that moved backwards ends the wait.
+    private func isWaitingForSync(_ pending: PendingSync) -> Bool {
+        let elapsed = clock().timeIntervalSince(pending.lastAttempt)
+        return elapsed >= 0 && elapsed < Self.pendingSyncRetryInterval
+    }
+
+    /// Acts on a failed attach. `identity_not_found` and `credential_expired` say the shared item is dead, so a new identity replaces it. `invalid_credential` says the identity exists and the credential is stale, because another device merged and rotated it and keychain sync is behind: the shared item stays, the attempt is recorded in the per-app item and a ``MidgarIdentityError/credentialPendingSync`` is thrown, and only seven days of continuous rejection of the same credential end in a new identity that Sign in with Apple can merge later. Everything else is rethrown.
+    private func rejectedAttach(
+        _ error: MidgarHTTPError,
+        shared: SharedIdentity,
+        pending: PendingSync?,
+        allowMint: Bool
+    ) async throws -> LiveSession {
+        guard let code = error.serverCode else {
+            throw error
+        }
+        if identityGoneCodes.contains(code) {
+            guard allowMint else {
+                throw MidgarIdentityGone()
+            }
+            log.warning("identity: the shared identity is gone (\(code)), minting a new identity that Sign in with Apple can merge later")
             return try await mint(replacingShared: true)
         }
+        guard code == "invalid_credential" else {
+            throw error
+        }
+        let now = clock()
+        let firstFailure = pending?.firstFailure ?? now
+        if allowMint, now.timeIntervalSince(firstFailure) >= Self.pendingSyncPatience {
+            log.warning("identity: the shared credential has been rejected for seven days, minting a new identity that Sign in with Apple can merge later")
+            return try await mint(replacingShared: true)
+        }
+        try store.writePendingSync(PendingSync(
+            firstFailure: firstFailure,
+            lastAttempt: now,
+            credentialDigest: MidgarDigest.sha256Hex(utf8: shared.credential)
+        ))
+        log.info("identity: the shared credential was rejected, waiting for keychain sync before trying again")
+        throw MidgarIdentityError.credentialPendingSync
     }
 
     /// Step 3: mints a new identity and stores it in both items, the shared one first so no other app can mint a second ID. When another app wrote the shared item while the mint was in flight, that identity wins and this app attaches to it.
@@ -136,7 +198,7 @@ extension MidgarIdentity {
             try store.writeShared(shared)
         } else if try !store.writeSharedIfAbsent(shared) {
             log.info("identity: another Midgar app created the shared identity first, attaching to it")
-            return try await attach(try sharedWrittenByAnotherApp())
+            return try await attach(try sharedWrittenByAnotherApp(), pending: nil, allowMint: true)
         }
         try store.writeSession(StoredSession(refreshToken: reply.session.refreshToken, keyId: keyID, midgarId: reply.session.midgarId))
         log.info("identity: minted a new identity (\(keyID == nil ? "unverified" : "attested"))")
@@ -199,7 +261,8 @@ extension MidgarIdentity {
         _ path: String,
         method: MidgarHTTPMethod,
         body: (any Encodable & Sendable)? = nil,
-        bearer: String? = nil
+        bearer: String? = nil,
+        neverRetries: Bool = false
     ) -> MidgarRequest {
         MidgarRequest(
             service: Self.service,
@@ -207,7 +270,8 @@ extension MidgarIdentity {
             method: method,
             headers: bearer.map { ["Authorization": "Bearer \($0)"] } ?? [:],
             body: body,
-            preservesUnauthorizedCode: true
+            preservesUnauthorizedCode: true,
+            neverRetries: neverRetries
         )
     }
 }

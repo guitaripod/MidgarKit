@@ -156,6 +156,42 @@
           }
         }
       }
+    },
+    "Your Midgar ID is not ready yet. Try again in a moment.": {
+      "comment": "Shown when a request could not be sent because the app could not get an access token for the Midgar ID",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Midgar ID is not ready yet. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Your Midgar ID is still syncing from your other devices. Try again later.": {
+      "comment": "Shown when the shared Midgar ID credential on this device was rejected and may be waiting for iCloud Keychain to deliver a newer one",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Midgar ID is still syncing from your other devices. Try again later."
+          }
+        }
+      }
+    },
+    "Your Midgar ID could not be confirmed on this device. Restart the app and try again.": {
+      "comment": "Shown when an account change needs the Midgar ID credential and this device has none stored",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Midgar ID could not be confirmed on this device. Restart the app and try again."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

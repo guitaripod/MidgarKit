@@ -30,13 +30,15 @@ public struct MidgarRequest: Sendable {
     public let body: (any Encodable & Sendable)?
     public let idempotent: Bool
     public let preservesUnauthorizedCode: Bool
+    public let neverRetries: Bool
 
     /// - Parameters:
     ///   - service: The gateway service name, such as `catalog`. Use `health` for `/v1/health`.
     ///   - path: The path after the service, such as `apps/42`. Empty for the service root.
     ///   - body: Encoded as JSON with `Content-Type: application/json`.
     ///   - idempotent: Opts a non-idempotent method (POST, PATCH) into retries. GET, HEAD, PUT and DELETE always retry.
-    ///   - preservesUnauthorizedCode: Reports a 401 as ``MidgarHTTPError/server(status:code:message:)`` with the envelope's code instead of ``MidgarHTTPError/unauthorized``, for callers such as the identity flows that act on the code.
+    ///   - preservesUnauthorizedCode: Reports a 401 as ``MidgarHTTPError/server(status:code:message:)`` with the envelope's code instead of ``MidgarHTTPError/unauthorized(code:)``, for callers such as the identity flows that act on the code.
+    ///   - neverRetries: Sends the request exactly once even when its method is idempotent, for a call whose repeat could be mistaken for the first, such as erasing an account. A 401 after a rejected token is still retried once with a new token, because a rejected request was never processed.
     public init(
         service: String,
         path: String = "",
@@ -45,7 +47,8 @@ public struct MidgarRequest: Sendable {
         headers: [String: String] = [:],
         body: (any Encodable & Sendable)? = nil,
         idempotent: Bool = false,
-        preservesUnauthorizedCode: Bool = false
+        preservesUnauthorizedCode: Bool = false,
+        neverRetries: Bool = false
     ) {
         self.service = service
         self.path = path
@@ -55,10 +58,11 @@ public struct MidgarRequest: Sendable {
         self.body = body
         self.idempotent = idempotent
         self.preservesUnauthorizedCode = preservesUnauthorizedCode
+        self.neverRetries = neverRetries
     }
 
     var isRetryable: Bool {
-        method.isIdempotentByDefinition || idempotent
+        !neverRetries && (method.isIdempotentByDefinition || idempotent)
     }
 
     /// The path segments without empty pieces, so `/apps//42/` and `apps/42` name the same resource.

@@ -189,4 +189,57 @@ private func attachReply(refresh: String = "refresh-attached") -> StubReply {
         _ = try await harness.identity.accessToken()
         #expect(harness.host.requests.count == 2)
     }
+
+    @Test func aDeviceClockThatRunsAheadOfTheServerDoesNotRefreshOnEveryCall() async throws {
+        let harness = try IdentityHarness(attested: false, shared: shared, session: session)
+        let behindToken = freshToken(lifetime: -7200)
+        harness.enqueue(refreshReply(token: behindToken))
+
+        #expect(try await harness.identity.accessToken() == behindToken)
+        #expect(try await harness.identity.accessToken() == behindToken)
+        harness.clock.advance(3600 - 61)
+        #expect(try await harness.identity.accessToken() == behindToken)
+
+        #expect(harness.host.requests.count == 1)
+    }
+
+    @Test func aDeviceClockThatRunsBehindTheServerStillRefreshesWhenExpiresInElapses() async throws {
+        let harness = try IdentityHarness(attested: false, shared: shared, session: session)
+        let aheadToken = freshToken(lifetime: 7 * 3600)
+        harness.enqueue(refreshReply(token: aheadToken), refreshReply(refresh: "refresh-3", token: aheadToken))
+
+        _ = try await harness.identity.accessToken()
+        harness.clock.advance(3600 - 59)
+        _ = try await harness.identity.accessToken()
+
+        #expect(harness.host.requests.count == 2)
+    }
+
+    @Test func midgarIdNeverReturnsAStaleIDAfterTheSessionWasDropped() async throws {
+        let harness = try IdentityHarness(attested: false, shared: shared, session: session)
+        harness.enqueue(refreshReply())
+        _ = try await harness.identity.accessToken()
+        #expect(try await harness.identity.midgarId == "id-shared")
+        harness.clock.advance(4000)
+        harness.enqueue(.json(401, errorJSON("identity_merged")), .json(503, errorJSON("down")))
+
+        let failure = await thrownIdentityError { try await harness.identity.accessToken() }
+        harness.enqueue(.json(200, sessionJSON(midgarId: "id-survivor", accessToken: freshToken(), refreshToken: "refresh-s")))
+        let id = try await harness.identity.midgarId
+
+        #expect(failure?.isTransient == true)
+        #expect(id == "id-survivor")
+        #expect(try harness.storedSession()?.midgarId == "id-survivor")
+        #expect(try harness.storedShared() == shared)
+    }
+
+    @Test func midgarIdFollowsTheIDTheServerReturnsOnRefresh() async throws {
+        let harness = try IdentityHarness(attested: false, shared: shared, session: session)
+        harness.enqueue(refreshReply("id-survivor"))
+
+        #expect(try await harness.identity.midgarId == "id-shared")
+        _ = try await harness.identity.accessToken()
+        #expect(try await harness.identity.midgarId == "id-survivor")
+        #expect(try harness.storedSession()?.midgarId == "id-survivor")
+    }
 }

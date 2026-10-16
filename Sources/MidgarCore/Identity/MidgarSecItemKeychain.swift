@@ -82,6 +82,10 @@ public struct MidgarSecItemKeychain: MidgarKeychain {
             query[kSecAttrService as String] = MidgarKeychainLayout.sessionService
             query[kSecAttrAccount as String] = appID
             query[kSecAttrSynchronizable as String] = false
+        case .local(let appID):
+            query[kSecAttrService as String] = MidgarKeychainLayout.localService
+            query[kSecAttrAccount as String] = appID
+            query[kSecAttrSynchronizable as String] = false
         }
         #if os(macOS)
         query[kSecUseDataProtectionKeychain as String] = true
@@ -96,7 +100,7 @@ public struct MidgarSecItemKeychain: MidgarKeychain {
         switch slot {
         case .shared:
             attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        case .session:
+        case .session, .local:
             attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         }
         return attributes

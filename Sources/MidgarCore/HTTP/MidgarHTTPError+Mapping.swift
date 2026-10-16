@@ -24,19 +24,30 @@ extension MidgarHTTPError {
         }
     }
 
-    /// Maps a non-2xx response. Reads the `{"error":{"code","message"}}` envelope and mako's legacy shapes. A 401 becomes ``unauthorized`` unless `preservesUnauthorizedCode` keeps its envelope as a ``server(status:code:message:)``.
+    /// Maps a failure of the token provider: a cancellation stays a cancellation and anything else becomes ``tokenUnavailable(isTransient:)``, transient when the thrown error says so.
+    init(tokenFailure error: any Error) {
+        if error is CancellationError {
+            self = .cancelled
+        } else if let transient = error as? any MidgarTransientError {
+            self = .tokenUnavailable(isTransient: transient.isTransient)
+        } else {
+            self = .tokenUnavailable(isTransient: false)
+        }
+    }
+
+    /// Maps a non-2xx response. Reads the `{"error":{"code","message"}}` envelope and mako's legacy shapes. The cases for 401, 402, 404 and 429 keep the envelope's code; `preservesUnauthorizedCode` reports a 401 as a ``server(status:code:message:)`` instead.
     init(response: HTTPURLResponse, data: Data, preservesUnauthorizedCode: Bool = false) {
+        let details = Self.envelopeDetails(in: data)
         switch response.statusCode {
         case 401 where !preservesUnauthorizedCode:
-            self = .unauthorized
+            self = .unauthorized(code: details.code)
         case 402:
-            self = .paymentRequired
+            self = .paymentRequired(code: details.code)
         case 404:
-            self = .notFound
+            self = .notFound(code: details.code)
         case 429:
-            self = .rateLimited(retryAfter: response.midgarRetryAfter)
+            self = .rateLimited(retryAfter: response.midgarRetryAfter, code: details.code)
         default:
-            let details = Self.envelopeDetails(in: data)
             self = .server(
                 status: response.statusCode,
                 code: details.code,
@@ -51,7 +62,7 @@ extension MidgarHTTPError {
             return true
         case .server(let status, _, _):
             return [502, 503, 504].contains(status)
-        case .unauthorized, .paymentRequired, .notFound, .decoding, .invalidRequest, .cancelled:
+        case .unauthorized, .paymentRequired, .notFound, .decoding, .invalidRequest, .cancelled, .tokenUnavailable:
             return false
         }
     }
@@ -69,7 +80,7 @@ extension MidgarHTTPError {
             return 429
         case .server(let status, _, _):
             return status
-        case .offline, .timeout, .decoding, .invalidRequest, .cancelled:
+        case .offline, .timeout, .decoding, .invalidRequest, .cancelled, .tokenUnavailable:
             return nil
         }
     }
@@ -87,6 +98,7 @@ extension MidgarHTTPError {
         case .decoding: return "decoding"
         case .invalidRequest: return "invalidRequest"
         case .cancelled: return "cancelled"
+        case .tokenUnavailable: return "tokenUnavailable"
         }
     }
 

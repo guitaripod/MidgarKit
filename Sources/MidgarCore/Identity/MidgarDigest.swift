@@ -16,6 +16,11 @@ enum MidgarDigest {
     static func sha256(utf8 text: String) -> Data {
         sha256(Data(text.utf8))
     }
+
+    /// The lowercase hex SHA-256 of the UTF-8 text, the form Sign in with Apple takes as a nonce.
+    static func sha256Hex(utf8 text: String) -> String {
+        sha256(utf8: text).map { String(format: "%02x", $0) }.joined()
+    }
 }
 
 /// FIPS 180-4 SHA-256 in plain Swift, for platforms without CryptoKit. Always compiled so the tests can check it against CryptoKit and the published vectors.

@@ -127,7 +127,7 @@ private let okBody = StubReply.json(200, "{\"ok\":true}")
 
         let error = await thrownError { try await client.sendRaw(MidgarRequest(service: "health")) }
 
-        #expect(error == .rateLimited(retryAfter: 3600))
+        #expect(error == .rateLimited(retryAfter: 3600, code: nil))
         #expect(host.requests.count == 1)
         #expect(await sleeps.durations.isEmpty)
     }
@@ -187,7 +187,7 @@ private let okBody = StubReply.json(200, "{\"ok\":true}")
             try await client.sendRaw(MidgarRequest(service: "intelligence", method: .post, body: Note()))
         }
 
-        #expect(error == .rateLimited(retryAfter: nil))
+        #expect(error == .rateLimited(retryAfter: nil, code: nil))
         #expect(host.requests.count == 1)
     }
 
