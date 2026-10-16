@@ -90,6 +90,53 @@ import Testing
         }
     }
 
+    @Test func aDeletedLogFileIsRecreatedOnTheNextWrite() {
+        let (writer, directory) = Self.makeWriter(maxBytes: 4096, keepFiles: 1)
+        defer { Self.remove(directory) }
+        writer.append(Self.record("before deletion"))
+        writer.flush()
+
+        try? FileManager.default.removeItem(at: writer.currentURL)
+        writer.append(Self.record("after deletion"))
+        writer.flush()
+
+        let text = Self.contents(of: writer.currentURL)
+        #expect(text.contains("after deletion"))
+        #expect(!text.contains("before deletion"))
+    }
+
+    @Test func aDeletedLogDirectoryIsRecreatedOnTheNextWrite() {
+        let (writer, directory) = Self.makeWriter(maxBytes: 4096, keepFiles: 1)
+        defer { Self.remove(directory) }
+        writer.append(Self.record("first"))
+        writer.flush()
+
+        Self.remove(directory)
+        writer.append(Self.record("second"))
+        writer.flush()
+
+        #expect(Self.contents(of: writer.currentURL).contains("second"))
+    }
+
+    #if canImport(Darwin)
+    @Test func theLogDirectoryIsExcludedFromBackup() throws {
+        let (writer, directory) = Self.makeWriter(maxBytes: 4096, keepFiles: 1)
+        defer { Self.remove(directory) }
+
+        writer.append(Self.record("hello"))
+        writer.flush()
+
+        let values = try directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(values.isExcludedFromBackup == true)
+
+        Self.remove(directory)
+        writer.append(Self.record("again"))
+        writer.flush()
+        let recreated = try directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(recreated.isExcludedFromBackup == true)
+    }
+    #endif
+
     private static func makeWriter(maxBytes: UInt64, keepFiles: Int) -> (LogFileWriter, URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LoggingFileWriterTests-\(UUID().uuidString)", isDirectory: true)
