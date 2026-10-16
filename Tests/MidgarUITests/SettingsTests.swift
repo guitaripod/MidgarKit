@@ -218,4 +218,61 @@ import Testing
         await engine.activate(.restorePurchases {})
         #expect(count >= 3)
     }
+
+    @Test func confirmingRunsTheHandlerEvenWhenTheAlertDismissalCancelsFirst() async {
+        let (engine, _) = make()
+        var deleted = 0
+        await engine.activate(.deleteAccount { deleted += 1 })
+
+        let running = engine.beginConfirmedAction()
+        engine.cancelPending()
+        await running?.value
+
+        #expect(deleted == 1)
+        #expect(engine.state.pending == nil)
+        #expect(engine.state.busyRowIDs.isEmpty)
+    }
+
+    @Test func aDismissalWithoutAButtonRunsNothing() async {
+        let (engine, _) = make()
+        var deleted = 0
+        await engine.activate(.deleteAccount { deleted += 1 })
+
+        engine.cancelPending()
+        let running = engine.beginConfirmedAction()
+
+        #expect(running == nil)
+        #expect(deleted == 0)
+    }
+
+    @Test func confirmingTwiceRunsTheHandlerOnce() async {
+        let (engine, _) = make()
+        var deleted = 0
+        await engine.activate(.deleteAccount { deleted += 1 })
+
+        let first = engine.beginConfirmedAction()
+        let second = engine.beginConfirmedAction()
+        await first?.value
+        await second?.value
+
+        #expect(deleted == 1)
+        #expect(second == nil)
+    }
+
+    @Test func theSwiftUIModelRepublishesTheEngineStateAndLetsBothGo() {
+        weak var weakModel: MidgarSettingsModel?
+        weak var weakEngine: MidgarSettingsEngine?
+        do {
+            let model = MidgarSettingsModel(engine: MidgarSettingsEngine(system: RecordingSystem()))
+            weakModel = model
+            weakEngine = model.engine
+            var value = false
+            let row = MidgarSettingsRow.toggle(id: "t", title: "T", isOn: { value }, setOn: { value = $0 })
+            let before = model.state.revision
+            model.engine.setToggle(row, to: true)
+            #expect(model.state.revision == before + 1)
+        }
+        #expect(weakModel == nil)
+        #expect(weakEngine == nil)
+    }
 }

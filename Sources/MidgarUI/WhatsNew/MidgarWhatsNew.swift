@@ -22,6 +22,8 @@ public struct MidgarWhatsNew: View {
     private let onContinue: @MainActor () -> Void
 
     @Environment(\.midgarTheme) private var theme
+    @ScaledMetric(relativeTo: .title) private var iconSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .title) private var iconWidth: CGFloat = 40
 
     public init(items: [MidgarWhatsNewItem], title: String? = nil, onContinue: @escaping @MainActor () -> Void) {
         self.items = items
@@ -55,7 +57,7 @@ public struct MidgarWhatsNew: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, theme.spacing.s)
             }
-            .midgarWhatsNewButtonStyle()
+            .midgarProminentButtonStyle()
             .controlSize(.large)
             .padding(.horizontal, theme.spacing.xl)
             .padding(.bottom, theme.spacing.xl)
@@ -66,9 +68,9 @@ public struct MidgarWhatsNew: View {
     private func itemRow(_ item: MidgarWhatsNewItem) -> some View {
         HStack(alignment: .top, spacing: theme.spacing.l) {
             Image(systemName: item.systemImage)
-                .font(.title)
+                .font(.system(size: iconSize))
                 .foregroundStyle(theme.accent.color)
-                .frame(width: 40)
+                .frame(width: iconWidth)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(verbatim: item.title)
@@ -85,15 +87,6 @@ public struct MidgarWhatsNew: View {
 }
 
 extension View {
-    @ViewBuilder
-    fileprivate func midgarWhatsNewButtonStyle() -> some View {
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            buttonStyle(.glassProminent)
-        } else {
-            buttonStyle(.borderedProminent)
-        }
-    }
-
     /// Shows the What's New sheet once per app version, when `store` says it is due, and records the version when it closes.
     public func midgarWhatsNew(
         items: [MidgarWhatsNewItem],

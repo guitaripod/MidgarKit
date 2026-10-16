@@ -94,6 +94,10 @@ enum MidgarUIStrings {
         String(localized: "Skip", bundle: .module, comment: "Button that skips the rest of onboarding")
     }
 
+    static var back: String {
+        String(localized: "Back", bundle: .module, comment: "Button that goes to the previous onboarding page")
+    }
+
     static func pageOf(_ page: Int, _ total: Int) -> String {
         String(
             localized: "Page \(page) of \(total)",
