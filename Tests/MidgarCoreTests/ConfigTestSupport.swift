@@ -27,7 +27,8 @@ struct ConfigSigner: Sendable {
         minVersion: String? = nil,
         alg: String = "ES256",
         typ: String = "midgar-config+jwt",
-        headerKid: String? = nil
+        headerKid: String? = nil,
+        payloadOverrides: [String: Any] = [:]
     ) throws -> String {
         var payload: [String: Any] = [
             "app": app,
@@ -39,6 +40,7 @@ struct ConfigSigner: Sendable {
         if let minVersion {
             payload["minVersion"] = minVersion
         }
+        payload.merge(payloadOverrides) { _, new in new }
         let header: [String: Any] = ["alg": alg, "typ": typ, "kid": headerKid ?? kid]
         return try sign(header: header, payload: payload)
     }
@@ -97,6 +99,8 @@ struct ConfigFixture: Sendable {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("midgar-config-\(UUID().uuidString)")
     let logs = ConfigLogSink()
     let clock = ConfigTestClock()
+    let floorSuite = "midgar-config-floor-\(UUID().uuidString)"
+    var floorDefaults: UserDefaults { UserDefaults(suiteName: floorSuite) ?? .standard }
 
     func store(
         defaults: [String: MidgarConfigValue] = [:],
@@ -111,6 +115,7 @@ struct ConfigFixture: Sendable {
             defaults: defaults,
             keys: keys ?? [signer.pinnedKey],
             cacheDirectory: directory,
+            floorDefaults: floorDefaults,
             minimumRefreshInterval: interval,
             now: { clock.now },
             logger: { sink.append($0) }
@@ -126,6 +131,7 @@ struct ConfigFixture: Sendable {
     }
 
     func cleanUp() {
+        UserDefaults(suiteName: floorSuite)?.removePersistentDomain(forName: floorSuite)
         try? FileManager.default.removeItem(at: directory)
     }
 }

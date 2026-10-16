@@ -15,7 +15,7 @@ public enum MidgarConfigRefreshResult: Sendable, Equatable {
 /// ``current`` is a nonisolated, always-available snapshot: it is the verified last-good document from disk right after `init`, and compiled defaults when there is none, so launch code never awaits. ``refresh(force:)`` updates it; ``updates()`` reports every change.
 ///
 /// Rules, in order:
-/// - A document that fails verification, names another app, or has a `version` below the highest one accepted is rejected, logged without the JWS, and the current snapshot stays. An equal version is a no-op.
+/// - A document that fails verification, names another app, has a `minVersion` or `kill` of the wrong type, or has a `version` below the highest one accepted is rejected, logged without the JWS, and the current snapshot stays. An equal version is a no-op. The highest version accepted is stored in `UserDefaults`, apart from the cache file, so deleting or swapping the file cannot roll the app back.
 /// - 304 keeps the current snapshot. Offline, timeouts and any other HTTP error keep it too.
 /// - 404 means nothing is published for the app. The last good document, its cache file and the anti-rollback floor all stay, so a misrouted 404 never lifts a kill switch. An app with no document keeps its compiled defaults.
 public actor MidgarConfigStore {
@@ -31,6 +31,7 @@ public actor MidgarConfigStore {
     private let defaults: [String: MidgarConfigValue]
     private let verifier: MidgarConfigVerifier
     private let cache: MidgarConfigCache
+    private let floor: MidgarConfigFloor
     private let minimumRefreshInterval: TimeInterval
     private let now: @Sendable () -> Date
     private let logger: @Sendable (String) -> Void
@@ -46,6 +47,7 @@ public actor MidgarConfigStore {
     ///   - defaults: The app's compiled defaults, used for every key a document lacks.
     ///   - keys: The pinned public keys. Tests inject their own.
     ///   - cacheDirectory: Where `config-<slug>.jws` lives. Defaults to `<Application Support>/Midgar`.
+    ///   - floorDefaults: Where the anti-rollback floor lives, apart from the cache file. Defaults to the `cc.midgarcorp.midgarkit.config` suite.
     ///   - minimumRefreshInterval: Seconds between network refreshes unless forced.
     ///   - now: The clock, injectable for tests.
     ///   - logger: Receives one line per rejection or fallback. Never receives a JWS.
@@ -55,23 +57,29 @@ public actor MidgarConfigStore {
         defaults: [String: MidgarConfigValue] = [:],
         keys: [MidgarConfigKey] = MidgarConfigKey.pinned,
         cacheDirectory: URL? = nil,
+        floorDefaults: UserDefaults? = nil,
         minimumRefreshInterval: TimeInterval = MidgarConfigStore.defaultMinimumRefreshInterval,
         now: @escaping @Sendable () -> Date = { Date() },
         logger: @escaping @Sendable (String) -> Void = { MidgarLog.notice($0, category: .config) }
     ) {
         let verifier = MidgarConfigVerifier(keys: keys, slug: slug)
         let cache = MidgarConfigCache(directory: cacheDirectory, slug: slug)
-        let cached = Self.loadCached(cache: cache, verifier: verifier, logger: logger)
+        let floor = MidgarConfigFloor(defaults: floorDefaults, slug: slug)
+        let cached = Self.loadCached(cache: cache, verifier: verifier, floor: floor, logger: logger)
+        if let cached {
+            floor.raise(to: cached.version)
+        }
         self.slug = slug
         self.client = client
         self.defaults = defaults
         self.verifier = verifier
         self.cache = cache
+        self.floor = floor
         self.minimumRefreshInterval = minimumRefreshInterval
         self.now = now
         self.logger = logger
         self.activeDocument = cached
-        self.floorVersion = cached?.version ?? 0
+        self.floorVersion = floor.version
         self.box = MidgarConfigStateBox(Self.snapshot(of: cached, defaults: defaults))
     }
 
@@ -155,6 +163,7 @@ public actor MidgarConfigStore {
         }
         activeDocument = document
         floorVersion = document.version
+        floor.raise(to: document.version)
         if !cache.write(jws) {
             logger("config \(slug) cache write failed")
         }
@@ -178,17 +187,23 @@ public actor MidgarConfigStore {
         document.map { MidgarConfig(document: $0, defaults: defaults) } ?? MidgarConfig(defaults: defaults)
     }
 
-    /// The cached document, or nil when the file is missing, tampered with, signed by another key or for another app.
+    /// The cached document, or nil when the file is missing, tampered with, signed by another key, for another app or older than the floor, which means the file was swapped for an earlier document.
     private static func loadCached(
         cache: MidgarConfigCache,
         verifier: MidgarConfigVerifier,
+        floor: MidgarConfigFloor,
         logger: @Sendable (String) -> Void
     ) -> MidgarConfigDocument? {
         guard let jws = cache.read() else {
             return nil
         }
         do {
-            return try verifier.verify(jws)
+            let document = try verifier.verify(jws)
+            guard document.version >= floor.version else {
+                logger("config \(verifier.slug) cache ignored: \(MidgarConfigError.rolledBack(version: document.version, lastGood: floor.version).logName)")
+                return nil
+            }
+            return document
         } catch {
             logger("config \(verifier.slug) cache ignored: \(error.logName)")
             return nil
