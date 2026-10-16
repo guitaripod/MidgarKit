@@ -60,43 +60,20 @@ import Testing
     }
 
     @Test func settingsRenders() throws {
-        let sections = [
-            MidgarSettingsSection(id: "app", title: "App", rows: [
-                .toggle(id: "haptics", title: "Haptics", systemImage: "waveform", isOn: { true }, setOn: { _ in }),
-                .custom(id: "appearance", title: "Appearance", detail: "System", systemImage: "circle.lefthalf.filled") {}
-            ]),
-            MidgarSettingsSection(id: "about", title: "About", rows: [
-                .restorePurchases {},
-                .support(address: "support@midgarcorp.cc"),
-                .version(MidgarVersionInfo(name: "Pay Day", version: "1.4.2", build: "87"))
-            ]),
-            MidgarSettingsSection(id: "account", rows: [.deleteAccount {}])
-        ]
-        try check("settings", MidgarSettings(sections: sections) {
-            RoundedRectangle(cornerRadius: 16).fill(.purple).frame(height: 88).padding()
-        })
+        try check("settings", RenderFixtures.settings())
     }
 
     @Test func onboardingRenders() throws {
-        let pages = [
-            MidgarOnboardingPage(id: "a", title: "Welcome", body: "Everything in one place.", artwork: .symbol("sparkles")),
-            MidgarOnboardingPage(id: "b", title: "Stay in sync", body: "Your data follows you.", artwork: .symbol("icloud"))
-        ]
-        try check("onboarding", MidgarOnboarding(pages: pages, showsSkip: true) {})
+        try check("onboarding", RenderFixtures.onboarding())
     }
 
     @Test func whatsNewRenders() throws {
-        let items = [
-            MidgarWhatsNewItem(title: "Faster search", body: "Results appear as you type.", systemImage: "magnifyingglass"),
-            MidgarWhatsNewItem(title: "New widgets", body: "Glance at your day.", systemImage: "rectangle.3.group")
-        ]
-        try check("whats-new", MidgarWhatsNew(items: items) {})
+        try check("whats-new", RenderFixtures.whatsNew())
     }
 
     @Test func toastRenders() throws {
         for style in MidgarToast.Style.allCases {
-            let toast = MidgarToast("Purchases restored", style: style)
-            try check("toast-\(style)", MidgarToastView(toast).padding(40).frame(maxWidth: .infinity, maxHeight: .infinity).background(MidgarTheme.standard.background.color))
+            try check("toast-\(style)", RenderFixtures.toast(style))
         }
     }
 }
