@@ -24,7 +24,12 @@ public struct MidgarOnDeviceModel: MidgarOnDeviceLanguageModel {
         #if canImport(FoundationModels) && !os(tvOS)
         if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
             try requireAvailable()
-            let text = try await FoundationModelsBackend.respond(to: prompt)
+            let text: String
+            do {
+                text = try await FoundationModelsBackend.respond(to: prompt)
+            } catch {
+                throw FoundationModelsBackend.mapped(error)
+            }
             guard !text.isEmpty else {
                 throw MidgarIntelligenceError.emptyResponse
             }
@@ -53,8 +58,13 @@ public struct MidgarOnDeviceModel: MidgarOnDeviceLanguageModel {
         #if canImport(FoundationModels) && !os(tvOS)
         if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
             try requireAvailable()
+            var delivered = false
             for try await delta in FoundationModelsBackend.deltas(for: prompt) {
+                delivered = true
                 continuation.yield(delta)
+            }
+            guard delivered else {
+                throw MidgarIntelligenceError.emptyResponse
             }
             return
         }
@@ -74,6 +84,24 @@ public struct MidgarOnDeviceModel: MidgarOnDeviceLanguageModel {
             return reason
         }
         return .unknown
+    }
+}
+
+/// Turns the cumulative snapshots of a Foundation Models stream into the new text of each step. A snapshot that does not extend what was already delivered means the model rewrote earlier text; that throws ``MidgarIntelligenceError/onDeviceOutputRewritten`` instead of silently dropping the rest of the answer.
+struct OnDeviceSnapshotAccumulator: Sendable {
+    private(set) var emitted = ""
+
+    /// The text `full` adds, or nil when it adds nothing.
+    mutating func delta(for full: String) throws -> String? {
+        guard full != emitted else {
+            return nil
+        }
+        guard full.hasPrefix(emitted) else {
+            throw MidgarIntelligenceError.onDeviceOutputRewritten
+        }
+        let added = String(full.dropFirst(emitted.count))
+        emitted = full
+        return added
     }
 }
 
@@ -103,29 +131,35 @@ enum FoundationModelsBackend {
             let task = Task {
                 do {
                     let session = LanguageModelSession(model: .default, instructions: prompt.instructions)
-                    var emitted = ""
+                    var accumulator = OnDeviceSnapshotAccumulator()
                     for try await snapshot in session.streamResponse(to: prompt.text, options: options(for: prompt)) {
                         let full: String = snapshot.content
-                        if let delta = delta(from: emitted, to: full) {
+                        if let delta = try accumulator.delta(for: full) {
                             continuation.yield(delta)
-                            emitted = full
                         }
                     }
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: error)
+                    continuation.finish(throwing: mapped(error))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
         }
     }
 
-    /// The text `full` adds to `emitted`, or nil when nothing was added or the model rewrote earlier text.
-    static func delta(from emitted: String, to full: String) -> String? {
-        guard full.count > emitted.count, full.hasPrefix(emitted) else {
-            return nil
+    /// Turns a Foundation Models failure into the module's typed errors where the router must tell them apart: missing assets are an outage, a guardrail or a refusal is an answer. Anything else passes through and is reported by type name.
+    static func mapped(_ error: any Error) -> any Error {
+        guard let failure = error as? LanguageModelSession.GenerationError else {
+            return error
         }
-        return String(full.dropFirst(emitted.count))
+        switch failure {
+        case .assetsUnavailable:
+            return MidgarIntelligenceError.onDeviceUnavailable(.modelNotReady)
+        case .guardrailViolation, .refusal:
+            return MidgarIntelligenceError.onDeviceRefused
+        default:
+            return error
+        }
     }
 
     private static func options(for prompt: MidgarPrompt) -> GenerationOptions {

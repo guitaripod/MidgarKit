@@ -53,14 +53,36 @@ import MidgarIntelligence
         #expect(await device.respondCalls.count == 0)
     }
 
-    @Test func aModelFailureFallsBackToTheCloud() async throws {
-        let device = FakeModel(failure: FakeFailure())
-        let cloud = FakeModel(route: .cloud)
-        let router = MidgarIntelligence(onDevice: device, cloud: cloud)
-        let completion = try await router.respond(to: prompt)
-        #expect(completion.route == .cloud)
-        #expect(await device.respondCalls.count == 1)
-        #expect(await cloud.respondCalls.count == 1)
+    @Test func anInfrastructureFailureFallsBackToTheCloud() async throws {
+        let failures: [any Error & Sendable] = [
+            MidgarIntelligenceError.onDeviceUnavailable(.modelNotReady), URLError(.timedOut)
+        ]
+        for failure in failures {
+            let device = FakeModel(failure: failure)
+            let cloud = FakeModel(route: .cloud)
+            let router = MidgarIntelligence(onDevice: device, cloud: cloud)
+            let completion = try await router.respond(to: prompt)
+            #expect(completion.route == .cloud)
+            #expect(await device.respondCalls.count == 1)
+            #expect(await cloud.respondCalls.count == 1)
+        }
+    }
+
+    @Test func aRefusalOrAnyOtherFailureNeverFallsBackToTheCloud() async {
+        let failures: [(any Error & Sendable, MidgarIntelligenceError)] = [
+            (MidgarIntelligenceError.onDeviceRefused, .onDeviceRefused),
+            (MidgarIntelligenceError.emptyResponse, .emptyResponse),
+            (MidgarIntelligenceError.onDeviceOutputRewritten, .onDeviceOutputRewritten),
+            (FakeFailure(), .onDeviceFailed(errorType: "FakeFailure"))
+        ]
+        for (failure, expected) in failures {
+            let cloud = FakeModel(route: .cloud)
+            let router = MidgarIntelligence(onDevice: FakeModel(failure: failure), cloud: cloud)
+            await #expect(throws: expected) {
+                try await router.respond(to: prompt)
+            }
+            #expect(await cloud.respondCalls.count == 0)
+        }
     }
 
     @Test func cancellationDoesNotFallBack() async {
@@ -84,7 +106,7 @@ import MidgarIntelligence
     }
 
     @Test func theCloudErrorSurfacesWhenBothRoutesFail() async {
-        let device = FakeModel(failure: FakeFailure())
+        let device = FakeModel(failure: MidgarIntelligenceError.onDeviceUnavailable(.modelNotReady))
         let cloud = FakeModel(route: .cloud, failure: MidgarIntelligenceError.needsCredits)
         let router = MidgarIntelligence(onDevice: device, cloud: cloud)
         await #expect(throws: MidgarIntelligenceError.needsCredits) {

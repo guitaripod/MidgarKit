@@ -9,7 +9,7 @@ import FoundationNetworking
 /// Routing, in order:
 /// 1. The `intelligence` kill switch throws ``MidgarIntelligenceError/disabled``.
 /// 2. A prompt that needs the cloud (``MidgarModelRequirement/cloudOnly`` or any image) goes to the cloud, or throws ``MidgarIntelligenceError/cloudDisabled`` when `intelligence.cloud` is killed.
-/// 3. Otherwise the on-device model answers when it is available. If it fails with anything but cancellation, the cloud answers instead, unless `intelligence.cloud` is killed.
+/// 3. Otherwise the on-device model answers when it is available. If it fails because the infrastructure failed (the model or its assets became unavailable, or a timeout), the cloud answers instead, unless `intelligence.cloud` is killed. A guardrail or content refusal, an empty or rewritten answer and every other failure are thrown: asking another model the same question would dodge the refusal. Cancellation is never retried.
 /// 4. When the on-device model is unavailable the cloud answers, unless `intelligence.cloud` is killed, which throws ``MidgarIntelligenceError/onDeviceUnavailable(_:)``.
 ///
 /// On-device calls are free and unmetered. The cloud meters them: ``MidgarCompletion/creditsCharged`` reports what mako charged. Free cloud grants need an `app_attest` identity (D12), so an `unverified` identity sees ``MidgarIntelligenceError/needsCredits`` until it has paid for credits or a Pass.
@@ -116,19 +116,27 @@ public struct MidgarIntelligence: MidgarLanguageModel {
         }
     }
 
-    /// Runs `cloudAttempt` after an on-device failure, or throws the failure when the cloud may not answer.
+    /// Runs `cloudAttempt` after an on-device failure when the failure is infrastructure and the cloud may answer, and throws the failure otherwise.
     func recover<Result>(
         from error: any Error,
         fallback: Bool,
         cloudAttempt: () async throws -> Result
     ) async throws -> Result {
         let errorType = String(describing: type(of: error))
-        guard fallback else {
-            logger("intelligence route=none reason=onDeviceFailed error=\(errorType) cloud=killed")
+        guard fallback, isInfrastructureFailure(error) else {
+            logger("intelligence route=none reason=onDeviceFailed error=\(errorType) fallback=\(fallback ? "refused" : "killed")")
             throw (error as? MidgarIntelligenceError) ?? MidgarIntelligenceError.onDeviceFailed(errorType: errorType)
         }
         logger("intelligence route=cloud reason=onDeviceFailed error=\(errorType)")
         return try await cloudAttempt()
+    }
+
+    /// True for failures where the cloud may stand in for the device: the model or its assets are unavailable, or the call timed out. A refusal, an empty or rewritten answer or any other failure says something about the prompt or the answer, not about the device.
+    func isInfrastructureFailure(_ error: any Error) -> Bool {
+        if case MidgarIntelligenceError.onDeviceUnavailable = error {
+            return true
+        }
+        return (error as? URLError)?.code == .timedOut
     }
 
     /// Rethrows when the failure is the caller cancelling, which must never fall back to the cloud.

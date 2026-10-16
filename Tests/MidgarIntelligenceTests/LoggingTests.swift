@@ -34,7 +34,7 @@ import MidgarIntelligence
 
     @Test func routerDecisionsNeverLogPromptText() async throws {
         let sink = LogSink()
-        let failing = FakeModel(failure: FakeFailure())
+        let failing = FakeModel(failure: MidgarIntelligenceError.onDeviceUnavailable(.modelNotReady))
         let router = MidgarIntelligence(onDevice: failing, cloud: FakeModel(route: .cloud, answer: secret), logger: sink.logger)
         _ = try await router.respond(to: MidgarPrompt(instructions: "secret instructions", text: secret))
         _ = try await collect(router.streamResponse(to: MidgarPrompt(instructions: "secret instructions", text: secret)))

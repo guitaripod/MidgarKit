@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import MidgarIntelligence
+@testable import MidgarIntelligence
 
 @Suite struct OnDeviceModelTests {
     @Test func availabilityIsAlwaysAnswered() {
@@ -31,5 +31,23 @@ import MidgarIntelligence
         let image = MidgarPromptImage(data: Data(), mediaType: "image/png")
         #expect(MidgarPrompt(text: "x", images: [image]).effectiveRequirement == .cloudOnly)
         #expect(MidgarPrompt(text: "x").effectiveRequirement == .any)
+    }
+
+    @Test func snapshotsThatExtendTheTextBecomeDeltas() throws {
+        var accumulator = OnDeviceSnapshotAccumulator()
+        #expect(try accumulator.delta(for: "") == nil)
+        #expect(try accumulator.delta(for: "Hel") == "Hel")
+        #expect(try accumulator.delta(for: "Hel") == nil)
+        #expect(try accumulator.delta(for: "Hello wor") == "lo wor")
+        #expect(try accumulator.delta(for: "Hello world") == "ld")
+        #expect(accumulator.emitted == "Hello world")
+    }
+
+    @Test func aSnapshotThatRewritesEarlierTextThrows() throws {
+        var accumulator = OnDeviceSnapshotAccumulator()
+        _ = try accumulator.delta(for: "Hello world")
+        #expect(throws: MidgarIntelligenceError.onDeviceOutputRewritten) { try accumulator.delta(for: "Howdy world, friend") }
+        #expect(throws: MidgarIntelligenceError.onDeviceOutputRewritten) { try accumulator.delta(for: "Hello") }
+        #expect(throws: MidgarIntelligenceError.onDeviceOutputRewritten) { try accumulator.delta(for: "") }
     }
 }
