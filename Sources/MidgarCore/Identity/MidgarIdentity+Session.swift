@@ -136,11 +136,19 @@ extension MidgarIdentity {
             try store.writeShared(shared)
         } else if try !store.writeSharedIfAbsent(shared) {
             log.info("identity: another Midgar app created the shared identity first, attaching to it")
-            return try await joinOrMint()
+            return try await attach(try sharedWrittenByAnotherApp())
         }
         try store.writeSession(StoredSession(refreshToken: reply.session.refreshToken, keyId: keyID, midgarId: reply.session.midgarId))
         log.info("identity: minted a new identity (\(keyID == nil ? "unverified" : "attested"))")
         return LiveSession(reply: reply.session, now: clock())
+    }
+
+    /// The shared item another app wrote while this app was minting. The keychain refused the write because the slot is taken, so an empty read means the item exists but cannot be read here; that is reported instead of minting again, which would loop.
+    private func sharedWrittenByAnotherApp() throws -> SharedIdentity {
+        guard let shared = try store.readShared() else {
+            throw MidgarIdentityError.corruptSharedItem
+        }
+        return shared
     }
 
     /// Runs a mint or attach with fresh attestation evidence where App Attest is supported. A used key or a spent challenge gets one more try with new ones, because the service consumes both.

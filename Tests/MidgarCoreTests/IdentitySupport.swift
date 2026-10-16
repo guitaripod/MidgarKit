@@ -110,6 +110,19 @@ final class RacingKeychain: MidgarKeychain, @unchecked Sendable {
     }
 }
 
+final class UnreadableSharedKeychain: MidgarKeychain, @unchecked Sendable {
+    let base: MidgarInMemoryKeychain
+
+    init(base: MidgarInMemoryKeychain) {
+        self.base = base
+    }
+
+    func read(_ slot: MidgarKeychainSlot) throws -> Data? { slot == .shared ? nil : try base.read(slot) }
+    func write(_ data: Data, to slot: MidgarKeychainSlot) throws { try base.write(data, to: slot) }
+    func delete(_ slot: MidgarKeychainSlot) throws { try base.delete(slot) }
+    func writeIfAbsent(_ data: Data, to slot: MidgarKeychainSlot) throws -> Bool { false }
+}
+
 func base64URL(_ data: Data) -> String {
     data.base64EncodedString()
         .replacingOccurrences(of: "+", with: "-")

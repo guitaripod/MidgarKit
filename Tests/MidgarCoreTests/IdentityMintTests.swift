@@ -89,6 +89,19 @@ private func mintReply(_ id: String = "id-minted", tier: String = "unverified", 
         #expect(try harness.storedSession()?.midgarId == "id-rival")
     }
 
+    @Test func aTakenButUnreadableSharedItemStopsAfterOneMint() async throws {
+        let harness = try IdentityHarness(attested: false) { base in
+            UnreadableSharedKeychain(base: base)
+        }
+        harness.enqueue(mintReply(), mintReply())
+
+        let error = await thrownIdentityError { try await harness.identity.accessToken() }
+
+        #expect(error == .corruptSharedItem)
+        #expect(harness.paths == ["POST /v1/identity/mint/unverified"])
+        #expect(try harness.storedSession() == nil)
+    }
+
     @Test func mintFailureStoresNothing() async throws {
         let harness = try IdentityHarness(attested: false)
         harness.enqueue(.json(503, errorJSON("unavailable")))
