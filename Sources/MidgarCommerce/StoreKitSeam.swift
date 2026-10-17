@@ -57,6 +57,31 @@ public struct StoreProduct: Sendable, Equatable, Identifiable {
     public let displayName: String
     public let description: String
     public let displayPrice: String
+    /// StoreKit's `Product.price`: the numeric price in the storefront's currency, for arithmetic. Zero when the product was built without a price. `displayPrice` is the formatted string the customer sees.
+    public let price: Decimal
+    /// StoreKit's `Product.isFamilyShareable`: whether the customer can share this purchase with their Family Sharing group.
+    public let isFamilyShareable: Bool
+    /// The ISO 4217 code of the storefront's currency (`USD`, `EUR`), from `Product.priceFormatStyle.currencyCode`. Nil when the product was built without one.
+    public let currencyCode: String?
+
+    /// Builds a product from the fields StoreKit reports. The price, Family Sharing and currency fields default to the values of a product StoreKit did not price, so existing callers keep compiling.
+    public init(
+        id: String,
+        displayName: String,
+        description: String,
+        displayPrice: String,
+        price: Decimal = 0,
+        isFamilyShareable: Bool = false,
+        currencyCode: String? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.description = description
+        self.displayPrice = displayPrice
+        self.price = price
+        self.isFamilyShareable = isFamilyShareable
+        self.currencyCode = currencyCode
+    }
 }
 
 /// The window or scene a purchase confirms in (`UIScene` on iOS and visionOS, `NSWindow` on macOS), carried through the seam without naming a UI framework. The anchor is a main-actor object that is only created on the main actor by the public `purchase(_:confirmIn:)` calls and only read by `LiveStoreKit` on the main actor, which is what makes the unchecked conformance sound.

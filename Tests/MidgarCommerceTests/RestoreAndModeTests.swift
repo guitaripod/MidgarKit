@@ -57,6 +57,19 @@ import Testing
         #expect(products.map(\.id) == [Products.pro, Products.monthly])
     }
 
+    @Test func productsPassThroughThePriceFieldsStoreKitReports() async throws {
+        let h = StoreHarness()
+        h.storeKit.setCatalog([
+            StoreProduct(id: Products.pro, displayName: "Pro", description: "", displayPrice: "€39.99", price: 39.99, isFamilyShareable: true, currencyCode: "EUR"),
+            StoreProduct(id: Products.monthly, displayName: "Monthly", description: "", displayPrice: "$3.99", price: 3.99, isFamilyShareable: false, currencyCode: nil)
+        ])
+        let products = try await h.store.products()
+        #expect(products.map(\.price) == [39.99, 3.99])
+        #expect(products.map(\.isFamilyShareable) == [true, false])
+        #expect(products.map(\.currencyCode) == ["EUR", nil])
+        #expect(products.map(\.displayPrice) == ["€39.99", "$3.99"])
+    }
+
     @Test func stopEndsTheEventStreams() async {
         let h = StoreHarness()
         let events = await h.store.events()

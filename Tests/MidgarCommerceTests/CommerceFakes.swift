@@ -66,6 +66,7 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
     private var purchaseCalls: [(productID: String, token: UUID?, confirmed: Bool)] = []
     private var syncCalls = 0
     private var environment: StoreEnvironment?
+    private var catalog: [String: StoreProduct] = [:]
     private let stream: AsyncStream<StoreVerification>
     private let continuation: AsyncStream<StoreVerification>.Continuation
 
@@ -80,9 +81,12 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
     func queue(_ outcome: StorePurchaseOutcome) { lock.withLock { outcomes.append(outcome) } }
     func setCurrent(_ verifications: [StoreVerification]) { lock.withLock { current = verifications } }
     func emit(_ verification: StoreVerification) { continuation.yield(verification) }
+    func setCatalog(_ products: [StoreProduct]) { lock.withLock { catalog = Dictionary(uniqueKeysWithValues: products.map { ($0.id, $0) }) } }
 
     func products(for ids: [String]) async throws -> [StoreProduct] {
-        ids.map { StoreProduct(id: $0, displayName: $0, description: "", displayPrice: "$1") }
+        lock.withLock {
+            ids.map { catalog[$0] ?? StoreProduct(id: $0, displayName: $0, description: "", displayPrice: "$1") }
+        }
     }
 
     func purchase(productID: String, appAccountToken: UUID?, confirmation: StoreConfirmation?) async throws -> StorePurchaseOutcome {

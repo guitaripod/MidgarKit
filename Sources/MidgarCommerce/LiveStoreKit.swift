@@ -11,7 +11,17 @@ actor LiveStoreKit: MidgarStoreKit {
             cachedProducts[product.id] = product
         }
         return ids.compactMap { id in
-            cachedProducts[id].map { StoreProduct(id: $0.id, displayName: $0.displayName, description: $0.description, displayPrice: $0.displayPrice) }
+            cachedProducts[id].map {
+                StoreProduct(
+                    id: $0.id,
+                    displayName: $0.displayName,
+                    description: $0.description,
+                    displayPrice: $0.displayPrice,
+                    price: $0.price,
+                    isFamilyShareable: $0.isFamilyShareable,
+                    currencyCode: $0.priceFormatStyle.currencyCode
+                )
+            }
         }
     }
 
