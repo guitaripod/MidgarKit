@@ -37,9 +37,11 @@ ICON_SIZE = 256
 VALID_PLATFORMS = ("ios", "mac", "tvos", "vision")
 SLOT_PATTERN = re.compile(r"^midgar-(0[1-9]|[12][0-9]|30)$")
 ACCENT_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+MOMENT_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
 APP_KEY_ORDER = (
     "appId",
     "bundleId",
+    "slug",
     "name",
     "tagline",
     "genre",
@@ -48,6 +50,7 @@ APP_KEY_ORDER = (
     "platforms",
     "topics",
     "related",
+    "moments",
     "value",
     "featured",
     "order",
@@ -228,6 +231,23 @@ def validate_schemes(apps):
     return problems
 
 
+def validate_moments(apps):
+    """Returns problems with the contextual cross-sell tables: every moment name well formed and every target a slug in the catalog that the app also lists as related."""
+    problems = []
+    slugs = {app.get("slug") for app in apps}
+    for app in apps:
+        label = describe(app)
+        related_slugs = {other.get("slug") for other in apps if other.get("bundleId") in app.get("related", [])}
+        for name, target in (app.get("moments") or {}).items():
+            if not MOMENT_PATTERN.match(name):
+                problems.append("{} has moment {!r}, which is not a lowercase name of at most 32 characters".format(label, name))
+            if target not in slugs:
+                problems.append("{} moment {} names slug {} which is not in the catalog".format(label, name, target))
+            elif target not in related_slugs:
+                problems.append("{} moment {} names slug {} which the app does not list as related".format(label, name, target))
+    return problems
+
+
 def validate_document(document):
     """Returns every validation problem in the document, or an empty list when it is valid."""
     apps = document["apps"]
@@ -235,6 +255,7 @@ def validate_document(document):
     problems += find_duplicates("appId", [app.get("appId") for app in apps])
     problems += find_duplicates("bundleId", [app.get("bundleId") for app in apps])
     problems += validate_schemes(apps)
+    problems += validate_moments(apps)
     bundle_ids = {app.get("bundleId") for app in apps}
     for app in apps:
         label = describe(app)
