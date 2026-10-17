@@ -11,9 +11,19 @@ extension MidgarCredits {
         case rejected(MidgarCreditsError)
     }
 
-    /// mako's text for a purchase it has already credited (400). It has no code of its own, so the text is the only signal.
+    /// mako's stable error codes for the validation. A code decides before any text or status does.
+    enum MakoCode {
+        /// The purchase is accepted and will be credited without the client doing anything more (409; a masked 500 before codes).
+        static let creditPending = "credit_pending"
+        /// The transaction was credited before (400).
+        static let alreadyProcessed = "already_processed"
+        /// The purchase could not be verified yet or as it stands (400). RevenueCat can lag the App Store by seconds, so it is retried.
+        static let unverifiable = "unverifiable_purchase"
+    }
+
+    /// mako's text for a purchase it has already credited (400), matched only when the answer has no code (a mako that predates them).
     static let alreadyProcessedMessage = "already been processed"
-    /// mako's text when RevenueCat does not (yet) list the purchase (400). RevenueCat can lag the App Store by seconds, so it is retried like a 500.
+    /// mako's text when RevenueCat does not (yet) list the purchase (400), matched only when the answer has no code. RevenueCat can lag the App Store by seconds, so it is retried like a 500.
     static let notYetVerifiedMessage = "could not be verified"
 
     /// Buys a pack and credits it. The store buys, finishes and reports the transaction to the ledger first; then mako's fast-track validation credits the wallet and the balance is read again.
@@ -130,12 +140,22 @@ extension MidgarCredits {
         return settlement
     }
 
-    /// Whether mako's refusal can still turn into a credit. Offline, a busy wallet, a rate limit, a missing token and any 5xx can; so can a 400 saying the purchase is not visible to the verifier yet. A 400 saying it is already processed is a success. Everything else is final.
+    /// Whether mako's refusal can still turn into a credit. Offline, a busy wallet, a rate limit, a missing token and any 5xx can; so can an answer saying the credit is pending or the purchase is not verifiable yet. An answer saying it is already processed is a success. Everything else is final.
+    ///
+    /// mako's error code decides when the answer has one. Without a code the client falls back to the status and the text, as it did before codes existed.
     static func classify(_ error: MidgarCreditsError) -> Settlement {
         switch error {
         case .offline, .walletUnavailable, .rateLimited, .identityUnavailable, .unauthorized:
             return .retry(error)
-        case .server(let status, _, let message):
+        case .server(let status, let code, let message):
+            switch code {
+            case MakoCode.creditPending, MakoCode.unverifiable:
+                return .retry(error)
+            case MakoCode.alreadyProcessed:
+                return .alreadyProcessed
+            default:
+                break
+            }
             if status >= 500 {
                 return .retry(error)
             }

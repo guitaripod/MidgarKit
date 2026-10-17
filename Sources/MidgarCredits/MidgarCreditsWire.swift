@@ -38,7 +38,7 @@ struct CreditsTransactionsWire: Decodable, Sendable {
     }
 }
 
-/// The body of mako's `POST /v1/credits/purchase/revenuecat/validate`. mako identifies the purchase by `purchase_token`, the App Store transaction id (RevenueCat's `store_purchase_identifier`), and binds the price to the credits through `pack_id` and `product_id`. `platform` is `ios` on every Apple platform: mako only knows `ios` and `android`. `signed_transaction` is not read by mako today; it rides along so the server can verify the JWS itself once RevenueCat is retired.
+/// The body of mako's `POST /v1/credits/purchase/revenuecat/validate`. mako identifies the purchase by `purchase_token`, the App Store transaction id (RevenueCat's `store_purchase_identifier`), and binds the price to the credits through `pack_id` and `product_id`. `platform` is `ios` on every Apple platform: mako only knows `ios` and `android`. `signed_transaction` is the StoreKit 2 JWS: mako has the ledger verify it instead of asking RevenueCat, and credits the pack under the same `tx:<transaction id>` key.
 struct CreditsValidateBody: Encodable, Sendable {
     let packID: String
     let purchaseToken: String
