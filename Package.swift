@@ -86,7 +86,7 @@ let package = Package(
         .testTarget(
             name: "MidgarCommerceUITests",
             dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarUI"],
-            exclude: ["PaywallSnapshotTests.swift", "Paywall.storekit"]
+            exclude: ["PaywallSnapshotTests.swift", "PlanPaywallSnapshotTests.swift", "Paywall.storekit"]
         ),
         .testTarget(
             name: "MidgarCreditsTests",

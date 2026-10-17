@@ -19,7 +19,8 @@ actor LiveStoreKit: MidgarStoreKit {
                     displayPrice: $0.displayPrice,
                     price: $0.price,
                     isFamilyShareable: $0.isFamilyShareable,
-                    currencyCode: $0.priceFormatStyle.currencyCode
+                    currencyCode: $0.priceFormatStyle.currencyCode,
+                    priceLocale: $0.priceFormatStyle.locale
                 )
             }
         }

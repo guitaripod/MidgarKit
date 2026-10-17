@@ -8,7 +8,7 @@ import MidgarCore
 import MidgarUI
 @testable import MidgarCommerceUI
 
-#if os(iOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 import UIKit
 #elseif os(macOS)
 import AppKit
@@ -26,12 +26,12 @@ import AppKit
         privacyPolicy: URL(string: "https://midgarcorp.cc/privacy")!
     )
 
-    private struct Live {
+    struct Live {
         let store: MidgarStore
         let session: SKTestSession
     }
 
-    private func makeLive() async throws -> Live {
+    func makeLive() async throws -> Live {
         let url = try #require(Bundle(for: BundleToken.self).url(forResource: "Paywall", withExtension: "storekit"))
         let session = try SKTestSession(contentsOf: url)
         session.resetToDefaultState()
@@ -58,26 +58,39 @@ import AppKit
         )
         let loaded = try await store.products()
         #expect(loaded.count == 3, "StoreKit testing served \(loaded.map(\.id)) from Paywall.storekit")
+        await waitForIntroOfferEligibility()
         return Live(store: store, session: session)
     }
 
-    private func settle() async {
+    /// A purchase in an earlier test uses up the introductory offer, and StoreKit takes a moment to give it back after the session reset. Waiting here keeps every test independent of the order they run in.
+    private func waitForIntroOfferEligibility() async {
+        for _ in 0..<40 {
+            if await Product.SubscriptionInfo.isEligibleForIntroOffer(for: Self.group) {
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+    }
+
+    func settle() async {
         try? await Task.sleep(for: .seconds(3))
     }
 
-    private func write(_ data: Data, name: String, dark: Bool) throws {
+    func write(_ data: Data, name: String, dark: Bool?) throws {
         let path = ProcessInfo.processInfo.environment["MIDGAR_SNAPSHOT_DIR"] ?? ""
         guard !path.isEmpty else {
             return
         }
         let directory = URL(fileURLWithPath: path, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: directory.appendingPathComponent("\(Self.platformName)-\(name)-\(dark ? "dark" : "light").png"))
+        let appearance = dark.map { $0 ? "dark" : "light" } ?? "default"
+        try data.write(to: directory.appendingPathComponent("\(Self.platformName)-\(name)-\(appearance).png"))
     }
 
-    private func capture<Content: View>(_ content: @autoclosure () -> Content, name: String) async throws {
-        for dark in [false, true] {
-            let png = try await render(content().midgarTheme(Self.theme), dark: dark)
+    /// Renders `content` in each appearance the platform has and writes one PNG per appearance. `size` is the window to render in, the whole screen when nil.
+    func capture<Content: View>(_ content: @autoclosure () -> Content, name: String, size: CGSize? = nil, scrolledToEnd: Bool = false) async throws {
+        for dark in Self.appearances {
+            let png = try await render(content().midgarTheme(Self.theme), dark: dark ?? false, size: size, scrolledToEnd: scrolledToEnd)
             try write(png, name: name, dark: dark)
             #expect(Self.distinctColors(in: png) > 4, "\(name) rendered blank")
         }
@@ -146,26 +159,70 @@ import AppKit
     }
 }
 
-#if os(iOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 extension PaywallSnapshotTests {
-    static let platformName = UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+    static var platformName: String {
+        #if os(tvOS)
+        "tvos"
+        #elseif os(visionOS)
+        "visionos"
+        #else
+        UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+        #endif
+    }
 
-    func render<Content: View>(_ content: Content, dark: Bool) async throws -> Data {
+    /// visionOS draws every window on its own glass, so it has one appearance to look at.
+    static var appearances: [Bool?] {
+        #if os(visionOS)
+        [nil]
+        #else
+        [false, true]
+        #endif
+    }
+
+    func render<Content: View>(_ content: Content, dark: Bool, size: CGSize? = nil, scrolledToEnd: Bool = false) async throws -> Data {
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene)
+        if let size {
+            window.frame = CGRect(origin: .zero, size: size)
+        }
         window.windowLevel = .alert + 1
         window.overrideUserInterfaceStyle = dark ? .dark : .light
         window.rootViewController = UIHostingController(rootView: content)
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
         await settle()
+        if scrolledToEnd {
+            await Self.scrollToEnd(window)
+        }
         return try Self.image(of: window)
     }
 
+    /// Scrolls every scroll view in the window to its end, so the part of the content that starts below the fold can be looked at.
+    static func scrollToEnd(_ window: UIWindow) async {
+        for scroll in scrollViews(in: window) where scroll.contentSize.height > scroll.bounds.height {
+            let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+            scroll.setContentOffset(CGPoint(x: 0, y: bottom), animated: false)
+        }
+        try? await Task.sleep(for: .seconds(1))
+    }
+
+    private static func scrollViews(in view: UIView) -> [UIScrollView] {
+        var found = (view as? UIScrollView).map { [$0] } ?? []
+        found += view.subviews.flatMap { scrollViews(in: $0) }
+        return found
+    }
+
+    /// The window as a PNG. visionOS has no Liquid Glass in these views and its `drawHierarchy` leaves blank tiles in a window this large, so it renders the layer tree instead; every other platform draws the hierarchy.
     static func image(of window: UIWindow) throws -> Data {
         window.rootViewController?.view.layoutIfNeeded()
-        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+        let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
+        let image = renderer.image { context in
+            #if os(visionOS)
+            window.layer.render(in: context.cgContext)
+            #else
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            #endif
         }
         return try #require(image.pngData())
     }
@@ -193,6 +250,9 @@ extension PaywallSnapshotTests {
     }
 }
 
+#endif
+
+#if os(iOS)
 extension PaywallSnapshotTests {
     private func present(_ controller: UIViewController) throws -> UIWindow {
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -243,19 +303,23 @@ extension PaywallSnapshotTests {
 #if os(macOS)
 extension PaywallSnapshotTests {
     static let platformName = "mac"
+    static let appearances: [Bool?] = [false, true]
 
-    func render<Content: View>(_ content: Content, dark: Bool) async throws -> Data {
-        let size = CGSize(width: 520, height: 760)
+    func render<Content: View>(_ content: Content, dark: Bool, size requested: CGSize? = nil, scrolledToEnd: Bool = false) async throws -> Data {
+        let size = requested ?? CGSize(width: 520, height: 760)
         let hosting = NSHostingView(rootView: content.environment(\.colorScheme, dark ? .dark : .light).frame(width: size.width, height: size.height))
         hosting.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         hosting.frame = CGRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = KeyableWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = hosting
         window.appearance = hosting.appearance
         window.setFrameOrigin(CGPoint(x: 80, y: 80))
-        window.orderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
         defer { window.orderOut(nil) }
         await settle()
+        window.makeKey()
+        try? await Task.sleep(for: .milliseconds(700))
         hosting.layoutSubtreeIfNeeded()
         if let captured = await Self.captureWindow(window, size: size) {
             return captured
@@ -263,6 +327,11 @@ extension PaywallSnapshotTests {
         let rep = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: rep)
         return try #require(rep.representation(using: .png, properties: [:]))
+    }
+
+    /// A borderless window that can become key, so its prominent buttons draw as they do in a window the customer is using instead of in their grey inactive state.
+    private final class KeyableWindow: NSWindow {
+        override var canBecomeKey: Bool { true }
     }
 
     private typealias WindowImageFunction = @convention(c) (CGRect, UInt32, UInt32, UInt32) -> Unmanaged<CGImage>?
@@ -303,7 +372,12 @@ extension PaywallSnapshotTests {
         let policy = MidgarTrialPolicy()
         let before = try await policy.presentation(for: Self.yearly)
 
+        #if os(visionOS)
+        let scene = try #require(UIApplication.shared.connectedScenes.first)
+        let result = try await live.store.purchase(Self.yearly, confirmIn: scene)
+        #else
         let result = try await live.store.purchase(Self.yearly)
+        #endif
         var after = try await policy.presentation(for: Self.yearly)
         for _ in 0..<10 where after != nil {
             try await Task.sleep(for: .milliseconds(500))

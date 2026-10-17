@@ -6,9 +6,11 @@ import SwiftUI
 struct MidgarPaywallFooter: View {
     let planLines: [MidgarPlanLine]
     let showsAutoRenew: Bool
+    var showsActions = true
     let links: MidgarPaywallLinks
     let isRestoring: Bool
     let restore: () -> Void
+    var focus: FocusState<MidgarPaywallFocus?>.Binding?
 
     @Environment(\.midgarTheme) private var theme
 
@@ -24,7 +26,9 @@ struct MidgarPaywallFooter: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            actions
+            if showsActions {
+                actions
+            }
         }
         .padding(.horizontal, theme.spacing.l)
         .padding(.vertical, theme.spacing.m)
@@ -64,8 +68,7 @@ struct MidgarPaywallFooter: View {
 
     @ViewBuilder
     private var actionButtons: some View {
-        Link(MidgarCommerceUIStrings.termsOfUse, destination: links.termsOfUse)
-        Link(MidgarCommerceUIStrings.privacyPolicy, destination: links.privacyPolicy)
+        legalLinks
         Button(action: restore) {
             if isRestoring {
                 ProgressView()
@@ -77,5 +80,39 @@ struct MidgarPaywallFooter: View {
         }
         .buttonStyle(.plain)
         .disabled(isRestoring)
+        .modifier(MidgarRestoreFocus(focus: focus))
+    }
+
+    /// The address a person types, without the scheme.
+    private static func address(of url: URL) -> String {
+        let text = url.absoluteString
+        return text.replacingOccurrences(of: "^https?://", with: "", options: .regularExpression)
+    }
+
+    /// Terms of Use and Privacy Policy as links. tvOS cannot open a web page, so it states the addresses.
+    @ViewBuilder
+    private var legalLinks: some View {
+        #if os(tvOS)
+        Text(verbatim: "\(MidgarCommerceUIStrings.termsOfUse): \(Self.address(of: links.termsOfUse))")
+        Text(verbatim: "\(MidgarCommerceUIStrings.privacyPolicy): \(Self.address(of: links.privacyPolicy))")
+        #else
+        Link(MidgarCommerceUIStrings.termsOfUse, destination: links.termsOfUse)
+        Link(MidgarCommerceUIStrings.privacyPolicy, destination: links.privacyPolicy)
+        #endif
+    }
+}
+
+/// Marks Restore Purchases as a focus target when the paywall tracks focus (tvOS), and does nothing otherwise.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
+private struct MidgarRestoreFocus: ViewModifier {
+    let focus: FocusState<MidgarPaywallFocus?>.Binding?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let focus {
+            content.focused(focus, equals: .restore)
+        } else {
+            content
+        }
     }
 }

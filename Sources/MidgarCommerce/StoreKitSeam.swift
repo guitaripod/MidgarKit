@@ -63,8 +63,10 @@ public struct StoreProduct: Sendable, Equatable, Identifiable {
     public let isFamilyShareable: Bool
     /// The ISO 4217 code of the storefront's currency (`USD`, `EUR`), from `Product.priceFormatStyle.currencyCode`. Nil when the product was built without one.
     public let currencyCode: String?
+    /// The storefront's locale for prices, from `Product.priceFormatStyle.locale`: what to format amounts derived from `price` in, so they read like `displayPrice` does. Nil when the product was built without one.
+    public let priceLocale: Locale?
 
-    /// Builds a product from the fields StoreKit reports. The price, Family Sharing and currency fields default to the values of a product StoreKit did not price, so existing callers keep compiling.
+    /// Builds a product from the fields StoreKit reports. The price, Family Sharing, currency and price locale fields default to the values of a product StoreKit did not price, so existing callers keep compiling.
     public init(
         id: String,
         displayName: String,
@@ -72,7 +74,8 @@ public struct StoreProduct: Sendable, Equatable, Identifiable {
         displayPrice: String,
         price: Decimal = 0,
         isFamilyShareable: Bool = false,
-        currencyCode: String? = nil
+        currencyCode: String? = nil,
+        priceLocale: Locale? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -81,6 +84,7 @@ public struct StoreProduct: Sendable, Equatable, Identifiable {
         self.price = price
         self.isFamilyShareable = isFamilyShareable
         self.currencyCode = currencyCode
+        self.priceLocale = priceLocale
     }
 }
 
