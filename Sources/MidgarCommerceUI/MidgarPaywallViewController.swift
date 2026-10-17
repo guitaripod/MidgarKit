@@ -20,10 +20,8 @@ public enum MidgarPaywallResult: Sendable, Equatable {
 @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 @MainActor
 public final class MidgarPaywallViewController: UIViewController, UIAdaptivePresentationControllerDelegate {
-    private let configuration: MidgarPaywallConfiguration
-    private let store: MidgarStore
+    private let makeScreen: @MainActor (@escaping @MainActor (MidgarPaywallEvent) -> Void) -> AnyView
     private let theme: MidgarTheme
-    private let trialPolicy: MidgarTrialPolicy
     private let showsCloseButton: Bool
     private let completion: @MainActor (MidgarPaywallResult) -> Void
     private var hasCompleted = false
@@ -40,10 +38,34 @@ public final class MidgarPaywallViewController: UIViewController, UIAdaptivePres
         showsCloseButton: Bool = true,
         completion: @escaping @MainActor (MidgarPaywallResult) -> Void
     ) {
-        self.configuration = configuration
-        self.store = store
+        self.makeScreen = { onEvent in
+            AnyView(MidgarPaywallScreen(configuration: configuration, store: store, trialPolicy: trialPolicy, onEvent: onEvent))
+        }
         self.theme = theme
-        self.trialPolicy = trialPolicy
+        self.showsCloseButton = showsCloseButton
+        self.completion = completion
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    /// The same host around a ``MidgarPlanPaywall``: one plan picker for subscriptions and a one-time product, the way the tuned app paywalls sell.
+    ///
+    /// - Parameters:
+    ///   - plans: The products to sell and the hero the app shows.
+    ///   - theme: The look of the paywall. Defaults to the theme installed with `MidgarTheme.install(_:)`.
+    ///   - showsCloseButton: Whether to draw a close button. Turn it off when the app puts the paywall in a navigation controller with its own.
+    ///   - completion: Called once, on the main actor.
+    public init(
+        plans: MidgarPlanPaywallConfiguration,
+        store: MidgarStore,
+        theme: MidgarTheme = .current,
+        trialPolicy: MidgarTrialPolicy = MidgarTrialPolicy(),
+        showsCloseButton: Bool = true,
+        completion: @escaping @MainActor (MidgarPaywallResult) -> Void
+    ) {
+        self.makeScreen = { onEvent in
+            AnyView(MidgarPlanPaywall(configuration: plans, store: store, trialPolicy: trialPolicy, onEvent: onEvent))
+        }
+        self.theme = theme
         self.showsCloseButton = showsCloseButton
         self.completion = completion
         super.init(nibName: nil, bundle: nil)
@@ -75,7 +97,7 @@ public final class MidgarPaywallViewController: UIViewController, UIAdaptivePres
     }
 
     private func embedPaywall() {
-        let screen = MidgarPaywallScreen(configuration: configuration, store: store, trialPolicy: trialPolicy) { [weak self] event in
+        let screen = makeScreen { [weak self] event in
             self?.handle(event)
         }
         let host = UIHostingController(rootView: screen.midgarTheme(theme))

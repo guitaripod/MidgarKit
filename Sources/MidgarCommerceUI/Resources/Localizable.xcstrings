@@ -1,6 +1,30 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ years of %@ costs %@. %@ is %@ and never renews.": {
+      "comment": "Line under the plan cards comparing the yearly plan with the one-time purchase; placeholders: number of years, yearly plan name, what those years cost, one-time plan name, its price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ years of %@ costs %@. %@ is %@ and never renews."
+          }
+        }
+      }
+    },
+    "%@ · cancel anytime": {
+      "comment": "Detail on a subscription plan card without a trial; the placeholder is the price with its period, e.g. $4.99/month",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · cancel anytime"
+          }
+        }
+      }
+    },
     "Close": {
       "comment": "Button that closes the paywall",
       "extractionState": "manual",
@@ -9,6 +33,90 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "comment": "Purchase button of the paywall when the selected plan has no free trial",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "Everything unlocks, free.": {
+      "comment": "Free trial timeline: what happens on the day the trial starts",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything unlocks, free."
+          }
+        }
+      }
+    },
+    "Family Sharing included": {
+      "comment": "Detail on a plan card for a product the customer can share with their family",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family Sharing included"
+          }
+        }
+      }
+    },
+    "How your free trial works": {
+      "comment": "Header of the free trial timeline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How your free trial works"
+          }
+        }
+      }
+    },
+    "Just %@ a month": {
+      "comment": "Detail on a plan card longer than a month; the placeholder is the localized per-month equivalent price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just %@ a month"
+          }
+        }
+      }
+    },
+    "Just %@ a month, billed yearly": {
+      "comment": "Detail on the yearly plan card; the placeholder is the localized per-month equivalent price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just %@ a month, billed yearly"
+          }
+        }
+      }
+    },
+    "Loading plans": {
+      "comment": "Accessibility label of the spinner while the plans of the paywall load",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading plans"
           }
         }
       }
@@ -33,6 +141,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "OK"
+          }
+        }
+      }
+    },
+    "One-time purchase of %@. No renewal.": {
+      "comment": "Line above the purchase button when a one-time purchase is selected; the placeholder is its price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One-time purchase of %@. No renewal."
+          }
+        }
+      }
+    },
+    "Pay once. Keep it forever.": {
+      "comment": "Detail on the one-time purchase plan card",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay once. Keep it forever."
+          }
+        }
+      }
+    },
+    "Plans unavailable": {
+      "comment": "Title shown on the paywall when the App Store returned no plans",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plans unavailable"
           }
         }
       }
@@ -97,6 +241,18 @@
         }
       }
     },
+    "Purchasing": {
+      "comment": "Accessibility label of the spinner on the purchase button while a purchase runs",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchasing"
+          }
+        }
+      }
+    },
     "Restore Purchases": {
       "comment": "Button on the paywall that restores earlier App Store purchases",
       "extractionState": "manual",
@@ -117,6 +273,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restoring purchases"
+          }
+        }
+      }
+    },
+    "Save %@": {
+      "comment": "Badge on a plan card; the placeholder is the localized percentage saved against paying monthly, e.g. 44%",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save %@"
           }
         }
       }
@@ -169,6 +337,18 @@
         }
       }
     },
+    "The App Store did not return any plans. Check your connection and try again.": {
+      "comment": "Detail shown on the paywall when the App Store returned no plans",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store did not return any plans. Check your connection and try again."
+          }
+        }
+      }
+    },
     "The purchase could not be completed. Please try again.": {
       "comment": "Alert message when a purchase failed",
       "extractionState": "manual",
@@ -181,6 +361,42 @@
         }
       }
     },
+    "Today": {
+      "comment": "Free trial timeline: the first step, the day the trial starts",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        }
+      }
+    },
+    "Try %@": {
+      "comment": "Purchase button of the paywall when the selected plan has a free trial; the placeholder is the offer, e.g. 1 week free",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try %@"
+          }
+        }
+      }
+    },
+    "Try again": {
+      "comment": "Button that loads the plans of the paywall again",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
     "Waiting for approval. You will get access as soon as it is approved.": {
       "comment": "Toast shown when a purchase needs approval, for example Ask to Buy",
       "extractionState": "manual",
@@ -189,6 +405,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Waiting for approval. You will get access as soon as it is approved."
+          }
+        }
+      }
+    },
+    "We'll remind you that your trial is ending.": {
+      "comment": "Free trial timeline: the step on which the app sends a reminder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll remind you that your trial is ending."
+          }
+        }
+      }
+    },
+    "Your plan continues at %@. Cancel before this day and you won't be charged.": {
+      "comment": "Free trial timeline: the day billing starts; the placeholder is the price with its period, e.g. $39.99/year",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan continues at %@. Cancel before this day and you won't be charged."
           }
         }
       }

@@ -4,6 +4,8 @@ options:
   deploymentTarget:
     iOS: "17.0"
     macOS: "14.0"
+    tvOS: "17.0"
+    visionOS: "1.0"
 
 packages:
   MidgarKit:
@@ -12,7 +14,7 @@ packages:
 targets:
   StoreKitHost:
     type: application
-    supportedDestinations: [iOS, macOS]
+    supportedDestinations: [iOS, macOS, tvOS, visionOS]
     sources:
       - path: Host
     settings:
@@ -26,7 +28,7 @@ targets:
         CODE_SIGN_IDENTITY: "-"
   StoreKitHostTests:
     type: bundle.unit-test
-    supportedDestinations: [iOS, macOS]
+    supportedDestinations: [iOS, macOS, tvOS, visionOS]
     sources:
       - path: ../MidgarCommerceTests/StoreKitIntegrationTests.swift
       - path: ../MidgarCommerceTests/CommerceFakes.swift
@@ -34,6 +36,7 @@ targets:
       - path: ../MidgarCommerceTests/Products.storekit
         buildPhase: resources
       - path: ../MidgarCommerceUITests/PaywallSnapshotTests.swift
+      - path: ../MidgarCommerceUITests/PlanPaywallSnapshotTests.swift
       - path: ../MidgarCommerceUITests/Paywall.storekit
         buildPhase: resources
     dependencies:
@@ -66,5 +69,8 @@ schemes:
       storeKitConfiguration: ../MidgarCommerceTests/Products.storekit
     test:
       storeKitConfiguration: ../MidgarCommerceTests/Products.storekit
+      commandLineArguments:
+        "-AppleLocale en_US": true
+        "-AppleLanguages (en)": true
       targets:
         - StoreKitHostTests
