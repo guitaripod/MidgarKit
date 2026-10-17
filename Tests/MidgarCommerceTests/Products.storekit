@@ -1,0 +1,46 @@
+{
+  "identifier" : "A1B2C3D4",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : true,
+      "internalID" : "6740000001",
+      "localizations" : [
+        { "description" : "Unlock everything", "displayName" : "Pro", "locale" : "en_US" }
+      ],
+      "productID" : "app.midgar.test.pro",
+      "referenceName" : "Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {},
+  "subscriptionGroups" : [
+    {
+      "id" : "21000001",
+      "localizations" : [],
+      "name" : "Pro Plus",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6740000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            { "description" : "Monthly", "displayName" : "Monthly", "locale" : "en_US" }
+          ],
+          "productID" : "app.midgar.test.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionGroupID" : "21000001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 4, "minor" : 0 }
+}

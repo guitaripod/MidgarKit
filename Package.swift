@@ -20,7 +20,7 @@ let package = Package(
             name: "MidgarCore",
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
-        .target(name: "MidgarCommerce", dependencies: ["MidgarCore"]),
+        .target(name: "MidgarCommerce", dependencies: ["MidgarCore"], exclude: ["README.md"]),
         .target(name: "MidgarAccount", dependencies: ["MidgarCore"]),
         .target(
             name: "MidgarUI",
@@ -57,7 +57,11 @@ let package = Package(
             ]
         ),
         .testTarget(name: "MidgarCoreTests", dependencies: ["MidgarCore"]),
-        .testTarget(name: "MidgarCommerceTests", dependencies: ["MidgarCommerce"]),
+        .testTarget(
+            name: "MidgarCommerceTests",
+            dependencies: ["MidgarCommerce", "MidgarCore"],
+            exclude: ["StoreKitIntegrationTests.swift", "Products.storekit"]
+        ),
         .testTarget(name: "MidgarAccountTests", dependencies: ["MidgarAccount"]),
         .testTarget(name: "MidgarUITests", dependencies: ["MidgarUI"]),
         .testTarget(name: "MidgarPortalTests", dependencies: ["MidgarPortal", "MidgarCore"]),
