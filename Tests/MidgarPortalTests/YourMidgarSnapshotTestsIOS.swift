@@ -64,6 +64,8 @@ final class YourMidgarSnapshotTestsIOS: XCTestCase {
         let text = YourMidgarSnapshotFixtures.recognizedText(in: data).joined(separator: "\n")
         XCTAssertTrue(text.contains("Your Midgar"), text)
         XCTAssertTrue(text.contains("Lifetime"), text)
+        XCTAssertTrue(text.contains("Jan 20, 2027"), "the billing grace date must not be truncated: \(text)")
+        XCTAssertFalse(text.contains("until..."), text)
     }
 
     /// `CALayer.render(in:)` draws nothing once a Liquid Glass layer (`CASDFLayer`) is in the tree, so the glass is hidden and a translucent shape of the same frame stands in for it. The material itself cannot be captured here.

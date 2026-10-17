@@ -359,6 +359,32 @@ private func slugs(_ apps: [YourApp]) -> [String] { apps.compactMap(\.app.slug) 
         #expect(!model.showsYourMidgar)
     }
 
+    @Test func anAppTheMidgarIDHasCountsInTheHeaderAndTheCardOffersOpenNeverGet() async throws {
+        let plain = PortalModel(config: MidgarConfig(enableTelemetry: false), hostBundleID: "com.marcusziade.psywave")
+        plain.start()
+        defer { plain.stop() }
+        let candidate = try #require(plain.ranked.first { $0.runsOnThisDevice && !plain.isHost($0) && !plain.isInstalled($0) && $0.slug != nil })
+        #expect(!plain.isOwned(candidate))
+        #expect(plain.buttonTitle(for: candidate) == candidate.priceLabel)
+        let before = plain.installedCount
+
+        let source = FakeAccountSource(slugs: .success(["psywave", try #require(candidate.slug)]), entitlements: .success([]))
+        let model = PortalModel(
+            config: MidgarConfig(enableTelemetry: false),
+            hostBundleID: "com.marcusziade.psywave",
+            account: PortalAccount(source: source)
+        )
+        model.start()
+        defer { model.stop() }
+        let appeared = await eventually { model.yourMidgar != nil }
+        #expect(appeared)
+
+        #expect(model.isOwned(candidate))
+        #expect(model.buttonTitle(for: candidate) == MidgarStrings.open)
+        if case .showProduct = model.action(for: candidate) {} else { Issue.record("an owned app that is not installed opens its store page") }
+        #expect(model.installedCount == before + 1)
+    }
+
     @Test func withoutAnAccountThePortalHasNoSectionAndNothingToOpen() async {
         let model = PortalModel(config: MidgarConfig(enableTelemetry: false), hostBundleID: "com.marcusziade.psywave")
         model.start()

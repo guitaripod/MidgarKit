@@ -59,8 +59,19 @@ final class PortalModel: ObservableObject {
 
     var availableHere: Int { ranked.filter(\.runsOnThisDevice).count }
 
+    /// How many of the apps for this device the person has: the host, the ones installed here, and, once the identity service has answered, the ones their Midgar ID has a session or purchase in. Without that answer it is the first two, as before.
     var installedCount: Int {
-        ranked.filter { $0.runsOnThisDevice && ($0.bundleId.lowercased() == hostBundleID?.lowercased() || installed.contains($0.bundleId.lowercased())) }.count
+        ranked.filter { $0.runsOnThisDevice && (isHost($0) || installed.contains($0.bundleId.lowercased()) || isOwned($0)) }.count
+    }
+
+    /// The registry slugs of the apps "Your Midgar" lists, empty while the account is unknown.
+    private var ownedSlugs: Set<String> {
+        Set(yourMidgar?.yours.compactMap(\.app.slug) ?? [])
+    }
+
+    /// `true` when the person's Midgar ID has an app that runs on this device, whether or not it is installed here. The card then offers Open, which opens the app when it is installed and its App Store page when it is not.
+    func isOwned(_ app: MidgarApp) -> Bool {
+        app.runsOnThisDevice && (app.slug.map(ownedSlugs.contains) ?? false)
     }
 
     /// The app the camera should drift to once the portal has opened.
@@ -180,7 +191,7 @@ final class PortalModel: ObservableObject {
             return MidgarStrings.view
             #endif
         }
-        return app.priceLabel
+        return isOwned(app) ? MidgarStrings.open : app.priceLabel
     }
 
     func perform(_ action: PortalAction) {

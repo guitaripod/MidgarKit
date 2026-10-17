@@ -67,7 +67,7 @@ struct PortalScreen: View {
             .padding(.bottom, layout.panelInsets.bottom)
             .padding(.trailing, layout.panelInsets.trailing)
             .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .transition(.opacity)
         }
         #endif

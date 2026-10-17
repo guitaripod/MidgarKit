@@ -6,6 +6,12 @@ import UIKit
 import AppKit
 #endif
 
+/// Solid colours for the panel and its rows, so nothing of the canvas behind the panel shows through.
+enum YourMidgarSurface {
+    static let panel = PortalColor.space.lightened(0.04)
+    static let row = PortalColor.space.lightened(0.11)
+}
+
 /// The "Your Midgar" panel: the Midgar apps the person has with what they own in each, then a few more worth a look. It sits over the canvas, between the header and the bottom card.
 struct YourMidgarPanel: View {
     let section: YourMidgarSection
@@ -15,37 +21,45 @@ struct YourMidgarPanel: View {
     let onClose: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    group(title: MidgarStrings.yourApps) {
-                        ForEach(section.yours) { yours in
-                            YourMidgarRow(
-                                app: yours.app,
-                                owned: yours.owned,
-                                status: status(for: yours.app),
-                                priceLabel: nil,
-                                onSelect: onSelect
-                            )
-                        }
-                    }
-                    if !section.suggestions.isEmpty {
-                        group(title: MidgarStrings.moreFromMidgar) {
-                            ForEach(section.suggestions) { app in
-                                YourMidgarRow(app: app, owned: [], status: nil, priceLabel: app.priceLabel, onSelect: onSelect)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 18 * PortalMetrics.scale)
-                .padding(.bottom, 18 * PortalMetrics.scale)
+        ViewThatFits(in: .vertical) {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                content
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                ScrollView { content }
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color(PortalColor.space).opacity(0.85)))
-        .portalGlass(in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color(YourMidgarSurface.panel)))
+        .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            group(title: MidgarStrings.yourApps) {
+                ForEach(section.yours) { yours in
+                    YourMidgarRow(
+                        app: yours.app,
+                        owned: yours.owned,
+                        status: status(for: yours.app),
+                        priceLabel: nil,
+                        onSelect: onSelect
+                    )
+                }
+            }
+            if !section.suggestions.isEmpty {
+                group(title: MidgarStrings.moreFromMidgar) {
+                    ForEach(section.suggestions) { app in
+                        YourMidgarRow(app: app, owned: [], status: nil, priceLabel: app.priceLabel, onSelect: onSelect)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 18 * PortalMetrics.scale)
+        .padding(.bottom, 18 * PortalMetrics.scale)
     }
 
     private var header: some View {
@@ -126,7 +140,7 @@ struct YourMidgarRow: View {
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color.white.opacity(0.07)))
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color(YourMidgarSurface.row)))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -143,12 +157,12 @@ struct YourMidgarRow: View {
         } else {
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(owned, id: \.name) { item in
-                    HStack(spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         PortalChip(text: item.name, accent: PortalColor(hex: app.accentHex))
                         Text(item.detail)
                             .font(.system(size: 12 * PortalMetrics.scale, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.7))
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                             .monospacedDigit()
                     }
                 }
