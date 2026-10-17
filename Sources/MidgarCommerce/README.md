@@ -59,6 +59,18 @@ Environment: the ledger is asked for `Sandbox` when `AppTransaction.environment`
 `restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
 
 
+## StoreKit views
+
+`SubscriptionStoreView`, `StoreView` and `ProductView` run their own purchase sheet. Two calls make the store own the result: `purchaseOptions()` returns `.appAccountToken(<Midgar ID>)` for the view's `.inAppPurchaseOptions`, and `complete(_:)` takes the `Product.PurchaseResult` from `.onInAppPurchaseCompletion` through the same path as `purchase(_:)` (verification, report queue, finish, signal, events). `complete` refuses a product the store is not configured with. MidgarCommerceUI wraps both in `.midgarPurchases(store:onEvent:)`.
+
+## Trial policy
+
+`MidgarTrialPolicy` is the one rule for introductory offers: present one exactly when `Product.SubscriptionInfo.isEligibleForIntroOffer(for:)` says the customer is eligible for the subscription group, and nothing else (no local flag, counter or date). `presentations(for:)` returns, per product with an offer the customer may use, a `MidgarTrialPresentation` whose `summary` (`1 week free, then $39.99/year`), `badge` and renewal text come from the product's own offer data (kind, period, period count, price) and renewal price. The policy keeps no cache, because eligibility changes after a purchase and a restore. The wording lives in this module's string catalog under `trial.*`, `price.*` and `unit.*` keys.
+
+## Review policy
+
+`MidgarReviewPolicy` decides when the app may call StoreKit's `requestReview`; it never calls it. All rules must hold: the app reported a positive moment this session with `noteSuccess()`; more than 3 days since the first launch and more than 5 sessions (`beginSession()` once per launch); not within 120 days of the last prompt and not on the app version that already prompted; not within 7 days of a purchase failure (`notePurchaseFailure()`) or a refund (`noteRefund()`) the app reported. `noteSuccess()` returns whether to ask now; after asking, call `notePrompted()`. State is a JSON file per app (`review-<app>.json` beside the commerce state), the clock and storage are injectable, and `evaluate()` returns the reason when it holds back. It records no `review.prompt` signal: the signals schema (`services/signals/src/schema.ts`) has no such event, so adding one is a schema change first.
+
 ## Tests
 
 - `swift test --filter Commerce` runs the unit tests against fakes for StoreKit, the identity and the ledger's HTTP routes (a `URLProtocol` stub). They also run on the iOS Simulator with `xcodebuild test -scheme MidgarKit-Package -destination 'platform=iOS Simulator,id=<udid>' -only-testing:MidgarCommerceTests`.

@@ -1,0 +1,114 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "price.everyPeriod": {
+      "comment": "A price for a billing period longer than one unit. First is the price, e.g. $9.99; second is the length, e.g. 3 months",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ every %@"
+          }
+        }
+      }
+    },
+    "price.perUnit": {
+      "comment": "A price for one billing period. First is the price, e.g. $4.99; second is the period name, e.g. month",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@/%@"
+          }
+        }
+      }
+    },
+    "trial.badge": {
+      "comment": "Short badge on a plan that starts with a free trial. The placeholder is the trial length, e.g. 1 week",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free"
+          }
+        }
+      }
+    },
+    "trial.freeThenRecurring": {
+      "comment": "Summary of a free trial. First is the trial length, e.g. 1 week; second is the renewal price with its period, e.g. $39.99/year",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free, then %@"
+          }
+        }
+      }
+    },
+    "trial.introThenRecurring": {
+      "comment": "Summary of a paid introductory offer. First is the offer price, e.g. $0.99 or $0.99/month; second is how long it lasts, e.g. 3 months; third is the renewal price with its period, e.g. $4.99/month",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ for %@, then %@"
+          }
+        }
+      }
+    },
+    "unit.day": {
+      "comment": "Singular name of a billing period after a price, as in $0.99/day",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "day"
+          }
+        }
+      }
+    },
+    "unit.month": {
+      "comment": "Singular name of a billing period after a price, as in $4.99/month",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "month"
+          }
+        }
+      }
+    },
+    "unit.week": {
+      "comment": "Singular name of a billing period after a price, as in $1.99/week",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "week"
+          }
+        }
+      }
+    },
+    "unit.year": {
+      "comment": "Singular name of a billing period after a price, as in $39.99/year",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "year"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

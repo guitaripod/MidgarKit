@@ -1,0 +1,198 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Close": {
+      "comment": "Button that closes the paywall",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "No purchases to restore": {
+      "comment": "Toast shown after restoring purchases found nothing",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No purchases to restore"
+          }
+        }
+      }
+    },
+    "OK": {
+      "comment": "Button that dismisses an alert",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Privacy Policy": {
+      "comment": "Link on the paywall to the privacy policy",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        }
+      }
+    },
+    "Purchased": {
+      "comment": "Label on a plan card for a product the customer already owns",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchased"
+          }
+        }
+      }
+    },
+    "Purchases are not available right now.": {
+      "comment": "Shown on the paywall when no product could be loaded",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are not available right now."
+          }
+        }
+      }
+    },
+    "Purchases could not be restored. Please try again.": {
+      "comment": "Alert message when restoring purchases failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases could not be restored. Please try again."
+          }
+        }
+      }
+    },
+    "Purchases restored": {
+      "comment": "Toast shown after restoring purchases found something to restore",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases restored"
+          }
+        }
+      }
+    },
+    "Restore Purchases": {
+      "comment": "Button on the paywall that restores earlier App Store purchases",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Purchases"
+          }
+        }
+      }
+    },
+    "Restoring purchases": {
+      "comment": "Accessibility label of the spinner while purchases are being restored",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restoring purchases"
+          }
+        }
+      }
+    },
+    "Something went wrong": {
+      "comment": "Title of the alert shown when a purchase or restore failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong"
+          }
+        }
+      }
+    },
+    "Subscriptions renew automatically at the price shown unless cancelled at least 24 hours before the end of the current period. Manage or cancel any time in your Apple Account settings.": {
+      "comment": "Required disclosure under the subscription options of the paywall",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscriptions renew automatically at the price shown unless cancelled at least 24 hours before the end of the current period. Manage or cancel any time in your Apple Account settings."
+          }
+        }
+      }
+    },
+    "Terms of Use": {
+      "comment": "Link on the paywall to the terms of use",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms of Use"
+          }
+        }
+      }
+    },
+    "The App Store could not verify this purchase, so it was not applied. Please try again.": {
+      "comment": "Alert message when the signature of a purchase could not be verified",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store could not verify this purchase, so it was not applied. Please try again."
+          }
+        }
+      }
+    },
+    "The purchase could not be completed. Please try again.": {
+      "comment": "Alert message when a purchase failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The purchase could not be completed. Please try again."
+          }
+        }
+      }
+    },
+    "Waiting for approval. You will get access as soon as it is approved.": {
+      "comment": "Toast shown when a purchase needs approval, for example Ask to Buy",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for approval. You will get access as soon as it is approved."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

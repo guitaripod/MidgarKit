@@ -19,6 +19,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.midgar.storekithost
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
         SWIFT_VERSION: "6.0"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGNING_ALLOWED: YES
@@ -32,10 +33,17 @@ targets:
       - path: ../MidgarCommerceTests/CommerceHTTPStub.swift
       - path: ../MidgarCommerceTests/Products.storekit
         buildPhase: resources
+      - path: ../MidgarCommerceUITests/PaywallSnapshotTests.swift
+      - path: ../MidgarCommerceUITests/Paywall.storekit
+        buildPhase: resources
     dependencies:
       - target: StoreKitHost
       - package: MidgarKit
         product: MidgarCommerce
+      - package: MidgarKit
+        product: MidgarCommerceUI
+      - package: MidgarKit
+        product: MidgarUI
       - package: MidgarKit
         product: MidgarCore
     settings:

@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "MidgarKit", targets: ["MidgarKit"]),
         .library(name: "MidgarCore", targets: ["MidgarCore"]),
         .library(name: "MidgarCommerce", targets: ["MidgarCommerce"]),
+        .library(name: "MidgarCommerceUI", targets: ["MidgarCommerceUI"]),
         .library(name: "MidgarAccount", targets: ["MidgarAccount"]),
         .library(name: "MidgarUI", targets: ["MidgarUI"]),
         .library(name: "MidgarPortal", targets: ["MidgarPortal"]),
@@ -20,7 +21,18 @@ let package = Package(
             name: "MidgarCore",
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
-        .target(name: "MidgarCommerce", dependencies: ["MidgarCore"], exclude: ["README.md"]),
+        .target(
+            name: "MidgarCommerce",
+            dependencies: ["MidgarCore"],
+            exclude: ["README.md"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
+        .target(
+            name: "MidgarCommerceUI",
+            dependencies: ["MidgarCommerce", "MidgarUI"],
+            exclude: ["README.md"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
         .target(name: "MidgarAccount", dependencies: ["MidgarCore"]),
         .target(
             name: "MidgarUI",
@@ -49,6 +61,7 @@ let package = Package(
             dependencies: [
                 "MidgarCore",
                 "MidgarCommerce",
+                "MidgarCommerceUI",
                 "MidgarAccount",
                 "MidgarUI",
                 "MidgarPortal",
@@ -61,6 +74,11 @@ let package = Package(
             name: "MidgarCommerceTests",
             dependencies: ["MidgarCommerce", "MidgarCore"],
             exclude: ["StoreKitIntegrationTests.swift", "Products.storekit"]
+        ),
+        .testTarget(
+            name: "MidgarCommerceUITests",
+            dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarUI"],
+            exclude: ["PaywallSnapshotTests.swift", "Paywall.storekit"]
         ),
         .testTarget(name: "MidgarAccountTests", dependencies: ["MidgarAccount"]),
         .testTarget(name: "MidgarUITests", dependencies: ["MidgarUI"]),

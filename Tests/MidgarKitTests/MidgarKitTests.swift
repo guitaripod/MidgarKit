@@ -5,6 +5,7 @@ import MidgarKit
     @Test func everyProductIsReachableThroughTheUmbrella() {
         #expect(MidgarCoreModule.name == "MidgarCore")
         #expect(MidgarCommerceModule.name == "MidgarCommerce")
+        #expect(MidgarCommerceUIModule.name == "MidgarCommerceUI")
         #expect(MidgarAccountModule.name == "MidgarAccount")
         #expect(MidgarUIModule.name == "MidgarUI")
         #expect(MidgarIntelligenceModule.name == "MidgarIntelligence")

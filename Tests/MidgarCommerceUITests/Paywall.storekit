@@ -1,0 +1,104 @@
+{
+  "identifier": "B2C3D4E5",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "79.99",
+      "familyShareable": true,
+      "internalID": "6750000001",
+      "localizations": [
+        {
+          "description": "Pay once, keep everything",
+          "displayName": "Lifetime",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "app.midgar.test.lifetime",
+      "referenceName": "Lifetime",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6750000002",
+      "localizations": [
+        {
+          "description": "A pack of 50 credits",
+          "displayName": "Credit Pack",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "app.midgar.test.credits",
+      "referenceName": "Credit Pack",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {},
+  "subscriptionGroups": [
+    {
+      "id": "22000001",
+      "localizations": [
+        {
+          "description": "Everything in the app",
+          "displayName": "Pro Plus",
+          "locale": "en_US"
+        }
+      ],
+      "name": "Pro Plus",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "39.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6750000003",
+          "introductoryOffer": {
+            "internalID": "6750000013",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
+          "localizations": [
+            {
+              "description": "Best value, billed once a year",
+              "displayName": "Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "app.midgar.test.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Yearly",
+          "subscriptionGroupID": "22000001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "6750000004",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Billed monthly",
+              "displayName": "Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "app.midgar.test.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Monthly",
+          "subscriptionGroupID": "22000001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}
