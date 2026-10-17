@@ -1,0 +1,114 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "You appear to be offline. Check your connection and try again.": {
+      "comment": "Shown when the credit balance or a credit purchase cannot reach Midgar because the device is offline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You appear to be offline. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "You do not have enough credits for this. Buy a credit pack to continue.": {
+      "comment": "Shown when an action needs more credits than the wallet holds",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have enough credits for this. Buy a credit pack to continue."
+          }
+        }
+      }
+    },
+    "Your credit balance is temporarily unavailable. Nothing was charged. Try again in a moment.": {
+      "comment": "Shown when the credit wallet cannot be reached",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your credit balance is temporarily unavailable. Nothing was charged. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Credit packs are not available in this app right now.": {
+      "comment": "Shown when the app has no credit pack to sell",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credit packs are not available in this app right now."
+          }
+        }
+      }
+    },
+    "Your session has expired. Sign in again.": {
+      "comment": "Shown when Midgar rejects the signed-in credentials while reading credits",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session has expired. Sign in again."
+          }
+        }
+      }
+    },
+    "Your Midgar ID is not ready yet. Try again in a moment.": {
+      "comment": "Shown when credits cannot be read because the Midgar ID has no access token yet",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Midgar ID is not ready yet. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Too many requests. Try again in a moment.": {
+      "comment": "Shown when the credits service asks the app to slow down",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many requests. Try again in a moment."
+          }
+        }
+      }
+    },
+    "The purchase could not be verified. If you were charged, contact support.": {
+      "comment": "Shown when the credits service refuses to credit a credit pack the customer paid for",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The purchase could not be verified. If you were charged, contact support."
+          }
+        }
+      }
+    },
+    "The credits request could not be completed. Try again later.": {
+      "comment": "Shown when a credit balance read or credit purchase failed for a reason the app cannot act on",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The credits request could not be completed. Try again later."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -189,6 +189,18 @@ public actor MidgarStore {
 
     /// The one purchase path every public variant goes through: the account token, the verified-transaction handling and the events are the same whatever confirms the sheet.
     func purchase(_ productID: String, confirmation: StoreConfirmation?) async throws -> MidgarPurchaseResult {
+        switch try await purchaseReceipt(productID, confirmation: confirmation) {
+        case .purchased:
+            return .purchased
+        case .pending:
+            return .pending
+        case .cancelled:
+            return .cancelled
+        }
+    }
+
+    /// ``purchase(_:confirmation:)`` with the verified transaction handed back, for callers that must tell another service about the purchase (MidgarCredits validates a credit pack with it). The transaction has already been queued, finished and granted when this returns.
+    func purchaseReceipt(_ productID: String, confirmation: StoreConfirmation?) async throws -> MidgarReceiptResult {
         try requirePurchases()
         guard handledProducts.contains(productID) else {
             throw MidgarStoreError.unknownProduct(productID)
@@ -210,7 +222,10 @@ public actor MidgarStore {
             return .cancelled
         case .success(let verification):
             try await handle(verification, origin: .purchase)
-            return .purchased
+            guard case .verified(let transaction) = verification else {
+                throw MidgarStoreError.unverifiedTransaction(productID: productID)
+            }
+            return .purchased(MidgarPurchaseReceipt(transaction))
         }
     }
 

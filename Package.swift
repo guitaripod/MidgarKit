@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "MidgarCore", targets: ["MidgarCore"]),
         .library(name: "MidgarCommerce", targets: ["MidgarCommerce"]),
         .library(name: "MidgarCommerceUI", targets: ["MidgarCommerceUI"]),
+        .library(name: "MidgarCredits", targets: ["MidgarCredits"]),
         .library(name: "MidgarAccount", targets: ["MidgarAccount"]),
         .library(name: "MidgarUI", targets: ["MidgarUI"]),
         .library(name: "MidgarPortal", targets: ["MidgarPortal"]),
@@ -24,6 +25,12 @@ let package = Package(
         .target(
             name: "MidgarCommerce",
             dependencies: ["MidgarCore"],
+            exclude: ["README.md"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
+        .target(
+            name: "MidgarCredits",
+            dependencies: ["MidgarCore", "MidgarCommerce"],
             exclude: ["README.md"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -62,6 +69,7 @@ let package = Package(
                 "MidgarCore",
                 "MidgarCommerce",
                 "MidgarCommerceUI",
+                "MidgarCredits",
                 "MidgarAccount",
                 "MidgarUI",
                 "MidgarPortal",
@@ -79,6 +87,10 @@ let package = Package(
             name: "MidgarCommerceUITests",
             dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarUI"],
             exclude: ["PaywallSnapshotTests.swift", "Paywall.storekit"]
+        ),
+        .testTarget(
+            name: "MidgarCreditsTests",
+            dependencies: ["MidgarCredits", "MidgarCommerce", "MidgarCore"]
         ),
         .testTarget(name: "MidgarAccountTests", dependencies: ["MidgarAccount"]),
         .testTarget(name: "MidgarUITests", dependencies: ["MidgarUI"]),

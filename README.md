@@ -24,6 +24,7 @@ Hosts use `from: "3.2.0"` until MidgarKit 4.0.0 is tagged (roadmap P2.18); after
 | `MidgarKit` | Umbrella: `@_exported import` of every product below | all products |
 | `MidgarCore` | Logging, config, HTTP, identity, `MidgarKitVersion` (signals planned, P2.06) | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
 | `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
+| `MidgarCredits` | AI credit packs on the Midgar ID wallet: balance, history, pack purchase and fast-track credit (replaces `AICredits`) | MidgarCore, MidgarCommerce |
 | `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
 | `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding | MidgarCore, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
 | `MidgarPortal` | The portal: catalog, entry card and view, `Midgar.present`, telemetry, resources, privacy manifest | MidgarUI, MidgarCore, StoreKit, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
