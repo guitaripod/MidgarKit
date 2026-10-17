@@ -6,12 +6,14 @@ import Testing
     private let day: TimeInterval = 86_400
 
     private func passEntry(expires: TimeInterval = 30 * 86_400) -> String {
-        FakeLedger.entry(app: "other", entitlement: "pass", productId: "app.midgar.other.pass", kind: "subscription", expires: commerceEpoch.addingTimeInterval(expires))
+        FakeLedger.entry(app: "app-test", entitlement: "pass", productId: "app.midgar.test.pass", kind: "subscription", expires: commerceEpoch.addingTimeInterval(expires))
     }
 
-    @Test func theUnionHoldsTheLedgersCrossAppGrantAndStoreKitsLocalOne() async throws {
-        let h = StoreHarness()
-        h.ledger.serve(midgarId: FakeIdentity.first, [passEntry()])
+    @Test func theUnionHoldsTheLedgersListedCrossAppGrantAndStoreKitsLocalOne() async throws {
+        let h = StoreHarness(crossAppEntitlements: ["pass"])
+        h.ledger.serve(midgarId: FakeIdentity.first, [
+            FakeLedger.entry(app: "other", entitlement: "pass", productId: "app.midgar.other.pass", kind: "subscription", expires: commerceEpoch.addingTimeInterval(30 * day))
+        ])
         h.storeKit.setCurrent([.verified(h.transaction())])
         await h.store.refresh()
 
@@ -20,6 +22,37 @@ import Testing
         #expect(entitlements.first { $0.name == "pass" }?.sources == .ledger)
         #expect(entitlements.first { $0.name == "pass" }?.app == "other")
         #expect(entitlements.first { $0.name == "pro" }?.sources == .storeKit)
+    }
+
+    @Test func anotherAppsEntryWithTheSameEntitlementNameGrantsNothing() async throws {
+        let h = StoreHarness()
+        h.ledger.serve(midgarId: FakeIdentity.first, [
+            FakeLedger.entry(app: "other", entitlement: "pro", productId: "app.midgar.other.pro", kind: "non_consumable"),
+            FakeLedger.entry(app: "other", entitlement: "pass", productId: "app.midgar.other.pass", kind: "subscription", expires: commerceEpoch.addingTimeInterval(30 * day))
+        ])
+        await h.store.refresh()
+        #expect(h.storedLedger?.entitlements.count == 2)
+        #expect(await h.store.entitlements.isEmpty)
+        #expect(!(await h.store.isEntitled(to: "pro")))
+    }
+
+    @Test func onlyTheListedCrossAppNamesGrant() async throws {
+        let h = StoreHarness(crossAppEntitlements: ["pass"])
+        h.ledger.serve(midgarId: FakeIdentity.first, [
+            FakeLedger.entry(app: "other", entitlement: "pro", productId: "app.midgar.other.pro", kind: "non_consumable"),
+            FakeLedger.entry(app: "other", entitlement: "pass", productId: "app.midgar.other.pass", kind: "non_consumable")
+        ])
+        await h.store.refresh()
+        #expect(await h.store.entitlements.map(\.name) == ["pass"])
+    }
+
+    @Test func aCrossAppEntryWithoutANameIsListedByItsProductId() async throws {
+        let h = StoreHarness(crossAppEntitlements: ["app.midgar.other.lifetime"])
+        h.ledger.serve(midgarId: FakeIdentity.first, [
+            FakeLedger.entry(app: "other", entitlement: nil, productId: "app.midgar.other.lifetime", kind: "non_consumable")
+        ])
+        await h.store.refresh()
+        #expect(await h.store.entitlements.map(\.name) == ["app.midgar.other.lifetime"])
     }
 
     @Test func aGrantBothSidesAgreeOnCarriesBothSources() async throws {

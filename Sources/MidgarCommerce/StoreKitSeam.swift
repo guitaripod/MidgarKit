@@ -59,10 +59,15 @@ public struct StoreProduct: Sendable, Equatable, Identifiable {
     public let displayPrice: String
 }
 
+/// The window or scene a purchase confirms in (`UIScene` on iOS and visionOS, `NSWindow` on macOS), carried through the seam without naming a UI framework. The anchor is a main-actor object that is only created on the main actor by the public `purchase(_:confirmIn:)` calls and only read by `LiveStoreKit` on the main actor, which is what makes the unchecked conformance sound.
+struct StoreConfirmation: @unchecked Sendable {
+    let anchor: AnyObject
+}
+
 /// The StoreKit calls `MidgarStore` makes, so its logic runs against fakes in unit tests and against `LiveStoreKit` in the app.
 protocol MidgarStoreKit: Sendable {
     func products(for ids: [String]) async throws -> [StoreProduct]
-    func purchase(productID: String, appAccountToken: UUID?) async throws -> StorePurchaseOutcome
+    func purchase(productID: String, appAccountToken: UUID?, confirmation: StoreConfirmation?) async throws -> StorePurchaseOutcome
     func updates() -> AsyncStream<StoreVerification>
     func currentEntitlements() async -> [StoreVerification]
     func sync() async throws

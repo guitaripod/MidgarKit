@@ -10,15 +10,18 @@ extension MidgarStore {
         return byName.values.sorted { $0.name < $1.name }
     }
 
-    /// The grants in the ledger snapshot that are valid at `date`. A non-consumable stays as long as the snapshot, which is dropped on an identity or environment change. A subscription needs a snapshot at most seven days old, and an expiry (or grace expiry) after `date`.
+    /// The grants in the ledger snapshot that are valid at `date`, for this app's own entries and for the cross-app entitlement names the configuration lists; every other app's entries grant nothing here. A non-consumable stays as long as the snapshot, which is dropped on an identity or environment change. A subscription needs a snapshot at most seven days old, and an expiry (or grace expiry) after `date`.
     func ledgerEntitlements(at date: Date) -> [MidgarEntitlement] {
         guard let snapshot = state.ledger else {
             return []
         }
         let isFresh = date.timeIntervalSince(snapshot.fetchedAt) <= Self.subscriptionCacheLifetime
         return snapshot.entitlements.compactMap { entry in
+            let name = Self.entitlementName(of: entry, configuration: configuration)
+            guard entry.app == configuration.appID || configuration.crossAppEntitlements.contains(name) else {
+                return nil
+            }
             let ownership: MidgarEntitlement.Ownership = entry.ownership == "FAMILY_SHARED" ? .familyShared : .purchased
-            let name = entry.entitlement ?? configuration.entitlementsByProduct[entry.productId] ?? entry.productId
             switch entry.kind {
             case "non_consumable":
                 return MidgarEntitlement(
@@ -37,6 +40,11 @@ extension MidgarStore {
                 return nil
             }
         }
+    }
+
+    /// The registry's entitlement name, else this app's map for its own product, else the product id.
+    private static func entitlementName(of entry: LedgerEntitlement, configuration: MidgarStoreConfiguration) -> String {
+        entry.entitlement ?? (entry.app == configuration.appID ? configuration.entitlementsByProduct[entry.productId] : nil) ?? entry.productId
     }
 
     /// The end of the paid period when it is still ahead, else the end of the grace period when the ledger says the subscription is in grace and that is still ahead.

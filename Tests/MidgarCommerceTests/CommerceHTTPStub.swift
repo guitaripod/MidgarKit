@@ -133,7 +133,7 @@ final class FakeLedger: @unchecked Sendable {
     }
 
     static func entry(
-        app: String = "other",
+        app: String = "app-test",
         entitlement: String?,
         productId: String,
         kind: String,

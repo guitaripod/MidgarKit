@@ -15,18 +15,16 @@ actor LiveStoreKit: MidgarStoreKit {
         }
     }
 
-    func purchase(productID: String, appAccountToken: UUID?) async throws -> StorePurchaseOutcome {
-        #if os(visionOS)
-        throw MidgarStoreError.unsupportedPlatform
-        #else
+    func purchase(productID: String, appAccountToken: UUID?, confirmation: StoreConfirmation?) async throws -> StorePurchaseOutcome {
         let product = try await product(for: productID)
         var options: Set<Product.PurchaseOption> = []
         if let appAccountToken {
             options.insert(.appAccountToken(appAccountToken))
         }
-        switch try await product.purchase(options: options) {
-        case .success(let result):
-            return .success(Self.map(result))
+        let result = try await Self.purchase(product, options: options, confirmation: confirmation)
+        switch result {
+        case .success(let verification):
+            return .success(Self.map(verification))
         case .pending:
             return .pending
         case .userCancelled:
@@ -34,6 +32,42 @@ actor LiveStoreKit: MidgarStoreKit {
         @unknown default:
             throw MidgarStoreError.storeKit("StoreKit returned a purchase result this version does not know.")
         }
+    }
+
+    /// Runs the purchase on the main actor, confirming in the scene or window when one is given. Where the SDK offers no plain `purchase(options:)` (visionOS) a purchase without a scene is refused, and a scene or window of the wrong kind for the platform is too. Before the OS versions that offer `confirmIn` (iOS 17, macOS 15.2) the plain purchase is used.
+    @MainActor
+    private static func purchase(
+        _ product: Product,
+        options: Set<Product.PurchaseOption>,
+        confirmation: StoreConfirmation?
+    ) async throws -> Product.PurchaseResult {
+        #if os(macOS)
+        if let confirmation {
+            guard let window = confirmation.anchor as? NSWindow else {
+                throw MidgarStoreError.unsupportedPlatform
+            }
+            if #available(macOS 15.2, *) {
+                return try await product.purchase(confirmIn: window, options: options)
+            }
+        }
+        return try await product.purchase(options: options)
+        #elseif os(visionOS)
+        guard let scene = confirmation?.anchor as? UIScene else {
+            throw MidgarStoreError.unsupportedPlatform
+        }
+        return try await product.purchase(confirmIn: scene, options: options)
+        #elseif os(iOS) || os(tvOS)
+        if let confirmation {
+            guard let scene = confirmation.anchor as? UIScene else {
+                throw MidgarStoreError.unsupportedPlatform
+            }
+            if #available(iOS 17.0, tvOS 17.0, *) {
+                return try await product.purchase(confirmIn: scene, options: options)
+            }
+        }
+        return try await product.purchase(options: options)
+        #else
+        return try await product.purchase(options: options)
         #endif
     }
 

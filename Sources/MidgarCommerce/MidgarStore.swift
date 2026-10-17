@@ -6,9 +6,9 @@ import StoreKit
 ///
 /// It is an actor, not a `@MainActor` model. The store owns state that several tasks touch (the `Transaction.updates` listener, a purchase, a restore, the background retry) and performs disk and network I/O; an actor serializes all of it without blocking the main thread, and the app wraps ``events()`` in whatever observable model its UI uses.
 ///
-/// - Purchase: every purchase carries `appAccountToken` = the Midgar ID. If the identity cannot answer right now the purchase still proceeds without the token, because a customer's payment must never wait on our backend. The transaction is granted from StoreKit on this device and queued for the ledger, which refuses a transaction without the caller's token (`403 account_mismatch`), so the queue drops it then and the customer keeps the entitlement through StoreKit only.
+/// - Purchase: every purchase carries `appAccountToken` = the Midgar ID. If the identity cannot answer right now the purchase still proceeds without the token, because a customer's payment must never wait on our backend. The transaction is granted from StoreKit on this device and queued for the ledger. Once the identity exists the queue reports it, and the ledger binds a token-less transaction to the reporting Midgar ID the first time; one already bound to another ID is refused with `403 account_mismatch` and dropped from the queue, leaving the customer's entitlement with StoreKit only.
 /// - Money path: a verified transaction is queued on disk, finished, granted, and reported to the ledger in the background until the ledger acknowledges it. An unverified one is never granted, finished or reported.
-/// - Entitlements: the union of the ledger's answer for the Midgar ID and StoreKit's `currentEntitlements` on this device.
+/// - Entitlements: the union of the ledger's answer for the Midgar ID and StoreKit's `currentEntitlements` on this device. The ledger answers for every app of the ID; only this app's own entries count, plus the names in ``MidgarStoreConfiguration/crossAppEntitlements`` (empty by default, the P4.00 switch).
 ///
 /// RevenueCat coexistence follows the registry engine. `storekit2` and `rc-observer` apps use ``MidgarStoreConfiguration/Mode/purchases``: MidgarCommerce buys, finishes and listens, and RevenueCat, where it is still linked, runs in observer mode (`purchasesAreCompletedBy: .myApp`) and only reports what MidgarCommerce finished. `rc-full` apps use ``MidgarStoreConfiguration/Mode/readOnly`` until their migration: RevenueCat keeps purchasing and finishing, and MidgarCommerce reads the ledger and touches no transaction.
 public actor MidgarStore {
@@ -165,8 +165,30 @@ public actor MidgarStore {
         }
     }
 
-    /// Buys a configured product. See the type's notes for the identity and money rules.
+    /// Buys a configured product. See the type's notes for the identity and money rules. Call this on iOS, macOS and tvOS; on visionOS, and on iOS or macOS when the app wants the confirmation sheet anchored to a window, call `purchase(_:confirmIn:)`.
     public func purchase(_ productID: String) async throws -> MidgarPurchaseResult {
+        try await purchase(productID, confirmation: nil)
+    }
+
+    #if os(iOS) || os(visionOS)
+    /// Buys a configured product and confirms in `scene`. This is the call on visionOS, where StoreKit has no scene-less purchase.
+    @available(iOS 17.0, visionOS 1.0, *)
+    @MainActor
+    public func purchase(_ productID: String, confirmIn scene: UIScene) async throws -> MidgarPurchaseResult {
+        try await purchase(productID, confirmation: StoreConfirmation(anchor: scene))
+    }
+    #endif
+
+    #if os(macOS)
+    /// Buys a configured product and confirms in `window`.
+    @MainActor
+    public func purchase(_ productID: String, confirmIn window: NSWindow) async throws -> MidgarPurchaseResult {
+        try await purchase(productID, confirmation: StoreConfirmation(anchor: window))
+    }
+    #endif
+
+    /// The one purchase path every public variant goes through: the account token, the verified-transaction handling and the events are the same whatever confirms the sheet.
+    func purchase(_ productID: String, confirmation: StoreConfirmation?) async throws -> MidgarPurchaseResult {
         try requirePurchases()
         guard handledProducts.contains(productID) else {
             throw MidgarStoreError.unknownProduct(productID)
@@ -174,7 +196,7 @@ public actor MidgarStore {
         let token = await accountToken()
         let outcome: StorePurchaseOutcome
         do {
-            outcome = try await storeKit.purchase(productID: productID, appAccountToken: token)
+            outcome = try await storeKit.purchase(productID: productID, appAccountToken: token, confirmation: confirmation)
         } catch let error as MidgarStoreError {
             throw error
         } catch {

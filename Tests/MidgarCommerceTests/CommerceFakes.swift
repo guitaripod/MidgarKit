@@ -63,7 +63,7 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
     private let lock = NSLock()
     private var outcomes: [StorePurchaseOutcome] = []
     private var current: [StoreVerification] = []
-    private var purchaseCalls: [(productID: String, token: UUID?)] = []
+    private var purchaseCalls: [(productID: String, token: UUID?, confirmed: Bool)] = []
     private var syncCalls = 0
     private var environment: StoreEnvironment?
     private let stream: AsyncStream<StoreVerification>
@@ -74,7 +74,7 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
         (stream, continuation) = AsyncStream.makeStream()
     }
 
-    var purchases: [(productID: String, token: UUID?)] { lock.withLock { purchaseCalls } }
+    var purchases: [(productID: String, token: UUID?, confirmed: Bool)] { lock.withLock { purchaseCalls } }
     var syncCount: Int { lock.withLock { syncCalls } }
 
     func queue(_ outcome: StorePurchaseOutcome) { lock.withLock { outcomes.append(outcome) } }
@@ -85,9 +85,9 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
         ids.map { StoreProduct(id: $0, displayName: $0, description: "", displayPrice: "$1") }
     }
 
-    func purchase(productID: String, appAccountToken: UUID?) async throws -> StorePurchaseOutcome {
+    func purchase(productID: String, appAccountToken: UUID?, confirmation: StoreConfirmation?) async throws -> StorePurchaseOutcome {
         lock.withLock {
-            purchaseCalls.append((productID, appAccountToken))
+            purchaseCalls.append((productID, appAccountToken, confirmation != nil))
             return outcomes.isEmpty ? .userCancelled : outcomes.removeFirst()
         }
     }
@@ -193,6 +193,7 @@ struct StoreHarness {
 
     init(
         mode: MidgarStoreConfiguration.Mode = .purchases,
+        crossAppEntitlements: Set<String> = [],
         storeKit: FakeStoreKit = FakeStoreKit(),
         ledger: FakeLedger = FakeLedger(),
         identity: FakeIdentity = FakeIdentity(),
@@ -218,6 +219,7 @@ struct StoreHarness {
                 productIDs: [Products.pro, Products.monthly],
                 entitlementsByProduct: Self.entitlementMap,
                 mode: mode,
+                crossAppEntitlements: crossAppEntitlements,
                 directory: directory
             ),
             identity: identity,
