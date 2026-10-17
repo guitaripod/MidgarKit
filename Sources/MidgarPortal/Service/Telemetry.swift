@@ -7,11 +7,12 @@ enum MidgarEvent: String {
     case tap
     case loaded
     case launch
+    case overlay
 }
 
 /// Fire-and-forget, anonymous cross-promo telemetry, sent through ``MidgarSignals``. Each event carries the
 /// promoted app id, the storefront and the placement; the host app is identified by the signals client's
-/// `X-App-ID`. Nothing is sent while the host has not configured ``MidgarSignals/shared`` or when
+/// `X-App-ID`. `overlay` is the App Store overlay that ``Midgar/moment(_:config:)`` presents. Nothing is sent while the host has not configured ``MidgarSignals/shared`` or when
 /// ``MidgarConfig/enableTelemetry`` is off.
 struct Telemetry {
     let config: MidgarConfig

@@ -1,4 +1,5 @@
 import Foundation
+import MidgarCore
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -41,6 +42,12 @@ public struct MidgarConfig: Sendable {
     /// App Analytics campaigns. `nil` sends the campaign token alone.
     public var providerToken: String?
 
+    /// The app's authorized Midgar HTTP client, built from ``MidgarIdentity/authorizing(_:)``. With it the portal shows
+    /// "Your Midgar" (the Midgar apps the person has and what they own in each, read from the identity service and the
+    /// ledger) and ``Midgar/moment(_:config:)`` skips a cross-sell for an app the person already uses. It never grants
+    /// anything in another app. `nil` (the default), no Midgar ID yet or no network leaves the portal as it was.
+    public var account: MidgarHTTPClient?
+
     /// Asked before the portal opens. Return `false` to keep it closed. Apps with a parental gate
     /// pass it here so the portal, and the App Store pages inside it, only open for a grown-up.
     public var gate: (@MainActor @Sendable () async -> Bool)?
@@ -54,6 +61,7 @@ public struct MidgarConfig: Sendable {
         storefront: String? = nil,
         placement: String = "settings",
         providerToken: String? = MidgarConfig.defaultProviderToken,
+        account: MidgarHTTPClient? = nil,
         gate: (@MainActor @Sendable () async -> Bool)? = nil
     ) {
         self.endpoint = endpoint
@@ -64,6 +72,7 @@ public struct MidgarConfig: Sendable {
         self.storefront = storefront
         self.placement = placement
         self.providerToken = providerToken
+        self.account = account
         self.gate = gate
     }
 
