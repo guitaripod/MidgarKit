@@ -26,6 +26,8 @@ struct CatalogEntry: Codable {
     let platforms: [MidgarPlatform]?
     let topics: [String]?
     let related: [String]?
+    let slug: String?
+    let moments: [String: String]?
     let family: String?
     let value: Double?
     let status: String?

@@ -9,6 +9,7 @@
     {
       "appId": "6787493695",
       "bundleId": "com.midgarcorp.flaccy",
+      "slug": "flaccy",
       "name": "Flaccy: Lossless FLAC Player",
       "tagline": "Lossless FLAC, beautifully played.",
       "genre": "Music",
@@ -41,6 +42,7 @@
     {
       "appId": "6705124497",
       "bundleId": "com.marcusziade.solarbeam",
+      "slug": "solar-beam",
       "name": "Solar Beam",
       "tagline": "A new NASA masterpiece every day.",
       "genre": "Photo & Video",
@@ -74,6 +76,7 @@
     {
       "appId": "1484270248",
       "bundleId": "com.marcusziade.knowtheflag",
+      "slug": "master-of-flags",
       "name": "Master of Flags: World Quiz",
       "tagline": "Master every flag in the world.",
       "genre": "Education",
@@ -108,6 +111,7 @@
     {
       "appId": "6791660932",
       "bundleId": "com.guitaripod.tailscode",
+      "slug": "tailscode",
       "name": "Tailscode: Coding Agent Remote",
       "tagline": "Your coding agents, in your pocket.",
       "genre": "Developer Tools",
@@ -140,6 +144,7 @@
     {
       "appId": "6784940198",
       "bundleId": "com.guitaripod.embr",
+      "slug": "embr",
       "name": "Embr — Live Streams",
       "tagline": "The best native Twitch client.",
       "genre": "Entertainment",
@@ -168,6 +173,7 @@
     {
       "appId": "6777952645",
       "bundleId": "com.guitaripod.psybeam",
+      "slug": "psybeam",
       "name": "Psybeam: Live Translator",
       "tagline": "Real-time two-way voice translation.",
       "genre": "Utilities",
@@ -199,6 +205,7 @@
     {
       "appId": "6779927672",
       "bundleId": "com.guitaripod.payday",
+      "slug": "pay-day",
       "name": "Pay Day: E-Invoice & Peppol",
       "tagline": "EU e-invoicing and Peppol, done right.",
       "genre": "Business",
@@ -229,6 +236,7 @@
     {
       "appId": "6727000827",
       "bundleId": "com.marcusziade.psywave",
+      "slug": "psywave",
       "name": "Psywave: AI Playlist Maker",
       "tagline": "AI-built playlists for any mood.",
       "genre": "Music",
@@ -259,6 +267,7 @@
     {
       "appId": "6751730339",
       "bundleId": "com.guitaripod.Pixie",
+      "slug": "pixiepocket",
       "name": "PixiePocket: AI Image Maker",
       "tagline": "Generate stunning images from a prompt.",
       "genre": "Photo & Video",
@@ -287,6 +296,7 @@
     {
       "appId": "6736581403",
       "bundleId": "com.marcusziade.doublekick",
+      "slug": "double-kick",
       "name": "Double Kick: Menu Translator",
       "tagline": "Translate any restaurant menu instantly.",
       "genre": "Food & Drink",
@@ -317,6 +327,7 @@
     {
       "appId": "6661019277",
       "bundleId": "com.marcusziade.DreamEater",
+      "slug": "dream-eater",
       "name": "Dream Eater: AI Dream Decoder",
       "tagline": "Decode the meaning of your dreams.",
       "genre": "Lifestyle",
@@ -348,6 +359,7 @@
     {
       "appId": "6736438070",
       "bundleId": "com.marcusziade.sforesight",
+      "slug": "sforesight",
       "name": "SForesight: SF Symbols Search",
       "tagline": "Search every SF Symbol, instantly.",
       "genre": "Developer Tools",
@@ -378,6 +390,7 @@
     {
       "appId": "6746733380",
       "bundleId": "com.marcusziade.aotd",
+      "slug": "app-of-the-dead",
       "name": "App of the Dead: Religions",
       "tagline": "Explore the world's religions and beliefs.",
       "genre": "Education",
@@ -408,6 +421,7 @@
     {
       "appId": "1523538855",
       "bundleId": "com.marcusziade.inventory",
+      "slug": "master-of-inventory",
       "name": "Master of Inventory: Warranty",
       "tagline": "Track warranties and everything you own.",
       "genre": "Utilities",
@@ -439,6 +453,7 @@
     {
       "appId": "6785542220",
       "bundleId": "com.guitaripod.helia",
+      "slug": "helia",
       "name": "Helia: UV Index & Sun Safety",
       "tagline": "The honest solar coach.",
       "genre": "Health & Fitness",
@@ -470,6 +485,7 @@
     {
       "appId": "6789594504",
       "bundleId": "com.midgarcorp.flaccy.mac",
+      "slug": "flaccy",
       "name": "Flaccy: FLAC Music Player",
       "tagline": "Your FLAC library, on the Mac.",
       "genre": "Music",

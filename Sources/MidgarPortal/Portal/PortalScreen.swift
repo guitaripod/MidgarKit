@@ -33,6 +33,7 @@ struct PortalScreen: View {
                             .padding(.bottom, max(proxy.safeAreaInsets.bottom, 16))
                     }
                 }
+                yourMidgarPanel(layout: layout)
                 if layout.isSideCard {
                     PortalCard(model: model)
                         .frame(width: layout.sideCardWidth)
@@ -46,6 +47,31 @@ struct PortalScreen: View {
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
+
+    /// "Your Midgar" over the canvas, kept clear of the header and the card. Not on tvOS, where a list of rows has no remote-friendly form here.
+    @ViewBuilder
+    private func yourMidgarPanel(layout: PortalScreenLayout) -> some View {
+        #if !os(tvOS)
+        if model.showsYourMidgar, let section = model.yourMidgar {
+            YourMidgarPanel(
+                section: section,
+                hostBundleID: model.hostBundleID,
+                installed: model.installed,
+                onSelect: { app in
+                    if !model.isHost(app) { model.perform(model.action(for: app)) }
+                },
+                onClose: { model.hideYourMidgar() }
+            )
+            .frame(maxWidth: 560)
+            .padding(.top, layout.panelInsets.top)
+            .padding(.bottom, layout.panelInsets.bottom)
+            .padding(.trailing, layout.panelInsets.trailing)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .transition(.opacity)
+        }
+        #endif
+    }
 }
 
 /// Where the card goes: under the canvas on tall screens, beside it when the screen is too short
@@ -57,6 +83,15 @@ struct PortalScreenLayout {
     var isSideCard: Bool { size.width > size.height && size.height < 560 }
 
     var sideCardWidth: CGFloat { min(340 * PortalMetrics.scale, size.width * 0.42) }
+
+    /// Where "Your Midgar" may sit, measured inside the safe area: under the header and clear of the card.
+    var panelInsets: PortalInsets {
+        let top = (safeArea.top > 0 ? 0 : 8) + PortalScreen.headerHeight
+        if isSideCard {
+            return PortalInsets(top: top, bottom: 12, trailing: sideCardWidth + 16 + 8)
+        }
+        return PortalInsets(top: top, bottom: max(safeArea.bottom, 16) + PortalScreen.cardHeight + 12)
+    }
 
     var canvasInsets: PortalInsets {
         let top = safeArea.top + PortalScreen.headerHeight
@@ -118,6 +153,19 @@ struct PortalHeader: View {
             .accessibilityElement(children: .combine)
             Spacer()
             #if !os(tvOS)
+            if model.yourMidgar != nil {
+                Button {
+                    if model.showsYourMidgar { model.hideYourMidgar() } else { model.showYourMidgar() }
+                } label: {
+                    Text(MidgarStrings.yourMidgar)
+                        .font(.system(size: 13 * PortalMetrics.scale, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36 * PortalMetrics.scale)
+                        .portalGlass(in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
             Button {
                 model.perform(.close)
             } label: {

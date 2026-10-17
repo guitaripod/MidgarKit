@@ -69,4 +69,40 @@ enum MidgarStrings {
     static var coreAccessibilityHint: String {
         String(localized: "All apps by Midgar Oy", bundle: .module, comment: "Accessibility hint of the Midgar emblem in the portal")
     }
+
+    static var yourMidgar: String {
+        String(localized: "Your Midgar", bundle: .module, comment: "Title of the panel that lists the Midgar apps the person has and what they own in each, and the button that opens it")
+    }
+
+    static var yourApps: String {
+        String(localized: "Your apps", bundle: .module, comment: "Heading above the Midgar apps the person already has")
+    }
+
+    static var moreFromMidgar: String {
+        String(localized: "More from Midgar", bundle: .module, comment: "Heading above Midgar apps the person does not have yet")
+    }
+
+    static var lifetime: String {
+        String(localized: "Lifetime", bundle: .module, comment: "Shown under an unlock the person bought once and keeps for good")
+    }
+
+    static var unlocked: String {
+        String(localized: "Unlocked", bundle: .module, comment: "Name of a purchase that has no entitlement name, such as a one-time unlock")
+    }
+
+    static func activeUntil(_ date: String) -> String {
+        String(
+            localized: "Active until \(date)",
+            bundle: .module,
+            comment: "Shown under a subscription: the date its paid period ends, %@ is a date"
+        )
+    }
+
+    static func billingIssue(until date: String) -> String {
+        String(
+            localized: "Billing issue, active until \(date)",
+            bundle: .module,
+            comment: "Shown under a subscription whose renewal payment failed and that stays active during the grace period, %@ is a date"
+        )
+    }
 }

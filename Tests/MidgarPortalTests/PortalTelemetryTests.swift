@@ -106,6 +106,97 @@ private final class PortalSignalsStub: URLProtocol, @unchecked Sendable {
         #expect(!text.contains("\"event\""))
     }
 
+    @Test func anOverlayCarriesTheOfferedAppAndTheFeaturePlacement() {
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: PortalMoments.placement))
+        #expect(telemetry.props(.overlay, appId: "6787493695") == [
+            "appId": .string("6787493695"),
+            "storefront": .string("fi"),
+            "placement": .string("feature"),
+        ])
+    }
+
+    @MainActor @Test func aMomentThatOffersAnAppReachesSignalsAsAnOverlayEventForThatApp() async throws {
+        PortalSignalsStub.reset()
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let signals = makeSignals(directory: directory)
+        let config = MidgarConfig(storefront: "FI", placement: PortalMoments.placement)
+        let host = PortalFixtures.app("psywave", moments: ["export": "flaccy"])
+        let flaccy = PortalFixtures.app("flaccy", id: "6787493695")
+        let (defaults, cleanup) = PortalFixtures.defaults()
+        defer { cleanup() }
+        let dependencies = MomentDependencies(
+            hostBundleID: host.bundleId,
+            catalog: { [host, flaccy] },
+            installed: { _ in [] },
+            ownedSlugs: { [] },
+            history: MomentHistory(defaults: defaults),
+            presenter: FakePresenter(),
+            inFlight: MomentsInFlight(),
+            platform: .ios
+        )
+
+        let outcome = await MomentCoordinator.run(
+            moment: "export",
+            config: config,
+            dependencies: dependencies,
+            telemetry: Telemetry(config: config, signals: { signals })
+        )
+        await signals.flush()
+
+        #expect(outcome == .presented(flaccy))
+        let body = try #require(PortalSignalsStub.captured.first)
+        let object = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let events = try #require(object["events"] as? [[String: Any]])
+        #expect(events.compactMap { $0["name"] as? String } == ["overlay"])
+        #expect(events.first?["props"] as? [String: String] == ["appId": "6787493695", "storefront": "fi", "placement": "feature"])
+    }
+
+    @MainActor @Test func aMomentThatOffersNothingSendsNothing() async {
+        PortalSignalsStub.reset()
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let signals = makeSignals(directory: directory)
+        let config = MidgarConfig(placement: PortalMoments.placement)
+        let host = PortalFixtures.app("psywave", moments: ["export": "flaccy"])
+        let (defaults, cleanup) = PortalFixtures.defaults()
+        defer { cleanup() }
+        let dependencies = MomentDependencies(
+            hostBundleID: host.bundleId,
+            catalog: { [host, PortalFixtures.app("flaccy")] },
+            installed: { _ in [] },
+            ownedSlugs: { ["flaccy"] },
+            history: MomentHistory(defaults: defaults),
+            presenter: FakePresenter(),
+            inFlight: MomentsInFlight(),
+            platform: .ios
+        )
+
+        let outcome = await MomentCoordinator.run(
+            moment: "export",
+            config: config,
+            dependencies: dependencies,
+            telemetry: Telemetry(config: config, signals: { signals })
+        )
+        await signals.flush()
+
+        #expect(outcome == .skipped(.alreadyOwned))
+        #expect(PortalSignalsStub.captured.isEmpty)
+    }
+
+    @Test func everyEventThePortalCanSendIsInTheSignalsSchema() throws {
+        let schema = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("services/signals/src/schema.ts")
+        guard let source = try? String(contentsOf: schema, encoding: .utf8) else { return }
+        let all: [MidgarEvent] = [.portalOpen, .impression, .tap, .loaded, .launch, .overlay]
+        for event in all {
+            let declared = source.contains("\n  \(event.rawValue): {") || source.contains("\n  \"\(event.rawValue)\": {")
+            #expect(declared, "signals schema has no event \(event.rawValue)")
+        }
+    }
+
     @Test func theStorefrontIsLeftOutWhenTheDeviceHasNone() {
         let telemetry = Telemetry(config: MidgarConfig(storefront: "", placement: "settings"))
         let props = telemetry.props(.tap, appId: "9")

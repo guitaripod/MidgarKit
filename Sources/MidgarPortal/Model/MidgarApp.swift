@@ -57,6 +57,10 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     public let value: Double
     public let scheme: String?
     public let slot: String?
+    /// The registry slug of the product, shared by its iPhone and Mac records. The identity service and the ledger name apps by it.
+    public let slug: String?
+    /// Contextual cross-sell: the moment names this app calls ``Midgar/moment(_:config:)`` with, each mapped to the slug of the related product to offer there.
+    public let moments: [String: String]
 
     public var id: String { appId }
 
@@ -80,7 +84,9 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         family: String? = nil,
         value: Double = 0.5,
         scheme: String? = nil,
-        slot: String? = nil
+        slot: String? = nil,
+        slug: String? = nil,
+        moments: [String: String] = [:]
     ) {
         self.appId = appId
         self.bundleId = bundleId
@@ -102,6 +108,8 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
         self.value = value
         self.scheme = scheme
         self.slot = slot
+        self.slug = slug
+        self.moments = moments
     }
 
     /// Public App Store product page, used as a fallback when in-app presentation is unavailable.
@@ -165,7 +173,7 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case appId, bundleId, name, tagline, genre, accentHex, featured, order, iconURL
         case screenshotURLs, rating, ratingCount, formattedPrice, platforms, topics, related
-        case family, value, scheme, slot
+        case family, value, scheme, slot, slug, moments
     }
 
     public init(from decoder: Decoder) throws {
@@ -190,7 +198,9 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
             family: try container.decodeIfPresent(String.self, forKey: .family),
             value: try container.decodeIfPresent(Double.self, forKey: .value) ?? 0.5,
             scheme: try container.decodeIfPresent(String.self, forKey: .scheme),
-            slot: try container.decodeIfPresent(String.self, forKey: .slot)
+            slot: try container.decodeIfPresent(String.self, forKey: .slot),
+            slug: try container.decodeIfPresent(String.self, forKey: .slug),
+            moments: try container.decodeIfPresent([String: String].self, forKey: .moments) ?? [:]
         )
     }
 }

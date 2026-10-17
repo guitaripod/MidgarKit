@@ -88,8 +88,21 @@ actor CatalogService {
         }
     }
 
+    /// What an entry's registry slug and moments are in the catalog that ships inside the package, by bundle id.
+    private struct ShippedFacts: Sendable {
+        let slug: String?
+        let moments: [String: String]?
+    }
+
+    /// The hosted catalog is regenerated separately from the SDK, so for a while it can lack the slug and moments an entry has in the bundled one. Without the slug the portal cannot match the account's apps to the catalog.
+    private static let shippedFacts: [String: ShippedFacts] = Dictionary(
+        bundledCatalog().map { ($0.bundleId.lowercased(), ShippedFacts(slug: $0.slug, moments: $0.moments)) },
+        uniquingKeysWith: { first, _ in first }
+    )
+
     static func merge(entry: CatalogEntry, live: ITunesApp?) -> MidgarApp {
-        MidgarApp(
+        let shipped = shippedFacts[entry.bundleId.lowercased()]
+        return MidgarApp(
             appId: entry.appId,
             bundleId: entry.bundleId,
             name: live?.trackName ?? entry.name,
@@ -109,7 +122,9 @@ actor CatalogService {
             family: entry.family,
             value: entry.value ?? 0.5,
             scheme: entry.scheme,
-            slot: entry.slot
+            slot: entry.slot,
+            slug: entry.slug ?? shipped?.slug,
+            moments: entry.moments ?? shipped?.moments ?? [:]
         )
     }
 

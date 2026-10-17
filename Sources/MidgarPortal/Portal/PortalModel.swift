@@ -26,6 +26,8 @@ final class PortalModel: ObservableObject {
     @Published private(set) var installed: Set<String> = []
     @Published var selection: PortalSelection = .core
     @Published private(set) var accent = PortalColor.midgar
+    @Published private(set) var yourMidgar: YourMidgarSection?
+    @Published private(set) var showsYourMidgar = false
 
     let config: MidgarConfig
     let hostBundleID: String?
@@ -33,12 +35,22 @@ final class PortalModel: ObservableObject {
 
     private let service = CatalogService()
     private let telemetry: Telemetry
+    private let account: PortalAccount?
+    private var accountSnapshot: PortalAccountSnapshot?
     private var loadTask: Task<Void, Never>?
+    private var accountTask: Task<Void, Never>?
 
-    init(config: MidgarConfig, hostBundleID: String? = Bundle.main.bundleIdentifier) {
+    /// - Parameter account: Where "Your Midgar" reads the person's apps and purchases. Defaults to the one for ``MidgarConfig/account``; without either the portal has no such section.
+    init(
+        config: MidgarConfig,
+        hostBundleID: String? = Bundle.main.bundleIdentifier,
+        account: PortalAccount? = nil,
+        telemetry: Telemetry? = nil
+    ) {
         self.config = config
         self.hostBundleID = hostBundleID
-        self.telemetry = Telemetry(config: config)
+        self.telemetry = telemetry ?? Telemetry(config: config)
+        self.account = account ?? config.account.map { PortalAccountDirectory.account(for: $0) }
     }
 
     var hostApp: MidgarApp? {
@@ -47,8 +59,19 @@ final class PortalModel: ObservableObject {
 
     var availableHere: Int { ranked.filter(\.runsOnThisDevice).count }
 
+    /// How many of the apps for this device the person has: the host, the ones installed here, and, once the identity service has answered, the ones their Midgar ID has a session or purchase in. Without that answer it is the first two, as before.
     var installedCount: Int {
-        ranked.filter { $0.runsOnThisDevice && ($0.bundleId.lowercased() == hostBundleID?.lowercased() || installed.contains($0.bundleId.lowercased())) }.count
+        ranked.filter { $0.runsOnThisDevice && (isHost($0) || installed.contains($0.bundleId.lowercased()) || isOwned($0)) }.count
+    }
+
+    /// The registry slugs of the apps "Your Midgar" lists, empty while the account is unknown.
+    private var ownedSlugs: Set<String> {
+        Set(yourMidgar?.yours.compactMap(\.app.slug) ?? [])
+    }
+
+    /// `true` when the person's Midgar ID has an app that runs on this device, whether or not it is installed here. The card then offers Open, which opens the app when it is installed and its App Store page when it is not.
+    func isOwned(_ app: MidgarApp) -> Bool {
+        app.runsOnThisDevice && (app.slug.map(ownedSlugs.contains) ?? false)
     }
 
     /// The app the camera should drift to once the portal has opened.
@@ -64,14 +87,46 @@ final class PortalModel: ObservableObject {
             guard !Task.isCancelled, !result.isEmpty else { return }
             if Set(result.map(\.appId)) != Set(ranked.map(\.appId)) { apply(withoutExcluded(result)) }
         }
+        loadAccount()
     }
 
     func stop() {
         loadTask?.cancel()
+        accountTask?.cancel()
+    }
+
+    /// Asks the identity service and the ledger what the person has. A failure leaves the portal without the section, as before.
+    private func loadAccount() {
+        guard let account else { return }
+        accountTask = Task { [weak self] in
+            let snapshot = await account.snapshot()
+            guard let self, !Task.isCancelled else { return }
+            accountSnapshot = snapshot
+            rebuildYourMidgar()
+        }
+    }
+
+    func rebuildYourMidgar() {
+        yourMidgar = accountSnapshot.flatMap {
+            YourMidgarBuilder.build(snapshot: $0, catalog: ranked, hostBundleID: hostBundleID, installed: installed)
+        }
+        if yourMidgar == nil { showsYourMidgar = false }
+    }
+
+    /// Opens the panel and counts an impression for each app it suggests.
+    func showYourMidgar() {
+        guard let yourMidgar else { return }
+        showsYourMidgar = true
+        yourMidgar.suggestions.forEach { recordSeen($0.appId) }
+    }
+
+    func hideYourMidgar() {
+        showsYourMidgar = false
     }
 
     func refreshInstalled() {
         installed = InstalledApps.detect(in: ranked)
+        rebuildYourMidgar()
     }
 
     func select(_ selection: PortalSelection) {
@@ -136,7 +191,7 @@ final class PortalModel: ObservableObject {
             return MidgarStrings.view
             #endif
         }
-        return app.priceLabel
+        return isOwned(app) ? MidgarStrings.open : app.priceLabel
     }
 
     func perform(_ action: PortalAction) {
@@ -153,6 +208,7 @@ final class PortalModel: ObservableObject {
         installed = installedNow
         ranked = PortalRanking.order(apps: apps, hostBundleID: hostBundleID, installed: installedNow)
         InstalledApps.warnIfSchemesMissing(for: apps)
+        rebuildYourMidgar()
         if case .app(let current) = selection, let fresh = ranked.first(where: { $0.appId == current.appId }) {
             selection = .app(fresh)
         }
