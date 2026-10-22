@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updatedAt": "2026-10-13T16:39:50Z",
+  "updatedAt": "2026-10-22T21:30:53Z",
   "developer": {
     "name": "Midgar",
     "artistId": "1484270247"
@@ -29,6 +29,7 @@
       "value": 1.0,
       "featured": true,
       "order": 0,
+      "slot": "midgar-01",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -62,6 +63,7 @@
       "value": 1.0,
       "featured": true,
       "order": 1,
+      "slot": "midgar-02",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -95,6 +97,7 @@
       "value": 1.0,
       "featured": true,
       "order": 2,
+      "slot": "midgar-03",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -126,6 +129,7 @@
       "value": 1.0,
       "featured": true,
       "order": 3,
+      "slot": "midgar-04",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -153,6 +157,7 @@
       "value": 0.3,
       "featured": true,
       "order": 4,
+      "slot": "midgar-05",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -183,6 +188,7 @@
       "value": 0.7,
       "featured": true,
       "order": 5,
+      "slot": "midgar-06",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -212,6 +218,7 @@
       "value": 0.8,
       "featured": false,
       "order": 6,
+      "slot": "midgar-07",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -242,6 +249,7 @@
       "value": 0.7,
       "featured": false,
       "order": 7,
+      "slot": "midgar-08",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -271,6 +279,7 @@
       "value": 0.3,
       "featured": false,
       "order": 8,
+      "slot": "midgar-09",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -301,6 +310,7 @@
       "value": 0.6,
       "featured": false,
       "order": 9,
+      "slot": "midgar-10",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -332,6 +342,7 @@
       "value": 0.6,
       "featured": false,
       "order": 10,
+      "slot": "midgar-11",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -361,6 +372,7 @@
       "value": 0.3,
       "featured": false,
       "order": 11,
+      "slot": "midgar-12",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -390,6 +402,7 @@
       "value": 0.3,
       "featured": false,
       "order": 12,
+      "slot": "midgar-13",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -420,6 +433,7 @@
       "value": 0.6,
       "featured": false,
       "order": 13,
+      "slot": "midgar-14",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -450,6 +464,7 @@
       "value": 0.6,
       "featured": true,
       "order": 14,
+      "slot": "midgar-15",
       "status": "live",
       "icon": null,
       "screenshots": [
@@ -480,12 +495,76 @@
       "value": 0.8,
       "featured": false,
       "order": 15,
+      "slot": "midgar-16",
       "status": "live",
       "icon": null,
       "screenshots": [
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8a/d6/3b/8ad63bfa-ea2a-b5ba-2217-6aa4c51d43f2/1-nowplaying.png/800x500bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d1/48/33/d14833e7-7d13-e3d3-92d1-4b20fbb6c986/2-albums.png/800x500bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3c/1f/af/3c1faf6a-9134-047b-16b8-1c7751b9236e/3-artist.png/800x500bb.jpg"
+      ]
+    },
+    {
+      "appId": "6822066419",
+      "bundleId": "com.guitaripod.crucible",
+      "slug": "crucible",
+      "name": "Crucible for Plex",
+      "tagline": "Your Plex library, beautifully native.",
+      "genre": "Entertainment",
+      "accent": "#E5A00D",
+      "platforms": [
+        "ios",
+        "tvos"
+      ],
+      "topics": [
+        "entertainment",
+        "streaming"
+      ],
+      "related": [
+        "com.guitaripod.embr",
+        "com.midgarcorp.flaccy",
+        "com.midgarcorp.flaccy.mac"
+      ],
+      "value": 0.6,
+      "featured": false,
+      "order": 16,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e1/e8/6c/e1e86c3b-4f79-0a0e-7513-e0cc8b468855/01.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/94/41/f0/9441f013-b124-357d-f8f5-c40edd092dc3/02.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5f/d1/f4/5fd1f4ad-89cd-cd6a-b87e-32d5e8eb84fb/03.png/320x480bb.jpg"
+      ]
+    },
+    {
+      "appId": "6787688416",
+      "bundleId": "com.guitaripod.livingdex",
+      "slug": "living-dex",
+      "name": "Living Dex: Animal Identifier",
+      "tagline": "Point your camera, meet the animal.",
+      "genre": "Education",
+      "accent": "#22C55E",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "learning",
+        "nature",
+        "ai"
+      ],
+      "related": [
+        "com.marcusziade.solarbeam",
+        "com.guitaripod.helia"
+      ],
+      "value": 0.5,
+      "featured": false,
+      "order": 17,
+      "status": "live",
+      "icon": null,
+      "screenshots": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d3/96/46/d39646f4-795a-3a5a-197e-dfb3dac14faf/1-field.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7a/b7/e4/7ab7e42a-a35b-3eb3-0a00-b398bad3869e/2-starter.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a8/23/78/a823782a-0a5a-e2f8-ac27-0af802347e03/3-reveal.png/320x480bb.jpg"
       ]
     }
   ]

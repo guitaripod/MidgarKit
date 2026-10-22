@@ -338,6 +338,55 @@
       "featured": true,
       "order": 3,
       "slot": "midgar-04"
+    },
+    {
+      "appId": "6822066419",
+      "bundleId": "com.guitaripod.crucible",
+      "slug": "crucible",
+      "name": "Crucible for Plex",
+      "tagline": "Your Plex library, beautifully native.",
+      "genre": "Entertainment",
+      "accent": "#E5A00D",
+      "platforms": [
+        "ios",
+        "tvos"
+      ],
+      "topics": [
+        "entertainment",
+        "streaming"
+      ],
+      "related": [
+        "com.guitaripod.embr",
+        "com.midgarcorp.flaccy",
+        "com.midgarcorp.flaccy.mac"
+      ],
+      "value": 0.6,
+      "featured": false,
+      "order": 16
+    },
+    {
+      "appId": "6787688416",
+      "bundleId": "com.guitaripod.livingdex",
+      "slug": "living-dex",
+      "name": "Living Dex: Animal Identifier",
+      "tagline": "Point your camera, meet the animal.",
+      "genre": "Education",
+      "accent": "#22C55E",
+      "platforms": [
+        "ios"
+      ],
+      "topics": [
+        "learning",
+        "nature",
+        "ai"
+      ],
+      "related": [
+        "com.marcusziade.solarbeam",
+        "com.guitaripod.helia"
+      ],
+      "value": 0.5,
+      "featured": false,
+      "order": 17
     }
   ]
 }
