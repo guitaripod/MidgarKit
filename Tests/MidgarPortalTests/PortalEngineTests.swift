@@ -373,7 +373,7 @@ final class PortalControllerTests: XCTestCase {
         _ = run(controller, from: 0, seconds: 4)
         XCTAssertEqual(seen.count, Set(seen).count)
         XCTAssertGreaterThanOrEqual(seen.count, 6)
-        XCTAssertLessThanOrEqual(seen.count, 16)
+        XCTAssertLessThanOrEqual(seen.count, CatalogService.bundledApps().count)
     }
 
     func testKeyboardNavigationWalksToANeighbour() {

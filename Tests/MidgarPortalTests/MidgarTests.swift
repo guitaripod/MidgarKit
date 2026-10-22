@@ -5,7 +5,7 @@ final class MidgarTests: XCTestCase {
 
     func testBundledCatalogLoadsEveryApp() {
         let entries = CatalogService.bundledCatalog()
-        XCTAssertEqual(entries.count, 16, "Bundled fallback should ship all 16 apps")
+        XCTAssertEqual(entries.count, 18, "Bundled fallback should ship all 18 store records")
         XCTAssertTrue(entries.allSatisfy { !$0.appId.isEmpty && !$0.bundleId.isEmpty })
         XCTAssertTrue(entries.allSatisfy { !($0.platforms ?? []).isEmpty })
         XCTAssertTrue(entries.allSatisfy { midgarRGBA(hex: $0.accent) != nil })
@@ -30,7 +30,7 @@ final class MidgarTests: XCTestCase {
 
     func testBundledAppsAreAllVisibleAndMergeEveryField() {
         let apps = CatalogService.bundledApps()
-        XCTAssertEqual(apps.count, 16)
+        XCTAssertEqual(apps.count, 18)
         let flaccyMac = apps.first { $0.bundleId == "com.midgarcorp.flaccy.mac" }
         XCTAssertEqual(flaccyMac?.platforms, [.mac])
         XCTAssertEqual(flaccyMac?.family, "flaccy")
