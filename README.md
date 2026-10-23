@@ -71,6 +71,16 @@ let appAccountToken = UUID(uuidString: try await identity.midgarId)
 
 `deleteIdentity()` and `export()` cover erasure and the data export.
 
+`midgarTokenHeader(within:)` (4.3.0) answers the `X-Midgar-Token` header with the current access token, or nil when the identity does not answer within the timeout. It never throws and never waits longer than the timeout, so a call that carries the header is never held up by it. `AsyncTimeout.run(for:operation:)` is the public primitive behind it. Handing mako the Midgar ID on every AICredits call is one line:
+
+```swift
+let credits = AICreditsConfig(
+    baseURL: backendURL,
+    appID: "myapp",
+    additionalHeaders: { await identity.midgarTokenHeader(within: .seconds(2)).map { [$0.name: $0.value] } ?? [:] }
+)
+```
+
 ## Errors and public enums
 
 `MidgarHTTPError` keeps the envelope's `code` for 401, 402, 404 and 429 (`.unauthorized(code:)`, `.paymentRequired(code:)`, `.notFound(code:)`, `.rateLimited(retryAfter:code:)`); `serverCode` reads it for every case that has one, and a pattern without the payload (`case .unauthorized:`) ignores it.
