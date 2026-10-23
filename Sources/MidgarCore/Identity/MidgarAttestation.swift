@@ -22,7 +22,7 @@ public protocol MidgarAttestation: Sendable {
     func generateAssertion(_ keyID: String, clientDataHash: Data) async throws -> Data
 }
 
-/// The attestation of platforms and processes without App Attest: Linux, Macs before macOS 27, most app extensions and the Simulator.
+/// The attestation of platforms and processes without App Attest: Linux, Macs before macOS 27, most app extensions and the Simulator. An app that must not create an App Attest key passes it to ``MidgarIdentity`` on purpose.
 public struct MidgarUnsupportedAttestation: MidgarAttestation {
     public init() {}
 
