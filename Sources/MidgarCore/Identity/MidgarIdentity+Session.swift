@@ -23,6 +23,9 @@ private let attachAgainCodes: Set<String> = [
 
 private let retryableEvidenceCodes: Set<String> = ["key_already_attested", "invalid_challenge"]
 
+/// What identity answers (401) for an attestation it cannot accept. Every verification failure maps to this one code: an attestation made for another App ID (`rp_id_mismatch`), an environment this service does not take (`bad_aaguid`), a broken certificate chain, a wrong nonce.
+private let attestationRejectionCodes: Set<String> = ["attestation_invalid"]
+
 private let identityGoneCodes: Set<String> = ["identity_not_found", "credential_expired"]
 
 /// Raised inside the session flow when the identity no longer exists and the caller asked for no new one to be minted.
@@ -213,7 +216,7 @@ extension MidgarIdentity {
         return shared
     }
 
-    /// Runs a mint or attach with fresh attestation evidence where App Attest is supported. A used key or a spent challenge gets one more try with new ones, because the service consumes both.
+    /// Runs a mint or attach with fresh attestation evidence where App Attest is supported. A used key or a spent challenge gets one more try with new ones, because the service consumes both. An attestation the service cannot accept (see ``attestationRejectionCodes``) is no reason to leave the app without a Midgar ID: the operation runs once more without evidence, which selects the unattested flows, and App Attest stays off for the rest of the process. Every other failure is thrown.
     private func withEvidence<Value: Sendable>(
         _ operation: (AttestationEvidence?) async throws -> Value
     ) async throws -> Value {
@@ -223,7 +226,15 @@ extension MidgarIdentity {
             do {
                 return try await operation(evidence)
             } catch let error as MidgarHTTPError {
-                guard evidence != nil, !retried, let code = error.serverCode, retryableEvidenceCodes.contains(code) else {
+                guard evidence != nil, let code = error.serverCode else {
+                    throw error
+                }
+                if attestationRejectionCodes.contains(code) {
+                    attestationFailedThisProcess = true
+                    log.warning("identity: the service rejected the attestation (\(code)), continuing unattested until the app restarts")
+                    return try await operation(nil)
+                }
+                guard !retried, retryableEvidenceCodes.contains(code) else {
                     throw error
                 }
                 retried = true
@@ -232,20 +243,37 @@ extension MidgarIdentity {
         }
     }
 
-    /// A challenge, a new key and its attestation. Nil where App Attest is not supported, which selects the unattested flows.
+    /// A challenge, a new key and its attestation. Nil where App Attest is not supported or has failed earlier in this process, which selects the unattested flows. A client failure of App Attest itself (a missing entitlement, a different App ID, a key that cannot be made or attested) also yields nil and switches App Attest off for the rest of the process, so refreshes and attaches do not generate a key each time; the next launch tries again. Apple's service being unreachable and a cancelled task are thrown, because a later attempt can succeed and a keyless session stays keyless.
     private func makeEvidence() async throws -> AttestationEvidence? {
         guard attestation.isSupported else {
             return nil
         }
+        guard !attestationFailedThisProcess else {
+            log.info("identity: App Attest failed earlier in this process, continuing unattested")
+            return nil
+        }
+        let reply: ChallengeReply = try await post("challenge", nil)
         do {
-            let reply: ChallengeReply = try await post("challenge", nil)
             let keyID = try await attestation.generateKey()
             let object = try await attestation.attestKey(keyID, clientDataHash: MidgarDigest.sha256(utf8: reply.challenge))
             return AttestationEvidence(keyID: keyID, attestation: object.base64EncodedString(), challenge: reply.challenge)
-        } catch MidgarAttestationError.unsupported {
-            log.info("identity: App Attest unsupported on this device, continuing unattested")
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch MidgarAttestationError.unavailable {
+            throw MidgarAttestationError.unavailable
+        } catch {
+            attestationFailedThisProcess = true
+            log.warning("identity: App Attest failed (\(Self.attestationErrorKind(error))), continuing unattested until the app restarts")
             return nil
         }
+    }
+
+    /// The case name of a ``MidgarAttestationError`` or the type of any other error, never its message.
+    private static func attestationErrorKind(_ error: any Error) -> String {
+        if let failure = error as? MidgarAttestationError {
+            return "\(failure)"
+        }
+        return String(describing: type(of: error))
     }
 
     /// POSTs to the identity service. 401s keep their error code so the flows can act on it.

@@ -21,6 +21,7 @@ public actor MidgarIdentity {
     let log: MidgarIdentityLogger
 
     private(set) var cached: LiveSession?
+    var attestationFailedThisProcess = false
     private var flight: Task<Result<LiveSession, any Error>, Never>?
 
     /// - Parameters:

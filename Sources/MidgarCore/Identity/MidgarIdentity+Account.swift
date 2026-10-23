@@ -148,7 +148,7 @@ extension MidgarIdentity {
         return DeleteBody(assertion: proof.assertion, clientData: proof.clientData, credential: proof.credential)
     }
 
-    /// The proof for a change to the account. A session with a key signs SHA-256 of the challenge; a key that no longer exists ends the session, so the next call attaches again with a new key.
+    /// The proof for a change to the account. A session with a key signs SHA-256 of the challenge; a key that no longer exists ends the session, so the next call attaches again with a new key. There is no unattested fallback here: the service accepts only an assertion from a key-bound session and refuses the ID credential, so any other assertion failure is thrown and the session keeps its key. A keyless session, such as one that fell back after App Attest failed, proves itself with the credential.
     private func proof(challenge: String) async throws -> AccountProof {
         guard let keyID = try store.readSession()?.keyId else {
             return AccountProof(assertion: nil, clientData: nil, credential: try sharedCredential())
