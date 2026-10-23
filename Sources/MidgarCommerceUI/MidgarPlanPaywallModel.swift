@@ -28,11 +28,15 @@ final class MidgarPlanPaywallModel {
     private(set) var isRestoring = false
     var toast: MidgarToast?
     var failureMessage: String?
+    var isPresentingOfferCodeSheet = false
+    private(set) var successCount = 0
+    private(set) var failureCount = 0
 
     @ObservationIgnored private let store: MidgarStore
     @ObservationIgnored private let trialPolicy: MidgarTrialPolicy
     @ObservationIgnored private let loadProduct: @Sendable (String) async throws -> Product?
     @ObservationIgnored private let onEvent: @MainActor (MidgarPaywallEvent) -> Void
+    @ObservationIgnored private var entitlementsBeforeRedemption = 0
 
     init(
         configuration: MidgarPlanPaywallConfiguration,
@@ -74,7 +78,9 @@ final class MidgarPlanPaywallModel {
                 terms: terms,
                 presentations: presentations,
                 order: configuration.productIDs,
-                featuredID: configuration.featuredProductID
+                featuredID: configuration.featuredProductID,
+                names: configuration.planNames,
+                oneTimeNote: configuration.oneTimeNote
             ))
         } catch {
             MidgarLog.info("paywall: could not load plans: \(error)", category: .commerce)
@@ -116,12 +122,45 @@ final class MidgarPlanPaywallModel {
         defer { isRestoring = false }
         do {
             try await store.restore()
-            let hasPurchases = await !store.entitlements.isEmpty
-            receive(hasPurchases ? .restored : .nothingToRestore)
+            receive(await hasPurchasesAfterRestore() ? .restored : .nothingToRestore)
         } catch {
-            receive(.failed(message: MidgarCommerceUIStrings.restoreFailed))
+            receive(.restoreFailed(message: MidgarCommerceUIStrings.restoreFailed))
         }
     }
+
+    private func hasPurchasesAfterRestore() async -> Bool {
+        if await !store.entitlements.isEmpty {
+            return true
+        }
+        return await configuration.ownsPurchaseOutsideStore?() ?? false
+    }
+
+    /// Opens the offer code sheet.
+    func redeemCode() {
+        guard !isBusy else {
+            return
+        }
+        isPresentingOfferCodeSheet = true
+        Task { entitlementsBeforeRedemption = await store.entitlements.count }
+    }
+
+    /// The sheet reports nothing about the code, so a redemption shows only as the store's entitlements growing a moment after the sheet is gone. Reports ``MidgarPaywallEvent/redeemed`` when they did.
+    func offerCodeSheetFinished(_ result: Result<Void, any Error>) async {
+        guard case .success = result else {
+            MidgarLog.info("paywall: the offer code sheet failed", category: .commerce)
+            return
+        }
+        for _ in 0..<Self.redemptionPollAttempts {
+            if await store.entitlements.count > entitlementsBeforeRedemption {
+                receive(.redeemed)
+                return
+            }
+            try? await Task.sleep(for: Self.redemptionPollInterval)
+        }
+    }
+
+    private static let redemptionPollAttempts = 8
+    private static let redemptionPollInterval = Duration.milliseconds(500)
 
     /// Shows the outcome, tells the app, and reads the plans again after anything that can change offer eligibility.
     func receive(_ event: MidgarPaywallEvent) {
@@ -134,12 +173,26 @@ final class MidgarPlanPaywallModel {
             toast = .success(MidgarCommerceUIStrings.purchasesRestored)
         case .nothingToRestore:
             toast = MidgarToast(MidgarCommerceUIStrings.nothingToRestore, style: .info)
-        case .failed(let message):
+        case .failed(let message), .restoreFailed(let message):
             failureMessage = message
+        case .redeemed:
+            break
         }
+        countFeedback(for: event)
         onEvent(event)
         if event.isSuccess {
             Task { await load() }
+        }
+    }
+
+    private func countFeedback(for event: MidgarPaywallEvent) {
+        switch event {
+        case .purchased, .restored, .redeemed:
+            successCount += 1
+        case .failed, .restoreFailed:
+            failureCount += 1
+        case .pending, .cancelled, .nothingToRestore:
+            break
         }
     }
 

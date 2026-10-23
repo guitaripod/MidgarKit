@@ -28,9 +28,9 @@ struct MidgarPlan: Identifiable, Equatable {
         return false
     }
 
-    /// Price, then the detail lines, for VoiceOver.
+    /// Name, price, badge, then the detail lines, for VoiceOver.
     var accessibilityLabel: String {
-        ([name, displayPrice] + detailLines).joined(separator: ", ")
+        ([name, displayPrice] + (badge.map { [$0] } ?? []) + detailLines).joined(separator: ", ")
     }
 }
 
@@ -54,21 +54,25 @@ struct MidgarPlanCatalog: Equatable {
     ///   - presentations: The introductory offers this customer may use, by product id.
     ///   - order: The product ids in display order.
     ///   - featuredID: The plan that opens selected. Without one, the first plan with a free trial, else the first subscription, else the first plan.
+    ///   - names: The names to show in place of the store's display names, by product id.
+    ///   - oneTimeNote: A sentence added to the offer line of the one-time product.
     static func make(
         products: [StoreProduct],
         terms: [MidgarSubscriptionTerms],
         presentations: [String: MidgarTrialPresentation],
         order: [String],
         featuredID: String? = nil,
+        names: [String: String] = [:],
+        oneTimeNote: String? = nil,
         locale: Locale = .current
     ) -> MidgarPlanCatalog {
         let productsByID = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let termsByID = Dictionary(terms.map { ($0.productID, $0) }, uniquingKeysWith: { first, _ in first })
-        let ordered = order.compactMap { productsByID[$0] }
+        let ordered = order.compactMap { productsByID[$0] }.map { $0.named(names[$0.id]) }
         let monthly = ordered.first { termsByID[$0.id]?.period.isMonth == true }
         let annual = ordered.first { termsByID[$0.id]?.period.isYear == true }
         let plans = ordered.map { product in
-            makePlan(product, terms: termsByID[product.id], presentation: presentations[product.id], monthly: monthly, locale: locale)
+            makePlan(product, terms: termsByID[product.id], presentation: presentations[product.id], monthly: monthly, oneTimeNote: oneTimeNote, locale: locale)
         }
         let oneTime = ordered.first { termsByID[$0.id] == nil }
         return MidgarPlanCatalog(
@@ -90,17 +94,20 @@ struct MidgarPlanCatalog: Equatable {
         terms: MidgarSubscriptionTerms?,
         presentation: MidgarTrialPresentation?,
         monthly: StoreProduct?,
+        oneTimeNote: String?,
         locale: Locale
     ) -> MidgarPlan {
         guard let terms else {
-            return makeOneTimePlan(product)
+            return makeOneTimePlan(product, note: oneTimeNote)
         }
         let renewal = terms.renewalDescription(locale: locale)
         let months = terms.period.wholeMonths
         let percent = months.flatMap { months in
             monthly.flatMap { MidgarPlanCaptions.savingsPercent(price: product.price, months: months, monthlyPrice: $0.price) }
         }
-        let badge = percent.map { MidgarCommerceUIStrings.saveBadge(MidgarPlanCaptions.formatPercent($0, locale: locale)) } ?? presentation?.badge
+        let badge = percent.map { MidgarCommerceUIStrings.saveBadge(MidgarPlanCaptions.formatPercent($0, locale: locale)) }
+            ?? presentation?.badge
+            ?? ((months ?? 0) > 1 ? MidgarCommerceUIStrings.bestValue : nil)
         let summary = presentation?.summary
         let lines = [summary ?? MidgarCommerceUIStrings.cancelAnytime(renewal), equivalentLine(product, terms: terms, locale: locale)]
         return MidgarPlan(
@@ -124,7 +131,7 @@ struct MidgarPlanCatalog: Equatable {
         return MidgarCommerceUIStrings.tryFree(offer)
     }
 
-    private static func makeOneTimePlan(_ product: StoreProduct) -> MidgarPlan {
+    private static func makeOneTimePlan(_ product: StoreProduct, note: String?) -> MidgarPlan {
         MidgarPlan(
             id: product.id,
             name: product.displayName,
@@ -133,7 +140,7 @@ struct MidgarPlanCatalog: Equatable {
             detailLines: [MidgarCommerceUIStrings.payOnceKeepForever] + familyLine(product),
             badge: nil,
             trial: nil,
-            offerLine: MidgarCommerceUIStrings.oneTimeOffer(product.displayPrice),
+            offerLine: ([MidgarCommerceUIStrings.oneTimeOffer(product.displayPrice)] + (note.map { [$0] } ?? [])).joined(separator: " "),
             ctaTitle: MidgarCommerceUIStrings.continueButton
         )
     }
@@ -159,7 +166,8 @@ struct MidgarPlanCatalog: Equatable {
             return nil
         }
         return MidgarCommerceUIStrings.lifetimeAnchor(
-            years: MidgarPlanCaptions.formatYears(years, locale: locale),
+            years: years,
+            yearsText: MidgarPlanCaptions.formatYears(years, locale: locale),
             annualName: annual.displayName,
             total: total,
             lifetimeName: oneTime.displayName,
@@ -187,5 +195,24 @@ struct MidgarPlanSelection: Equatable {
         }
         selectedID = id
         return true
+    }
+}
+
+extension StoreProduct {
+    /// The same product under another display name, or itself when `name` is nil.
+    func named(_ name: String?) -> StoreProduct {
+        guard let name else {
+            return self
+        }
+        return StoreProduct(
+            id: id,
+            displayName: name,
+            description: description,
+            displayPrice: displayPrice,
+            price: price,
+            isFamilyShareable: isFamilyShareable,
+            currencyCode: currencyCode,
+            priceLocale: priceLocale
+        )
     }
 }

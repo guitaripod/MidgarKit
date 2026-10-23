@@ -33,10 +33,12 @@ import MidgarCommerce
     @Test func onlyAPurchaseOrARestoreThatGaveSomethingIsASuccess() {
         #expect(MidgarPaywallEvent.purchased(productID: "p").isSuccess)
         #expect(MidgarPaywallEvent.restored.isSuccess)
+        #expect(MidgarPaywallEvent.redeemed.isSuccess)
         #expect(MidgarPaywallEvent.pending.isSuccess == false)
         #expect(MidgarPaywallEvent.cancelled.isSuccess == false)
         #expect(MidgarPaywallEvent.nothingToRestore.isSuccess == false)
         #expect(MidgarPaywallEvent.failed(message: "m").isSuccess == false)
+        #expect(MidgarPaywallEvent.restoreFailed(message: "m").isSuccess == false)
     }
 
     @Test func theRequiredLegalStringsExistInEnglish() {

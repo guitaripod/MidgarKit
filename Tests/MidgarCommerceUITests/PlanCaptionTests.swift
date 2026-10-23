@@ -1,4 +1,5 @@
 import Foundation
+import MidgarUI
 import Testing
 @testable import MidgarCommerce
 @testable import MidgarCommerceUI
@@ -115,6 +116,45 @@ import Testing
 
         #expect(yearly.badge == "1 week free")
         #expect(yearly.detailLines.contains("Just $3.33 a month, billed yearly"))
+    }
+
+    @Test func theAppsNamesReplaceTheStoreDisplayNamesInThePickerAndTheComparison() throws {
+        let catalog = PlanFixtures.catalog(names: [PlanFixtures.yearly: "Annual", PlanFixtures.lifetime: "Forever"])
+
+        #expect(catalog.plans.map(\.name) == ["Annual", "Monthly", "Forever"])
+        #expect(catalog.lifetimeAnchor == "2 years of Annual costs $79.98. Forever is $79.99 and never renews.")
+    }
+
+    @Test func aPlanWithoutAnEntryKeepsTheStoreDisplayName() throws {
+        let catalog = PlanFixtures.catalog(names: [PlanFixtures.monthly: "Month to month"])
+
+        #expect(catalog.plans.map(\.name) == ["Yearly", "Month to month", "Lifetime"])
+    }
+
+    @Test func aYearlyPlanWithNoSavingToStateAndNoTrialIsCalledBestValue() throws {
+        let catalog = PlanFixtures.catalog(
+            products: [PlanFixtures.yearlyProduct, PlanFixtures.lifetimeProduct],
+            terms: [PlanFixtures.yearlyTerms],
+            presentations: [:],
+            order: [PlanFixtures.yearly, PlanFixtures.lifetime]
+        )
+
+        #expect(try plan(catalog, PlanFixtures.yearly).badge == "Best value")
+        #expect(try plan(catalog, PlanFixtures.lifetime).badge == nil)
+    }
+
+    @Test func theAppsNoteFollowsTheOfferLineOfTheOneTimeProductOnly() throws {
+        let catalog = PlanFixtures.catalog(oneTimeNote: "Yours on every device.")
+
+        #expect(try plan(catalog, PlanFixtures.lifetime).offerLine == "One-time purchase of $79.99. No renewal. Yours on every device.")
+        #expect(try plan(catalog, PlanFixtures.monthly).offerLine == "$4.99/month")
+    }
+
+    @Test func voiceOverReadsTheBadgeOfAPlanAfterItsPrice() throws {
+        let yearly = try plan(PlanFixtures.catalog(), PlanFixtures.yearly)
+
+        #expect(yearly.accessibilityLabel == "Yearly, $39.99, Save 33%, 1 week free, then $39.99/year, Just $3.33 a month, billed yearly")
+        #expect(try plan(PlanFixtures.catalog(), PlanFixtures.monthly).accessibilityLabel == "Monthly, $4.99, $4.99/month · cancel anytime")
     }
 
     @Test func theOneTimeProductIsComparedWithYearsOfTheYearlyPlan() throws {
@@ -267,12 +307,53 @@ import Testing
 }
 
 @Suite struct PaywallArrangementTests {
-    @Test func aNarrowWindowGetsOneColumnAndAWideOneGetsTwo() {
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 375) == .single)
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 430) == .single)
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 699) == .single)
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 700) == .twoColumns)
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 834) == .twoColumns)
-        #expect(MidgarPaywallArrangement.arrangement(forWidth: 1920) == .twoColumns)
+    @Test func aNarrowWindowGetsOneColumnAndAWideLandscapeOneGetsTwo() {
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 375, height: 812) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 812, height: 375) == .twoColumns)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 699, height: 400) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 700, height: 600) == .twoColumns)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 1194, height: 834) == .twoColumns)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 1920, height: 1080) == .twoColumns)
+    }
+
+    @Test func aTallWindowKeepsOneColumnWhateverItsWidth() {
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 700, height: 800) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 834, height: 1194) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 780, height: 880) == .single)
+    }
+
+    @Test func anAccessibilityTextSizeKeepsOneColumnInAWideLandscapeWindow() {
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 951, height: 669, isAccessibilitySize: true) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 1920, height: 1080, isAccessibilitySize: true) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 951, height: 669, isAccessibilitySize: false) == .twoColumns)
+    }
+
+    @Test func aHorizontalFoldThatIsActiveDividesTheWindowWhateverItsSize() {
+        let fold = MidgarFoldDivision(axis: .rows, frame: CGRect(x: 0, y: 440, width: 669, height: 70), isActive: true)
+
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 669, height: 951, fold: fold) == .divided)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 951, height: 669, fold: fold) == .divided)
+    }
+
+    @Test func aFoldThatIsFlatOrVerticalLeavesTheSizeToDecide() {
+        let flat = MidgarFoldDivision(axis: .rows, frame: CGRect(x: 0, y: 440, width: 669, height: 70), isActive: false)
+        let vertical = MidgarFoldDivision(axis: .columns, frame: CGRect(x: 440, y: 0, width: 70, height: 669), isActive: true)
+
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 669, height: 951, fold: flat) == .single)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 951, height: 669, fold: vertical) == .twoColumns)
+        #expect(MidgarPaywallArrangement.arrangement(forWidth: 466, height: 678, fold: nil) == .single)
+    }
+
+    @Test func aShortWindowOrAnAccessibilityTextSizePinsLessOfTheFooter() {
+        #expect(MidgarPaywallBarDensity.density(forHeight: 1194, isAccessibilitySize: false) == .full)
+        #expect(MidgarPaywallBarDensity.density(forHeight: 762, isAccessibilitySize: false) == .links)
+        #expect(MidgarPaywallBarDensity.density(forHeight: 678, isAccessibilitySize: false) == .links)
+        #expect(MidgarPaywallBarDensity.density(forHeight: 852, isAccessibilitySize: true) == .minimal)
+    }
+
+    @Test func theButtonLabelIsBlackOnALightAccentAndWhiteOnADarkOne() {
+        #expect(MidgarOnAccentLabel.isLight(MidgarColor.RGBA(hex: 0xFFC740)))
+        #expect(MidgarOnAccentLabel.isLight(MidgarColor.RGBA(hex: 0x2A9D8F)) == false)
+        #expect(MidgarOnAccentLabel.isLight(MidgarColor.RGBA(hex: 0x5B5BD6)) == false)
     }
 }

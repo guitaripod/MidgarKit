@@ -77,8 +77,10 @@ final class MidgarPaywallModel {
             toast = .success(MidgarCommerceUIStrings.purchasesRestored)
         case .nothingToRestore:
             toast = MidgarToast(MidgarCommerceUIStrings.nothingToRestore, style: .info)
-        case .failed(let message):
+        case .failed(let message), .restoreFailed(let message):
             failureMessage = message
+        case .redeemed:
+            break
         }
         onEvent(event)
         if event.isSuccess {
@@ -98,7 +100,7 @@ final class MidgarPaywallModel {
             let hasPurchases = await !store.entitlements.isEmpty
             receive(hasPurchases ? .restored : .nothingToRestore)
         } catch {
-            receive(.failed(message: MidgarCommerceUIStrings.restoreFailed))
+            receive(.restoreFailed(message: MidgarCommerceUIStrings.restoreFailed))
         }
     }
 }

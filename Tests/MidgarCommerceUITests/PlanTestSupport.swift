@@ -40,8 +40,10 @@ enum PlanFixtures {
         presentations: [String: MidgarTrialPresentation] = [yearly: trial(yearly)],
         order: [String] = [yearly, monthly, lifetime],
         featured: String? = nil,
+        names: [String: String] = [:],
+        oneTimeNote: String? = nil,
         locale: Locale = english
     ) -> MidgarPlanCatalog {
-        MidgarPlanCatalog.make(products: products, terms: terms, presentations: presentations, order: order, featuredID: featured, locale: locale)
+        MidgarPlanCatalog.make(products: products, terms: terms, presentations: presentations, order: order, featuredID: featured, names: names, oneTimeNote: oneTimeNote, locale: locale)
     }
 }

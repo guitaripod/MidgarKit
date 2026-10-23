@@ -10,6 +10,9 @@ struct MidgarPaywallFooter: View {
     let links: MidgarPaywallLinks
     let isRestoring: Bool
     let restore: () -> Void
+    var redeem: (() -> Void)?
+    var dismiss: MidgarPaywallDismissButton?
+    var drawsBackground = true
     var focus: FocusState<MidgarPaywallFocus?>.Binding?
 
     @Environment(\.midgarTheme) private var theme
@@ -34,7 +37,7 @@ struct MidgarPaywallFooter: View {
         .padding(.vertical, theme.spacing.m)
         .frame(maxWidth: 560)
         .frame(maxWidth: .infinity)
-        .background(theme.background.color)
+        .background(drawsBackground ? theme.background.color : .clear)
     }
 
     private func planRow(_ line: MidgarPlanLine) -> some View {
@@ -56,10 +59,20 @@ struct MidgarPaywallFooter: View {
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: theme.spacing.l) {
-                actionButtons
+                legalLinks
+                accountActions
             }
             VStack(spacing: theme.spacing.s) {
-                actionButtons
+                HStack(spacing: theme.spacing.l) {
+                    legalLinks
+                }
+                HStack(spacing: theme.spacing.l) {
+                    accountActions
+                }
+            }
+            VStack(spacing: theme.spacing.s) {
+                legalLinks
+                accountActions
             }
         }
         .midgarFont(.footnote)
@@ -67,8 +80,11 @@ struct MidgarPaywallFooter: View {
     }
 
     @ViewBuilder
-    private var actionButtons: some View {
-        legalLinks
+    private var accountActions: some View {
+        if let redeem {
+            Button(MidgarCommerceUIStrings.redeemCode, action: redeem)
+                .buttonStyle(.plain)
+        }
         Button(action: restore) {
             if isRestoring {
                 ProgressView()
@@ -81,6 +97,12 @@ struct MidgarPaywallFooter: View {
         .buttonStyle(.plain)
         .disabled(isRestoring)
         .modifier(MidgarRestoreFocus(focus: focus))
+        if let dismiss {
+            Button(dismiss.title, action: dismiss.action)
+                .buttonStyle(.plain)
+                .foregroundStyle(theme.secondaryLabel.color)
+                .modifier(MidgarDismissFocus(focus: focus))
+        }
     }
 
     /// The address a person types, without the scheme.
@@ -111,6 +133,21 @@ private struct MidgarRestoreFocus: ViewModifier {
     func body(content: Content) -> some View {
         if let focus {
             content.focused(focus, equals: .restore)
+        } else {
+            content
+        }
+    }
+}
+
+/// Marks the dismiss button as a focus target when the paywall tracks focus (tvOS), and does nothing otherwise.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
+private struct MidgarDismissFocus: ViewModifier {
+    let focus: FocusState<MidgarPaywallFocus?>.Binding?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let focus {
+            content.focused(focus, equals: .dismiss)
         } else {
             content
         }

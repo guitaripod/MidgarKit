@@ -6,6 +6,7 @@ enum MidgarPaywallFocus: Hashable {
     case plan(String)
     case purchase
     case restore
+    case dismiss
 }
 
 /// One choice for every plan, subscriptions and one-time products together: the selected plan is drawn with the accent, and on tvOS the selection follows the focus.

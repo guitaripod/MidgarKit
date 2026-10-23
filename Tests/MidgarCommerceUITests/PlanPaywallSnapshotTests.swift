@@ -286,4 +286,22 @@ extension PaywallSnapshotTests {
         live.session.clearTransactions()
         await live.store.stop()
     }
+
+    @Test func aCustomerWhoOwnsAnEarlierPaidVersionOutsideTheStoreRestoresInsteadOfFindingNothing() async throws {
+        let live = try await makeLive()
+        var events: [MidgarPaywallEvent] = []
+        let configuration = MidgarPlanPaywallConfiguration(
+            productIDs: [Self.yearly, Self.monthly, Self.lifetime],
+            links: Self.links,
+            hero: MidgarPaywallHero(title: "Go Pro"),
+            ownsPurchaseOutsideStore: { true }
+        )
+        let model = MidgarPlanPaywallModel(configuration: configuration, store: live.store, trialPolicy: MidgarTrialPolicy()) { events.append($0) }
+        await model.load()
+
+        await model.restore()
+
+        #expect(events == [.restored])
+        await live.store.stop()
+    }
 }

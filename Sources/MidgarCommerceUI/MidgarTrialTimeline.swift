@@ -126,21 +126,52 @@ public struct MidgarTrialTimeline: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(MidgarTimelineCard())
         }
     }
 
-    private static let markerDiameter: CGFloat = 28
+    private static var markerDiameter: CGFloat {
+        #if os(tvOS)
+        56
+        #else
+        28
+        #endif
+    }
+
+    private static var markerSymbolSize: CGFloat {
+        #if os(tvOS)
+        24
+        #else
+        12
+        #endif
+    }
+
+    private static var stepTitleStyle: MidgarTextStyle {
+        #if os(tvOS)
+        .title3
+        #else
+        .subheadline
+        #endif
+    }
+
+    private static var stepDetailStyle: MidgarTextStyle {
+        #if os(tvOS)
+        .callout
+        #else
+        .footnote
+        #endif
+    }
 
     private func row(_ step: MidgarTrialTimelineSteps.Step, isLast: Bool) -> some View {
         HStack(alignment: .top, spacing: theme.spacing.m) {
             marker(step.symbol)
             VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(verbatim: step.title)
-                    .midgarFont(.subheadline)
+                    .midgarFont(Self.stepTitleStyle)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.label.color)
                 Text(verbatim: step.detail)
-                    .midgarFont(.footnote)
+                    .midgarFont(Self.stepDetailStyle)
                     .foregroundStyle(theme.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -163,10 +194,27 @@ public struct MidgarTrialTimeline: View {
 
     private func marker(_ symbol: String) -> some View {
         Image(systemName: symbol)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.system(size: Self.markerSymbolSize, weight: .semibold))
             .foregroundStyle(theme.accent.color)
             .frame(width: Self.markerDiameter, height: Self.markerDiameter)
             .background(theme.accent.color.opacity(0.2), in: Circle())
             .accessibilityHidden(true)
+    }
+}
+
+/// On a TV the timeline sits on a card, so it reads as one block beside the plans; elsewhere it sits on the page.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
+private struct MidgarTimelineCard: ViewModifier {
+    @Environment(\.midgarTheme) private var theme
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if os(tvOS)
+        content
+            .padding(theme.spacing.xl)
+            .background(theme.surface.color, in: RoundedRectangle(cornerRadius: theme.radius.card, style: .continuous))
+        #else
+        content
+        #endif
     }
 }

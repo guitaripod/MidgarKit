@@ -125,5 +125,38 @@ import MidgarCommerce
         )
         try check("pitch", size: CGSize(width: 390, height: 460), MidgarPaywallPitch(hero: hero, isCompact: true).padding(16))
     }
+
+    @Test func thePitchRendersAPictureBehindTheSymbolOnceItHasLoaded() async throws {
+        let hero = MidgarPaywallHero(
+            title: "Go Pro",
+            subtitle: "Everything unlocked.",
+            artwork: .picture(symbol: "sparkles", load: { Image(systemName: "moon.stars.fill") }),
+            features: [MidgarPaywallFeature(symbol: "sparkles", title: "Unlimited AI facts")]
+        )
+
+        try check("pitch-picture", size: CGSize(width: 390, height: 380), MidgarPaywallPitch(hero: hero, isCompact: false).padding(16))
+    }
+
+    @Test func theFooterOffersToRedeemACodeWhenTheAppAsksForIt() throws {
+        let links = MidgarPaywallLinks(termsOfUse: URL(string: "https://example.com/terms")!, privacyPolicy: URL(string: "https://example.com/privacy")!)
+
+        try check(
+            "footer-redeem",
+            size: CGSize(width: 390, height: 140),
+            MidgarPaywallFooter(planLines: [], showsAutoRenew: true, links: links, isRestoring: false, restore: {}, redeem: {})
+        )
+    }
+
+    #if os(macOS)
+    @Test func theComparisonLineWrapsOntoAsManyLinesAsTheColumnNeeds() {
+        let text = "2 years of Annual costs $39.98. Lifetime is $39.99 and never renews."
+        let wide = NSHostingView(rootView: MidgarLifetimeAnchor(text: text).frame(width: 700))
+        let narrow = NSHostingView(rootView: MidgarLifetimeAnchor(text: text).frame(width: 200))
+        let veryNarrow = NSHostingView(rootView: MidgarLifetimeAnchor(text: text).frame(width: 110))
+
+        #expect(narrow.fittingSize.height > wide.fittingSize.height * 1.8)
+        #expect(veryNarrow.fittingSize.height > narrow.fittingSize.height * 1.3)
+    }
+    #endif
 }
 #endif

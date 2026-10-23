@@ -10,12 +10,13 @@ struct MidgarPaywallPitch: View {
     var inlinesSymbol = false
 
     @Environment(\.midgarTheme) private var theme
+    @State private var picture: Image?
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = MidgarPaywallPitch.baseIconWidth
 
     var body: some View {
         VStack(spacing: isCompact ? theme.spacing.m : theme.spacing.l) {
             VStack(spacing: theme.spacing.s) {
-                if inlinesSymbol, case .symbol = hero.artwork {
+                if inlinesSymbol, hero.artwork?.isSymbolOnly == true {
                     HStack(spacing: theme.spacing.l) {
                         artwork
                         titleText
@@ -38,6 +39,11 @@ struct MidgarPaywallPitch: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .task {
+            if case .picture(_, let load) = hero.artwork {
+                picture = await load()
+            }
+        }
     }
 
     private var titleText: some View {
@@ -53,10 +59,13 @@ struct MidgarPaywallPitch: View {
     private var artwork: some View {
         switch hero.artwork {
         case .symbol(let name):
-            Image(systemName: name)
-                .font(.system(size: isCompact ? 44 : 64, weight: .light))
-                .foregroundStyle(theme.accent.color)
-                .accessibilityHidden(true)
+            symbolArtwork(name)
+        case .picture(let name, _):
+            if let picture {
+                pictureArtwork(picture, symbol: name)
+            } else {
+                symbolArtwork(name)
+            }
         case .image(let image):
             image
                 .resizable()
@@ -70,11 +79,38 @@ struct MidgarPaywallPitch: View {
         }
     }
 
+    private func symbolArtwork(_ name: String, color: Color? = nil) -> some View {
+        Image(systemName: name)
+            .font(.system(size: isCompact ? 44 : 64, weight: .light))
+            .foregroundStyle(color ?? theme.accent.color)
+            .accessibilityHidden(true)
+    }
+
+    /// The picture the customer was stopped at, lightly blurred, with the symbol over it.
+    private func pictureArtwork(_ image: Image, symbol: String) -> some View {
+        ZStack {
+            image
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompact ? 96 : 148)
+                .clipped()
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .opacity(0.55)
+            symbolArtwork(symbol, color: .white)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: isCompact ? 96 : 148)
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.card, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
     private static var baseIconWidth: CGFloat {
         #if os(tvOS)
-        48
+        56
         #else
-        28
+        34
         #endif
     }
 
@@ -101,7 +137,15 @@ struct MidgarPaywallPitch: View {
                 .accessibilityElement(children: .combine)
             }
         }
-        .frame(maxWidth: 480, alignment: .leading)
+        .frame(maxWidth: Self.featuresWidth, alignment: .leading)
         .frame(maxWidth: .infinity)
+    }
+
+    private static var featuresWidth: CGFloat {
+        #if os(tvOS)
+        820
+        #else
+        480
+        #endif
     }
 }

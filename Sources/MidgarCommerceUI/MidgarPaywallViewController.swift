@@ -135,9 +135,9 @@ public final class MidgarPaywallViewController: UIViewController, UIAdaptivePres
         switch event {
         case .purchased(let productID):
             finish(.purchased(productID: productID))
-        case .restored:
+        case .restored, .redeemed:
             finish(.restored)
-        case .pending, .cancelled, .nothingToRestore, .failed:
+        case .pending, .cancelled, .nothingToRestore, .failed, .restoreFailed:
             break
         }
     }

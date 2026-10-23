@@ -13,15 +13,19 @@ public enum MidgarPaywallEvent: Sendable, Equatable {
     case restored
     /// A restore finished and the customer has no purchases.
     case nothingToRestore
-    /// A purchase or restore failed. The message is what the paywall showed. Report it to the review policy with `notePurchaseFailure()`.
+    /// A purchase failed. The message is what the paywall showed. Report it to the review policy with `notePurchaseFailure()`.
     case failed(message: String)
+    /// A restore failed. The message is what the paywall showed. Restoring is not buying, so it is not a purchase failure.
+    case restoreFailed(message: String)
+    /// The customer closed the offer code sheet and a purchase arrived through it. The transaction itself arrives through ``MidgarStore/events()`` like any other that the app did not start.
+    case redeemed
 
-    /// True for the events after which the paywall has done its job: a purchase or a restore that gave the customer something.
+    /// True for the events after which the paywall has done its job: a purchase, a restore or a redemption that gave the customer something.
     public var isSuccess: Bool {
         switch self {
-        case .purchased, .restored:
+        case .purchased, .restored, .redeemed:
             return true
-        case .pending, .cancelled, .nothingToRestore, .failed:
+        case .pending, .cancelled, .nothingToRestore, .failed, .restoreFailed:
             return false
         }
     }
