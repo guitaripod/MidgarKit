@@ -237,19 +237,40 @@ public actor MidgarStore {
         } catch {
             throw MidgarStoreError.storeKit(String(describing: error))
         }
-        for verification in await storeKit.currentEntitlements() {
+        enqueueCurrentEntitlements(await storeKit.currentEntitlements(), context: "restore")
+        await refresh()
+    }
+
+    /// Queues the purchases StoreKit already holds for the ledger, once per install, so a customer who bought before the app reported to the ledger (through RevenueCat or plain StoreKit) reaches their Midgar ID without the App Store sync and sign-in a restore costs. Call it at launch in an app moving its purchases onto the store. Later calls, and calls on a read-only store, do nothing. The ledger records an old transaction as history, never as a sale.
+    public func reportPurchaseHistory() async {
+        guard configuration.mode == .purchases, state.historyReportedAt == nil else {
+            return
+        }
+        let queued = enqueueCurrentEntitlements(await storeKit.currentEntitlements(), context: "history")
+        state.historyReportedAt = clock()
+        persist()
+        log("commerce: queued \(queued) earlier purchase(s) for the ledger")
+        await refresh()
+    }
+
+    /// Queues every verified, owned entitlement of a product this store handles and returns how many. Unverified ones are logged and skipped; other products are left to whatever owns them.
+    @discardableResult
+    private func enqueueCurrentEntitlements(_ verifications: [StoreVerification], context: String) -> Int {
+        var queued = 0
+        for verification in verifications {
             switch verification {
             case .verified(let transaction) where handledProducts.contains(transaction.productID):
                 if shouldReport(transaction) {
                     enqueueReport(transaction)
+                    queued += 1
                 }
             case .unverified(let transaction, let reason) where handledProducts.contains(transaction.productID):
-                log("commerce: restore skipped an unverified transaction for \(transaction.productID): \(reason)")
+                log("commerce: \(context) skipped an unverified transaction for \(transaction.productID): \(reason)")
             default:
                 break
             }
         }
-        await refresh()
+        return queued
     }
 
     #if os(iOS) || os(visionOS)

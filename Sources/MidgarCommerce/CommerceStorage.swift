@@ -20,6 +20,8 @@ struct LedgerSnapshot: Codable, Sendable, Equatable {
 struct CommerceState: Codable, Sendable, Equatable {
     var pending: [PendingReport] = []
     var ledger: LedgerSnapshot?
+    /// When ``MidgarStore/reportPurchaseHistory()`` queued what StoreKit already held. Optional so a file written before the field existed still decodes, with its queue.
+    var historyReportedAt: Date?
 }
 
 /// `<directory>/commerce-<app>.json`, rewritten atomically after every change so a relaunch resumes the queue and the cache.

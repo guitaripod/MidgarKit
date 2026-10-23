@@ -56,7 +56,7 @@ Environment: the ledger is asked for `Sandbox` when `AppTransaction.environment`
 
 ## Restore and offer codes
 
-`restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
+`restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. `reportPurchaseHistory()` does the same without the sync and its sign-in, once per install (`historyReportedAt` in the state file): an app moving its purchases onto the store calls it at launch so customers who bought through RevenueCat or plain StoreKit reach their Midgar ID. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
 
 
 ## StoreKit views
