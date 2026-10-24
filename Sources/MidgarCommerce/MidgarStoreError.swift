@@ -26,7 +26,7 @@ public enum MidgarPurchaseResult: Sendable, Equatable {
 /// What the store tells observers. Read ``MidgarStore/entitlements`` after `entitlementsChanged`.
 public enum MidgarStoreEvent: Sendable, Equatable {
     case entitlementsChanged
-    /// A new purchase arrived through the updates listener: an Ask to Buy approval, an offer code redemption or a purchase made on another device.
+    /// A new purchase arrived that no call of the app started: an Ask to Buy approval, an offer code redemption or a purchase made on another device (through the updates listener), or a purchase the customer started on the App Store product page.
     case purchaseApproved(productID: String)
     /// A transaction failed verification and was refused.
     case refused(productID: String)

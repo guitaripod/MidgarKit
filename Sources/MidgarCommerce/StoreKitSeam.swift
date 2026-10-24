@@ -98,6 +98,7 @@ protocol MidgarStoreKit: Sendable {
     func products(for ids: [String]) async throws -> [StoreProduct]
     func purchase(productID: String, appAccountToken: UUID?, confirmation: StoreConfirmation?) async throws -> StorePurchaseOutcome
     func updates() -> AsyncStream<StoreVerification>
+    func purchaseIntents() -> AsyncStream<String>
     func currentEntitlements() async -> [StoreVerification]
     func sync() async throws
     func appEnvironment() async -> StoreEnvironment?

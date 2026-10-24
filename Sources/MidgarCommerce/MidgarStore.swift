@@ -41,6 +41,7 @@ public actor MidgarStore {
     var rerunRequested = false
     var retryTask: Task<Void, Never>?
     var listener: Task<Void, Never>?
+    var intentListener: Task<Void, Never>?
     var foreground: ForegroundObserver?
     var subscribers: [UUID: AsyncStream<MidgarStoreEvent>.Continuation] = [:]
     var lastPublished: [MidgarEntitlement] = []
@@ -96,13 +97,14 @@ public actor MidgarStore {
         self.log = logger
         self.state = storage.load()
         let updates = configuration.mode == .purchases ? storeKit.updates() : nil
+        let intents = configuration.mode == .purchases ? storeKit.purchaseIntents() : nil
         Task { [weak self] in
-            await self?.start(listeningTo: updates, observesForeground: observesForeground)
+            await self?.start(listeningTo: updates, intents: intents, observesForeground: observesForeground)
         }
     }
 
-    /// Starts the one updates listener and the foreground observer, then does the launch refresh.
-    private func start(listeningTo updates: AsyncStream<StoreVerification>?, observesForeground: Bool) async {
+    /// Starts the one updates listener, the App Store purchase intent listener and the foreground observer, then does the launch refresh.
+    private func start(listeningTo updates: AsyncStream<StoreVerification>?, intents: AsyncStream<String>?, observesForeground: Bool) async {
         guard !isStopped else {
             return
         }
@@ -113,6 +115,16 @@ public actor MidgarStore {
                         return
                     }
                     await store.processUpdate(verification)
+                }
+            }
+        }
+        if let intents {
+            intentListener = Task { [weak self] in
+                for await productID in intents {
+                    guard let store = self else {
+                        return
+                    }
+                    await store.purchaseFromAppStore(productID)
                 }
             }
         }
@@ -129,6 +141,8 @@ public actor MidgarStore {
         isStopped = true
         listener?.cancel()
         listener = nil
+        intentListener?.cancel()
+        intentListener = nil
         retryTask?.cancel()
         retryTask = nil
         foreground = nil

@@ -36,6 +36,26 @@ public enum MidgarReceiptResult: Sendable, Equatable {
 }
 
 extension MidgarStore {
+    /// Completes a purchase the customer started on the App Store product page (a promoted in-app purchase). StoreKit hands the running app the intent instead of charging, so without this the purchase never happens. It runs through the same money path as a purchase made in the app, with the Midgar ID as `appAccountToken`, and observers hear of it as ``MidgarStoreEvent/purchaseApproved(productID:)`` because no call of theirs started it (MidgarCredits reads the balance again and the ledger-fed grant credits a pack). A product this store does not sell is left alone; a cancel or a failure is logged.
+    func purchaseFromAppStore(_ productID: String) async {
+        guard handledProducts.contains(productID) else {
+            log("commerce: ignored an App Store purchase of \(productID), which this store does not sell")
+            return
+        }
+        do {
+            switch try await purchaseReceipt(productID, confirmation: nil) {
+            case .purchased:
+                emit(.purchaseApproved(productID: productID))
+            case .pending:
+                break
+            case .cancelled:
+                log("commerce: the App Store purchase of \(productID) was cancelled")
+            }
+        } catch {
+            log("commerce: the App Store purchase of \(productID) failed: \(error)")
+        }
+    }
+
     /// Buys a configured product exactly like ``purchase(_:)`` and returns the verified transaction. Used for consumables whose grant lives in another service, such as credit packs.
     public func purchaseReceipt(_ productID: String) async throws -> MidgarReceiptResult {
         try await purchaseReceipt(productID, confirmation: nil)

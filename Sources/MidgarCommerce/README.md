@@ -58,6 +58,10 @@ Environment: the ledger is asked for `Sandbox` when `AppTransaction.environment`
 
 `restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. `reportPurchaseHistory()` does the same without the sync and its sign-in, once per install (`historyReportedAt` in the state file): an app moving its purchases onto the store calls it at launch so customers who bought through RevenueCat or plain StoreKit reach their Midgar ID. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
 
+## Promoted in-app purchases
+
+A purchase the customer starts on the App Store product page reaches the running app as a StoreKit `PurchaseIntent` (iOS 16.4, macOS 14.4, visionOS), and nothing is charged until the app buys it. In purchases mode the store listens for intents from launch and buys an intent for one of its products through the same path as `purchase(_:)`, with the Midgar ID as `appAccountToken`, then publishes `purchaseApproved(productID:)`, since no call of the app started it. A credit pack bought this way is credited by the ledger-fed grant (it carries the Midgar ID), and MidgarCredits reads the balance again on the event. An intent for a product the store does not sell is ignored; a read-only store does not listen. tvOS has no purchase intents.
+
 
 ## StoreKit views
 

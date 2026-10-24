@@ -94,6 +94,24 @@ actor LiveStoreKit: MidgarStoreKit {
         }
     }
 
+    /// The product ids the customer chose to buy on the App Store product page (promoted in-app purchases), as StoreKit hands them to the running app. Finished at once where StoreKit has no purchase intents (tvOS, and the OS versions before them).
+    nonisolated func purchaseIntents() -> AsyncStream<String> {
+        #if os(iOS) || os(macOS) || os(visionOS)
+        if #available(iOS 16.4, macOS 14.4, visionOS 1.0, *) {
+            return AsyncStream { continuation in
+                let task = Task {
+                    for await intent in PurchaseIntent.intents {
+                        continuation.yield(intent.product.id)
+                    }
+                    continuation.finish()
+                }
+                continuation.onTermination = { _ in task.cancel() }
+            }
+        }
+        #endif
+        return AsyncStream { $0.finish() }
+    }
+
     func currentEntitlements() async -> [StoreVerification] {
         var found: [StoreVerification] = []
         for await result in Transaction.currentEntitlements {
