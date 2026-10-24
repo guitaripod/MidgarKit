@@ -40,6 +40,10 @@ for await event in await credits.events() { ... }
 
 Pass the app's base `MidgarHTTPConfiguration` (no token provider) as `http`: MidgarCredits authorizes it itself, because a legacy API key and the Midgar token travel in different headers.
 
+## Free allowances
+
+`MidgarCreditsBalance.allowances` lists the free allowances mako sends next to the balance (`weekly` on `GET /v1/credits/balance`, keyed by the capability or alias id): `MidgarCreditsAllowance(id:remaining:limit:resetsAt:)`, sorted by id. The array is empty when mako sends none, so an app without allowances sees no change. A bucket that cannot be read is skipped instead of failing the balance, a negative `remaining` is read as 0, and `resetsAt` is nil when mako sends no date. `balanceChanged` also fires when only an allowance changed.
+
 ## Which pack, which product
 
 Pack ids, product ids and credit amounts come from the app, never from the code: `MidgarCreditsPack(id:productID:credits:)`. `id` is the pack id in mako's catalog for the app; mako requires the product id to be the app's `rc_product_prefix` plus that id, and rejects a receipt for another pack. `credits` is what the pack grants, bonus included; mako's answer is authoritative and the value is used for display and while a credit is pending. The pack product ids must also be in `MidgarStoreConfiguration.productIDs`, or the store leaves the transaction alone and `buy` throws `notConfigured(.productNotSold)`.

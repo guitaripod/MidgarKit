@@ -5,10 +5,32 @@ import MidgarCommerce
 public struct MidgarCreditsBalance: Sendable, Equatable {
     public let credits: Int
     public let updatedAt: Date
+    /// The free allowances mako reports next to the balance, sorted by ``MidgarCreditsAllowance/id``. Empty for an app without any, and for a mako that does not send them.
+    public let allowances: [MidgarCreditsAllowance]
 
-    public init(credits: Int, updatedAt: Date) {
+    public init(credits: Int, updatedAt: Date, allowances: [MidgarCreditsAllowance] = []) {
         self.credits = credits
         self.updatedAt = updatedAt
+        self.allowances = allowances
+    }
+}
+
+/// One free allowance that renews on a schedule, such as the weekly free uses of a capability. mako sends them as `weekly` on the balance, keyed by the capability or alias id.
+public struct MidgarCreditsAllowance: Sendable, Equatable, Identifiable {
+    /// The capability or bucket id mako keys the allowance by (`reading.v2`).
+    public let id: String
+    /// What is left in the current period. Never negative.
+    public let remaining: Int
+    /// What the period starts with.
+    public let limit: Int
+    /// When the allowance refills, or nil when mako sent no date or one that cannot be read.
+    public let resetsAt: Date?
+
+    public init(id: String, remaining: Int, limit: Int, resetsAt: Date?) {
+        self.id = id
+        self.remaining = remaining
+        self.limit = limit
+        self.resetsAt = resetsAt
     }
 }
 

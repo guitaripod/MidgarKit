@@ -1,7 +1,50 @@
 import Foundation
 
+/// The body of mako's `GET /v1/credits/balance`: `{"balance": 12, "currency": "credits", "weekly": {"<alias>": {"limit": 3, "remaining": 2, "resets_at": "2026-10-12T00:00:00Z"}}}`. `weekly` is absent for an app without weekly free buckets. A bucket that does not parse is skipped, so one bad entry never hides the balance.
 struct CreditsBalanceWire: Decodable, Sendable {
     let balance: Int
+    let allowances: [CreditsAllowanceWire]
+
+    enum CodingKeys: String, CodingKey {
+        case balance
+        case weekly
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        balance = try container.decode(Int.self, forKey: .balance)
+        let buckets = (try? container.decodeIfPresent([String: LossyBucket].self, forKey: .weekly)) ?? [:]
+        allowances = buckets
+            .compactMap { id, bucket in bucket.value.map { CreditsAllowanceWire(id: id, limit: $0.limit, remaining: $0.remaining, resetsAt: $0.resetsAt) } }
+            .sorted { $0.id < $1.id }
+    }
+
+    private struct LossyBucket: Decodable {
+        let value: Bucket?
+
+        init(from decoder: any Decoder) throws {
+            value = try? Bucket(from: decoder)
+        }
+    }
+
+    private struct Bucket: Decodable {
+        let limit: Int
+        let remaining: Int
+        let resetsAt: String?
+
+        enum CodingKeys: String, CodingKey {
+            case limit
+            case remaining
+            case resetsAt = "resets_at"
+        }
+    }
+}
+
+struct CreditsAllowanceWire: Sendable, Equatable {
+    let id: String
+    let limit: Int
+    let remaining: Int
+    let resetsAt: String?
 }
 
 struct CreditsTransactionWire: Decodable, Sendable {
