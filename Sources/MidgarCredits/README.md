@@ -66,6 +66,17 @@ Task { await credits.reportAdAttributionOnce() }
 - **Nothing to send.** A token call that throws (the Simulator, no attribution record yet), no token, or a token that mako's shape check would refuse (16 to 8192 characters of base64) sends nothing and counts for nothing.
 - **Result.** `reportAdAttributionOnce()` never throws and returns a `MidgarAdAttributionResult` (`settled`, `alreadySettled`, `deferred`, `skipped`, `noToken`, `exhausted`) whose `logDescription` is safe for the app's file log.
 
+## Deleting the old account
+
+An app that passed `legacyAPIKey` still has an old per-app account at mako. Its Delete Account calls `try await credits.deleteLegacyAccount()` before it deletes the Midgar ID, because the key is the only way to name that account:
+
+```swift
+try await credits.deleteLegacyAccount()
+try await identity.deleteAccount()
+```
+
+It sends `DELETE /v1/intelligence/v1/identity` with the legacy key as the only credential (no Midgar token, so the deletion never waits on or fails for the Midgar ID). 200, 204, 401 and 404 count as done, because a rejected key or a missing account means nothing is left to delete; any other answer throws a `MidgarCreditsError` (`offline`, `rateLimited`, `walletUnavailable`, `server(...)`) and the app should stop and let the person retry. With no `legacyAPIKey`, or a closure that returns no key, it returns without a request. mako removes the account's data and, for a user already linked to a wallet, erases this app's partition of the wallet.
+
 ## Which pack, which product
 
 Pack ids, product ids and credit amounts come from the app, never from the code: `MidgarCreditsPack(id:productID:credits:)`. `id` is the pack id in mako's catalog for the app; mako requires the product id to be the app's `rc_product_prefix` plus that id, and rejects a receipt for another pack. `credits` is what the pack grants, bonus included; mako's answer is authoritative and the value is used for display and while a credit is pending. The pack product ids must also be in `MidgarStoreConfiguration.productIDs`, or the store leaves the transaction alone and `buy` throws `notConfigured(.productNotSold)`.

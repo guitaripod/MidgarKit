@@ -12,6 +12,7 @@ struct CreditsAPI: Sendable {
     static let transactionsPath = "v1/credits/transactions"
     static let validatePath = "v1/credits/purchase/revenuecat/validate"
     static let attributionPath = "v1/attribution"
+    static let identityPath = "v1/identity"
     static let midgarTokenHeader = "X-Midgar-Token"
     /// An AdServices token is valid for a short while, so a submission that stalls and then succeeds is worse than a quick failure the next launch retries with a fresh token.
     static let attributionTimeout: TimeInterval = 20
@@ -60,6 +61,23 @@ struct CreditsAPI: Sendable {
             status: MidgarAdAttributionStatus(rawValue: wire.status) ?? .pending,
             retryAfter: wire.retryAfterSeconds
         )
+    }
+
+    /// Sends `DELETE /v1/identity` with the legacy API key as the only credential, and returns false without any request when the app has no legacy key. 200 and 204 are done, and so are 401 and 404: the identity is already gone. The Midgar token stays off the request on purpose, so a deletion never waits on, fails on or links through the Midgar ID.
+    func deleteLegacyIdentity() async throws -> Bool {
+        guard let key = await legacyAPIKey?(), !key.isEmpty else {
+            return false
+        }
+        let client = MidgarHTTPClient(configuration: configuration.settingTokenProvider({ key }))
+        let request = MidgarRequest(service: Self.service, path: Self.identityPath, method: .delete, neverRetries: true)
+        do {
+            _ = try await client.sendRaw(request)
+        } catch .unauthorized, .notFound {
+            return true
+        } catch {
+            throw await translated(error, resolvesBalance: false)
+        }
+        return true
     }
 
     private func send<Response: Decodable & Sendable>(
