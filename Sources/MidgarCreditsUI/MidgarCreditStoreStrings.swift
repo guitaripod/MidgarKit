@@ -1,7 +1,19 @@
 import Foundation
 
-/// The strings of the credit store, looked up in the package's own string catalog. Counts of credits take the plural form of the language.
-extension MidgarCommerceUIStrings {
+/// Every string MidgarCreditsUI shows to people, looked up in the target's own string catalog. Counts of credits take the plural form of the language.
+enum MidgarCreditsUIStrings {
+    static var purchaseFailed: String {
+        String(localized: "The purchase could not be completed. Please try again.", bundle: .module, comment: "Alert message when a purchase failed")
+    }
+
+    static var tryAgain: String {
+        String(localized: "Try again", bundle: .module, comment: "Button that loads the credit packs again")
+    }
+
+    static var purchasing: String {
+        String(localized: "Purchasing", bundle: .module, comment: "Accessibility label of the spinner on the buy button while a purchase runs")
+    }
+
     static var creditsBalanceTitle: String {
         String(localized: "Your balance", bundle: .module, comment: "Label above the number of credits the person has in the credit store")
     }

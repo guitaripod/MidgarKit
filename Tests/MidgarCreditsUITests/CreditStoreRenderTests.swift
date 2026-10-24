@@ -2,7 +2,7 @@
 import SwiftUI
 import Testing
 import MidgarCredits
-@testable import MidgarCommerceUI
+@testable import MidgarCreditsUI
 
 @Suite @MainActor struct CreditStoreRenderTests {
     private var platform: String {

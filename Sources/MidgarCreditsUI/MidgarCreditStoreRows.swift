@@ -1,3 +1,4 @@
+import MidgarCommerceUI
 import MidgarCredits
 import MidgarUI
 import SwiftUI
@@ -15,7 +16,7 @@ struct MidgarCreditBalanceCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.m) {
             VStack(alignment: .leading, spacing: theme.spacing.xs) {
-                Text(MidgarCommerceUIStrings.creditsBalanceTitle)
+                Text(MidgarCreditsUIStrings.creditsBalanceTitle)
                     .midgarFont(.subheadline)
                     .foregroundStyle(theme.secondaryLabel.color)
                 balanceText
@@ -23,7 +24,7 @@ struct MidgarCreditBalanceCard: View {
             .accessibilityElement(children: .combine)
             if let allowances = balance?.allowances, !allowances.isEmpty {
                 Divider()
-                Text(MidgarCommerceUIStrings.creditsAllowancesTitle)
+                Text(MidgarCreditsUIStrings.creditsAllowancesTitle)
                     .midgarFont(.subheadline)
                     .foregroundStyle(theme.secondaryLabel.color)
                 ForEach(allowances) { allowance in
@@ -39,16 +40,16 @@ struct MidgarCreditBalanceCard: View {
     @ViewBuilder
     private var balanceText: some View {
         if let balance {
-            Text(verbatim: MidgarCommerceUIStrings.creditsCount(balance.credits))
+            Text(verbatim: MidgarCreditsUIStrings.creditsCount(balance.credits))
                 .midgarFont(.largeTitle)
                 .monospacedDigit()
                 .foregroundStyle(theme.label.color)
                 .fixedSize(horizontal: false, vertical: true)
         } else if isLoading {
             ProgressView()
-                .accessibilityLabel(MidgarCommerceUIStrings.creditsLoadingPacks)
+                .accessibilityLabel(MidgarCreditsUIStrings.creditsLoadingPacks)
         } else if isUnavailable {
-            Text(MidgarCommerceUIStrings.creditsBalanceUnavailable)
+            Text(MidgarCreditsUIStrings.creditsBalanceUnavailable)
                 .midgarFont(.subheadline)
                 .foregroundStyle(theme.secondaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
@@ -81,7 +82,7 @@ struct MidgarCreditAllowanceRow: View {
             }
             gauge
             if let resetsAt = allowance.resetsAt {
-                Text(MidgarCommerceUIStrings.creditsAllowanceResets(resetsAt.formatted(date: .abbreviated, time: .omitted)))
+                Text(MidgarCreditsUIStrings.creditsAllowanceResets(resetsAt.formatted(date: .abbreviated, time: .omitted)))
                     .midgarFont(.caption)
                     .foregroundStyle(theme.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
@@ -98,7 +99,7 @@ struct MidgarCreditAllowanceRow: View {
     }
 
     private var left: some View {
-        Text(verbatim: MidgarCommerceUIStrings.creditsAllowanceLeft(remaining: allowance.remaining, limit: allowance.limit))
+        Text(verbatim: MidgarCreditsUIStrings.creditsAllowanceLeft(remaining: allowance.remaining, limit: allowance.limit))
             .midgarFont(.subheadline)
             .monospacedDigit()
             .foregroundStyle(theme.secondaryLabel.color)
@@ -164,7 +165,7 @@ struct MidgarCreditOfferRow: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: theme.spacing.xs) {
-            Text(verbatim: MidgarCommerceUIStrings.creditsCount(offer.pack.credits))
+            Text(verbatim: MidgarCreditsUIStrings.creditsCount(offer.pack.credits))
                 .midgarFont(.headline)
                 .foregroundStyle(theme.label.color)
                 .fixedSize(horizontal: false, vertical: true)
@@ -173,7 +174,7 @@ struct MidgarCreditOfferRow: View {
                 .foregroundStyle(theme.secondaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
             if coversShortfall {
-                Text(MidgarCommerceUIStrings.creditsCoversShortfall)
+                Text(MidgarCreditsUIStrings.creditsCoversShortfall)
                     .midgarFont(.caption)
                     .foregroundStyle(theme.accent.color)
                     .padding(.horizontal, theme.spacing.s)
@@ -191,7 +192,7 @@ struct MidgarCreditOfferRow: View {
                 if isBuying {
                     ProgressView()
                         .modifier(MidgarOnAccentSpinner())
-                        .accessibilityLabel(MidgarCommerceUIStrings.purchasing)
+                        .accessibilityLabel(MidgarCreditsUIStrings.purchasing)
                 }
             }
             .frame(minWidth: 72, maxWidth: fillsWidth ? .infinity : nil, minHeight: 24)
@@ -199,7 +200,7 @@ struct MidgarCreditOfferRow: View {
         .buttonStyle(.borderedProminent)
         .tint(theme.accent.color)
         .disabled(!isEnabled && !isBuying)
-        .accessibilityLabel(MidgarCommerceUIStrings.creditsBuy(offer.product.displayPrice))
+        .accessibilityLabel(MidgarCreditsUIStrings.creditsBuy(offer.product.displayPrice))
     }
 }
 
@@ -241,11 +242,11 @@ struct MidgarCreditConfirmingRow: View {
 
     private var texts: some View {
         VStack(alignment: .leading, spacing: theme.spacing.xs) {
-            Text(MidgarCommerceUIStrings.creditsConfirmingTitle)
+            Text(MidgarCreditsUIStrings.creditsConfirmingTitle)
                 .midgarFont(.headline)
                 .foregroundStyle(theme.label.color)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(MidgarCommerceUIStrings.creditsConfirmingDetail)
+            Text(MidgarCreditsUIStrings.creditsConfirmingDetail)
                 .midgarFont(.subheadline)
                 .foregroundStyle(theme.secondaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)

@@ -40,19 +40,19 @@ enum MidgarCreditStoreFailure: Equatable {
     var message: String {
         switch self {
         case .offline:
-            return MidgarCommerceUIStrings.creditsOffline
+            return MidgarCreditsUIStrings.creditsOffline
         case .walletUnavailable:
-            return MidgarCommerceUIStrings.creditsWalletUnavailable
+            return MidgarCreditsUIStrings.creditsWalletUnavailable
         case .signIn:
-            return MidgarCommerceUIStrings.creditsSignIn
+            return MidgarCreditsUIStrings.creditsSignIn
         case .rateLimited:
-            return MidgarCommerceUIStrings.creditsRateLimited
+            return MidgarCreditsUIStrings.creditsRateLimited
         case .rejected:
-            return MidgarCommerceUIStrings.creditsRejected
+            return MidgarCreditsUIStrings.creditsRejected
         case .unavailable:
-            return MidgarCommerceUIStrings.creditsPacksNotAvailable
+            return MidgarCreditsUIStrings.creditsPacksNotAvailable
         case .generic:
-            return MidgarCommerceUIStrings.purchaseFailed
+            return MidgarCreditsUIStrings.purchaseFailed
         }
     }
 }

@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "MidgarCommerce", targets: ["MidgarCommerce"]),
         .library(name: "MidgarCommerceUI", targets: ["MidgarCommerceUI"]),
         .library(name: "MidgarCredits", targets: ["MidgarCredits"]),
+        .library(name: "MidgarCreditsUI", targets: ["MidgarCreditsUI"]),
         .library(name: "MidgarAccount", targets: ["MidgarAccount"]),
         .library(name: "MidgarUI", targets: ["MidgarUI"]),
         .library(name: "MidgarPortal", targets: ["MidgarPortal"]),
@@ -36,7 +37,13 @@ let package = Package(
         ),
         .target(
             name: "MidgarCommerceUI",
-            dependencies: ["MidgarCommerce", "MidgarCredits", "MidgarUI"],
+            dependencies: ["MidgarCommerce", "MidgarUI"],
+            exclude: ["README.md"],
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
+        .target(
+            name: "MidgarCreditsUI",
+            dependencies: ["MidgarCommerceUI", "MidgarCredits", "MidgarUI"],
             exclude: ["README.md"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -70,6 +77,7 @@ let package = Package(
                 "MidgarCommerce",
                 "MidgarCommerceUI",
                 "MidgarCredits",
+                "MidgarCreditsUI",
                 "MidgarAccount",
                 "MidgarUI",
                 "MidgarPortal",
@@ -85,12 +93,16 @@ let package = Package(
         ),
         .testTarget(
             name: "MidgarCommerceUITests",
-            dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarCredits", "MidgarUI"],
+            dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarUI"],
             exclude: ["PaywallSnapshotTests.swift", "PlanPaywallSnapshotTests.swift", "Paywall.storekit"]
         ),
         .testTarget(
             name: "MidgarCreditsTests",
             dependencies: ["MidgarCredits", "MidgarCommerce", "MidgarCore"]
+        ),
+        .testTarget(
+            name: "MidgarCreditsUITests",
+            dependencies: ["MidgarCreditsUI", "MidgarCredits", "MidgarCommerce", "MidgarUI"]
         ),
         .testTarget(name: "MidgarAccountTests", dependencies: ["MidgarAccount"]),
         .testTarget(name: "MidgarUITests", dependencies: ["MidgarUI"]),

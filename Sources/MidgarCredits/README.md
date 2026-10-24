@@ -2,7 +2,7 @@
 
 AI credit packs on the Midgar ID wallet (roadmap P2.09, decision D2). It replaces the `AICredits` package for MidgarKit 4 apps: the balance, the pack purchase and the credit all go through mako's wallet for the Midgar ID, partitioned per app.
 
-It is its own target, not part of MidgarCommerce, so an app that sells no credits links none of it. It depends on MidgarCore and MidgarCommerce. The `MidgarKit` umbrella re-exports it.
+It is its own target, not part of MidgarCommerce, so an app that sells no credits links none of it. It depends on MidgarCore and MidgarCommerce. The `MidgarKit` umbrella re-exports it. The credit store screen (`MidgarCreditStoreView`) is its own target, MidgarCreditsUI, so a paywall-only app links no credits code.
 
 ```swift
 let identity = MidgarIdentity(httpConfiguration: configuration)

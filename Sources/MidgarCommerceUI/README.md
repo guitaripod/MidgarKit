@@ -48,23 +48,6 @@ UIKit apps use `MidgarPaywallViewController(plans:store:completion:)`.
 - **Names, notes and extras.** `planNames` replaces the store's display names in the picker and the comparison caption, `oneTimeNote` adds an app sentence to the one-time offer line, and a yearly plan with no saving to state and no trial is badged `Best value`. `MidgarPaywallArtwork.picture(symbol:load:)` shows a symbol that becomes a lightly blurred picture once the app's loader returns one. `offersCodeRedemption` adds Redeem Code to the footer (the App Store sheet, `MidgarPaywallEvent.redeemed` when a purchase arrived through it). `ownsPurchaseOutsideStore` lets an app say a restore that found nothing in the store still has something to restore, such as a paid-up-front earlier version. `MidgarPlanPaywall(dismiss:)` adds a Not now button for tvOS. Return buys on a Mac, and success and failure give haptic feedback. VoiceOver reads each plan as name, price, badge, then its detail lines. Restore failures arrive as `MidgarPaywallEvent.restoreFailed`, not `failed`.
 - **Purchases.** The selected plan is bought with the `\.purchase` action using `MidgarStore.purchaseOptions()` (the Midgar ID as `appAccountToken`) and the result goes to `MidgarStore.complete(_:)`, for subscriptions and the one-time product alike, so verification, the report queue and the entitlements are those of `MidgarStore.purchase(_:)`, and visionOS needs no scene. Restore runs `MidgarStore.restore()`. Outcomes arrive as `MidgarPaywallEvent`.
 
-## The credit store
-
-`MidgarCreditStoreView` is the screen of an app that sells AI credit packs on the Midgar ID wallet (MidgarCredits, roadmap P2.09). It takes the app's `MidgarCredits` (through the small `MidgarCreditStoreSource` protocol, so previews and tests pass a fake) and needs no other setup:
-
-```swift
-MidgarCreditStoreView(credits: credits, shortfall: 40, allowanceTitles: ["reading.v2": "Readings"])
-```
-
-UIKit hosts it with `UIHostingController(rootView: MidgarCreditStoreView(credits: credits))`.
-
-- **What it shows.** The balance, and the free allowances that renew when mako reports any (a name from `allowanceTitles` or the allowance id, how much is left of the limit, a gauge and the reset date). One row per pack of `credits.offers()`: the credits the pack grants, the StoreKit display name and, on the buy button, StoreKit's display price. A pack StoreKit does not sell has no row.
-- **Buying.** A tap runs `credits.buy(_:)`. The tapped button turns into a spinner and the other buttons are disabled until it ends, so only one purchase runs at a time. `credited` updates the balance and says how many credits arrived; `creditPending` adds a "your purchase is being confirmed" row that stays until `credits.events()` reports a credit (a purchase an earlier launch left unconfirmed shows the same row, by `unconfirmedPurchases`); `awaitingApproval` says the purchase waits for approval (Ask to Buy); `cancelled` shows nothing; a failure is one short message: offline, wallet unavailable (nothing was charged), session expired, too many requests, purchase could not be verified (contact support), packs not available, or the generic purchase failure.
-- **Shortfall.** With `shortfall: N` a banner says the person needs N more credits and the smallest pack that covers it is marked "Enough for this". Zero or a negative number is ignored.
-- **When the packs cannot load.** The balance still shows, the list says the packs are unavailable and Try again loads them again.
-- **Layout.** One column, at most 560 points wide and centered, in the theme's surface, hairline and accent, so it reads the same in an iPhone sheet, an iPad or Mac window and every window of an iPhone Duo. An accessibility text size stacks each row and gives the buy button the full width; text uses the Midgar text styles and never truncates.
-- **Dependency.** MidgarCommerceUI depends on MidgarCredits for the pack, offer and result types, so an app that links the paywall links the (small) credits module too.
-
 ## Languages
 
 The string catalog carries English and de, es, fr, it, ja, ko, pl, pt-BR, zh-Hans and zh-Hant, the languages Solar Beam ships, so a paywall in any of them is fully translated. The comparison line takes the plural form of its number of years (Polish has rok, lata and lat), and a half year reads as a fraction. Other languages fall back to English. Add a locale to the catalog before an app ships it.
@@ -76,7 +59,6 @@ The string catalog carries English and de, es, fr, it, ja, ko, pl, pt-BR, zh-Han
 - `MidgarStorefront`: one-time products on `StoreView`, each drawn as a `MidgarPlanCard`.
 - `MidgarPlanCard` and `MidgarPlanProductViewStyle`: the card (title, price and period, detail, badge, selected and purchased states) and the `ProductViewStyle` that gives any `StoreView` or `ProductView` that face.
 - `MidgarPaywallScreen` and `MidgarPaywallConfiguration`: one entry point for either kind.
-- `MidgarCreditStoreView` and `MidgarCreditStoreSource`: the credit store above.
 - `MidgarPaywallViewController`: the UIKit host, a view controller around a `UIHostingController` that calls its completion once with `.purchased`, `.restored` or `.dismissed`.
 - `.midgarPurchases(store:onEvent:)`: the modifier that makes the purchases of any StoreKit view below it belong to the store.
 
@@ -95,5 +77,4 @@ Restore runs `MidgarStore.restore()`, so restored purchases reach the ledger.
 ## Tests
 
 - `swift test --filter Paywall` runs the logic tests and renders the plan cards and the footer on macOS (`MIDGAR_SNAPSHOT_DIR` collects the PNGs). On the iOS Simulator: `xcodebuild test -scheme MidgarKit-Package -destination 'platform=iOS Simulator,id=<udid>' -only-testing:MidgarCommerceUITests`.
-- `swift test --filter CreditStore` runs the credit store's model tests against a scripted wallet, checks every string in every language of the catalog (the plural forms of credits included) and renders the view on macOS (and the iOS Simulator, where the accessibility text size is real) in the layouts above, in light and dark.
 - The paywall and storefront over the real StoreKit views need StoreKit testing and an app scene, so they run from the StoreKit host (`Tests/StoreKitHost`, see the MidgarCommerce README): `TEST_RUNNER_MIDGAR_SNAPSHOT_DIR=<dir> xcodebuild test -project StoreKitHost.xcodeproj -scheme StoreKitHost -destination <iPhone, iPad or platform=macOS> -only-testing:StoreKitHostTests/PaywallSnapshotTests`. They use `Tests/MidgarCommerceUITests/Paywall.storekit`. The host builds for iOS, macOS, tvOS and visionOS (`-destination 'platform=tvOS Simulator,id=<udid>'`, `'platform=visionOS Simulator,id=<udid>'`), and the plan paywall renders in the layouts of each: an iPhone and a small window, an iPad plus the windows of an unfolded iPhone Duo (951 x 669, 669 x 951, 466 x 678), a Mac sheet and a wide Mac window, a TV (and the focus state) and a visionOS window, in light and dark where the platform has both, plus the scrolled end and an accessibility text size on iOS. Two traps: StoreKit testing reads the prices of `Paywall.storekit` in the Simulator's region, so a Simulator with a comma-decimal region (`en_US@rg=fizzzz`) reports `Product.price` 39 for 39.99; set it with `xcrun simctl spawn <udid> defaults write -g AppleLocale -string en_US` and reboot it. And on macOS StoreKit testing does not grant a purchase to `Transaction.currentEntitlements` (the `MidgarStore` integration tests fail there the same way), so the purchase tests skip their entitlement checks on macOS.

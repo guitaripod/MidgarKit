@@ -1,3 +1,4 @@
+import MidgarCommerceUI
 import MidgarCredits
 import MidgarUI
 import SwiftUI
@@ -32,7 +33,7 @@ public struct MidgarCreditStoreView: View {
         ScrollView {
             VStack(spacing: theme.spacing.l) {
                 if let shortfall = model.shortfall {
-                    MidgarCreditNoticeRow(style: .warning, symbol: "exclamationmark.circle.fill", text: MidgarCommerceUIStrings.creditsShortfall(shortfall))
+                    MidgarCreditNoticeRow(style: .warning, symbol: "exclamationmark.circle.fill", text: MidgarCreditsUIStrings.creditsShortfall(shortfall))
                 }
                 MidgarCreditBalanceCard(
                     balance: model.balance,
@@ -62,9 +63,9 @@ public struct MidgarCreditStoreView: View {
     private var notice: some View {
         switch model.notice {
         case .credited(let count):
-            MidgarCreditNoticeRow(style: .success, symbol: "checkmark.circle.fill", text: MidgarCommerceUIStrings.creditsAdded(count))
+            MidgarCreditNoticeRow(style: .success, symbol: "checkmark.circle.fill", text: MidgarCreditsUIStrings.creditsAdded(count))
         case .awaitingApproval:
-            MidgarCreditNoticeRow(style: .info, symbol: "clock.fill", text: MidgarCommerceUIStrings.creditsAwaitingApproval)
+            MidgarCreditNoticeRow(style: .info, symbol: "clock.fill", text: MidgarCreditsUIStrings.creditsAwaitingApproval)
         case .failure(let failure):
             MidgarCreditNoticeRow(style: .failure, symbol: "exclamationmark.triangle.fill", text: failure.message)
         case nil:
@@ -77,7 +78,7 @@ public struct MidgarCreditStoreView: View {
         switch model.phase {
         case .loading:
             ProgressView()
-                .accessibilityLabel(MidgarCommerceUIStrings.creditsLoadingPacks)
+                .accessibilityLabel(MidgarCreditsUIStrings.creditsLoadingPacks)
                 .frame(maxWidth: .infinity, minHeight: 120)
         case .unavailable:
             unavailable
@@ -102,15 +103,15 @@ public struct MidgarCreditStoreView: View {
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(theme.secondaryLabel.color)
                 .accessibilityHidden(true)
-            Text(MidgarCommerceUIStrings.creditsPacksUnavailableTitle)
+            Text(MidgarCreditsUIStrings.creditsPacksUnavailableTitle)
                 .midgarFont(.headline)
                 .foregroundStyle(theme.label.color)
-            Text(MidgarCommerceUIStrings.creditsPacksUnavailableDetail)
+            Text(MidgarCreditsUIStrings.creditsPacksUnavailableDetail)
                 .midgarFont(.subheadline)
                 .foregroundStyle(theme.secondaryLabel.color)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button(MidgarCommerceUIStrings.tryAgain) {
+            Button(MidgarCreditsUIStrings.tryAgain) {
                 Task { await model.retry() }
             }
             .buttonStyle(.borderedProminent)

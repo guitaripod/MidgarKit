@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import MidgarCommerceUI
+@testable import MidgarCreditsUI
 
 @Suite struct CreditStoreStringsTests {
     private static let languages = ["en", "de", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "zh-Hans", "zh-Hant"]

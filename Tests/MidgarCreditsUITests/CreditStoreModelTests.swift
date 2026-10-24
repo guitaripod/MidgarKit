@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import MidgarCredits
-@testable import MidgarCommerceUI
+@testable import MidgarCreditsUI
 
 @Suite @MainActor struct CreditStoreModelTests {
     private func model(_ source: FakeCreditSource, shortfall: Int? = nil) -> MidgarCreditStoreModel {

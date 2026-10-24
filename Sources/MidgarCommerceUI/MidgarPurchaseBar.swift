@@ -149,7 +149,9 @@ private struct MidgarDefaultAction: ViewModifier {
 
 /// The label color that reads on the accent: black on a light accent, white on a dark one.
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
-struct MidgarOnAccentLabel: ViewModifier {
+package struct MidgarOnAccentLabel: ViewModifier {
+    package init() {}
+
     @Environment(\.midgarTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     #if os(macOS)
@@ -157,7 +159,7 @@ struct MidgarOnAccentLabel: ViewModifier {
     #endif
 
     @ViewBuilder
-    func body(content: Content) -> some View {
+    package func body(content: Content) -> some View {
         #if os(macOS)
         if controlActiveState == .inactive {
             content
@@ -174,7 +176,7 @@ struct MidgarOnAccentLabel: ViewModifier {
     }
 
     /// True when the color's relative luminance is above the point where black text reads better than white.
-    static func isLight(_ color: MidgarColor.RGBA) -> Bool {
+    package static func isLight(_ color: MidgarColor.RGBA) -> Bool {
         func linear(_ component: Double) -> Double {
             component <= 0.03928 ? component / 12.92 : pow((component + 0.055) / 1.055, 2.4)
         }

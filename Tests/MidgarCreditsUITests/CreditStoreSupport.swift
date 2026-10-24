@@ -1,7 +1,7 @@
 import Foundation
 import MidgarCommerce
 import MidgarCredits
-@testable import MidgarCommerceUI
+@testable import MidgarCreditsUI
 
 /// A wallet the test scripts. Everything is touched only inside `lock`.
 final class FakeCreditSource: MidgarCreditStoreSource, @unchecked Sendable {
