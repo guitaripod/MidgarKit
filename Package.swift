@@ -36,7 +36,7 @@ let package = Package(
         ),
         .target(
             name: "MidgarCommerceUI",
-            dependencies: ["MidgarCommerce", "MidgarUI"],
+            dependencies: ["MidgarCommerce", "MidgarCredits", "MidgarUI"],
             exclude: ["README.md"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -85,7 +85,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MidgarCommerceUITests",
-            dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarUI"],
+            dependencies: ["MidgarCommerceUI", "MidgarCommerce", "MidgarCredits", "MidgarUI"],
             exclude: ["PaywallSnapshotTests.swift", "PlanPaywallSnapshotTests.swift", "Paywall.storekit"]
         ),
         .testTarget(
