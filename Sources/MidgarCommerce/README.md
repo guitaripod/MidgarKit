@@ -60,7 +60,7 @@ Environment: the ledger is asked for `Sandbox` when `AppTransaction.environment`
 
 ## Promoted in-app purchases
 
-A purchase the customer starts on the App Store product page reaches the running app as a StoreKit `PurchaseIntent` (iOS 16.4, macOS 14.4, visionOS), and nothing is charged until the app buys it. In purchases mode the store listens for intents from launch and buys an intent for one of its products through the same path as `purchase(_:)`, with the Midgar ID as `appAccountToken`, then publishes `purchaseApproved(productID:)`, since no call of the app started it. A credit pack bought this way is credited by the ledger-fed grant (it carries the Midgar ID), and MidgarCredits reads the balance again on the event. An intent for a product the store does not sell is ignored; a read-only store does not listen. tvOS has no purchase intents.
+A purchase the customer starts on the App Store product page reaches the running app as a StoreKit `PurchaseIntent` (iOS 16.4, macOS 14.4), and nothing is charged until the app buys it. In purchases mode the store listens for intents from launch and buys an intent for one of its products through the same path as `purchase(_:)`, with the Midgar ID as `appAccountToken`, then publishes `purchaseApproved(productID:)`, since no call of the app started it. A credit pack bought this way is credited by the ledger-fed grant (it carries the Midgar ID), and MidgarCredits reads the balance again on the event. An intent for a product the store does not sell is ignored; a read-only store does not listen. tvOS and visionOS have no purchase intents.
 
 
 ## StoreKit views
