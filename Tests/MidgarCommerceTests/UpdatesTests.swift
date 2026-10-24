@@ -26,6 +26,75 @@ import Testing
         #expect(await h.signals.events.count == 1)
     }
 
+    @Test func anApprovalThatStoreKitListsLateStillGrantsAndPublishesOnce() async throws {
+        let storeKit = FakeStoreKit()
+        let finishes = FinishLog()
+        let approved = makeTransaction(id: 7, log: finishes)
+        let pauses = PauseCount()
+        let h = StoreHarness(storeKit: storeKit, finishes: finishes, grantLagSleep: { _ in
+            if pauses.increment() == 2 {
+                storeKit.setCurrent([.verified(approved)])
+            }
+        })
+        let events = await h.store.events()
+        let changes = Task {
+            var seen: [MidgarStoreEvent] = []
+            for await event in events {
+                seen.append(event)
+                if event == .entitlementsChanged { break }
+            }
+            return seen
+        }
+
+        storeKit.emit(.verified(approved))
+
+        #expect(await eventually { await h.store.isEntitled(to: "pro") })
+        let seen = await changes.value
+        #expect(seen.contains(.purchaseApproved(productID: Products.pro)))
+        #expect(pauses.count == 2)
+    }
+
+    @Test func aRenewalThatStoreKitListsLateExtendsTheEntitlementOnce() async throws {
+        let storeKit = FakeStoreKit()
+        let finishes = FinishLog()
+        let first = makeTransaction(id: 20, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(30 * day), log: finishes)
+        let renewal = makeTransaction(id: 21, original: 20, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(60 * day), log: finishes)
+        let pauses = PauseCount()
+        let h = StoreHarness(storeKit: storeKit, finishes: finishes, grantLagSleep: { _ in
+            if pauses.increment() == 3 {
+                storeKit.setCurrent([.verified(renewal)])
+            }
+        })
+        storeKit.setCurrent([.verified(first)])
+        storeKit.emit(.verified(first))
+        #expect(await eventually { await h.store.isEntitled(to: "pro") })
+        #expect(pauses.count == 0)
+
+        storeKit.emit(.verified(renewal))
+
+        #expect(await eventually { await h.store.entitlements.first?.expirationDate == commerceEpoch.addingTimeInterval(60 * day) })
+        #expect(pauses.count == 3)
+    }
+
+    @Test func aTransactionStoreKitNeverListsGivesUpAfterTheBoundedWait() async throws {
+        let pauses = PauseCount()
+        let h = StoreHarness(grantLagSleep: { _ in _ = pauses.increment() })
+        h.storeKit.emit(.verified(h.transaction(id: 8)))
+        #expect(await eventually { h.logs.lines.contains { $0.contains("still does not list") } })
+        #expect(pauses.count == MidgarStore.grantLagDelays.count)
+        #expect(!(await h.store.isEntitled(to: "pro")))
+    }
+
+    @Test func anExpiredSubscriptionArrivingThroughUpdatesIsNotWaitedFor() async throws {
+        let pauses = PauseCount()
+        let h = StoreHarness(grantLagSleep: { _ in _ = pauses.increment() })
+        h.clock.advance(90 * day)
+        let lapsed = h.transaction(id: 9, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(30 * day))
+        h.storeKit.emit(.verified(lapsed))
+        #expect(await eventually { h.finishes.ids.contains(9) })
+        #expect(pauses.count == 0)
+    }
+
     @Test func aRefundRemovesTheEntitlementAndIsReportedToTheLedger() async throws {
         let h = StoreHarness()
         h.ledger.serve(midgarId: FakeIdentity.first)

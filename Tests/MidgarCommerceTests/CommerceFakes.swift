@@ -204,6 +204,7 @@ struct StoreHarness {
         clock: TestClock = TestClock(),
         finishes: FinishLog = FinishLog(),
         sleeper: ManualSleeper = ManualSleeper(),
+        grantLagSleep: @escaping @Sendable (Duration) async throws -> Void = { _ in },
         directory: URL = FileManager.default.temporaryDirectory.appendingPathComponent("commerce-" + UUID().uuidString, isDirectory: true)
     ) {
         let logs = LogCapture()
@@ -233,7 +234,8 @@ struct StoreHarness {
             sleep: { try await sleeper.sleep($0) },
             signal: { await signals.record($0, $1) },
             logger: { logs.record($0) },
-            observesForeground: false
+            observesForeground: false,
+            grantLagSleep: grantLagSleep
         )
     }
 
@@ -272,4 +274,20 @@ func eventually(_ condition: () async -> Bool) async -> Bool {
         try? await Task.sleep(for: .milliseconds(10))
     }
     return await condition()
+}
+
+/// Counts the store's pauses while it waits for StoreKit to list a grant. `pauses` is touched only inside `lock`.
+final class PauseCount: @unchecked Sendable {
+    private let lock = NSLock()
+    private var pauses = 0
+
+    var count: Int { lock.withLock { pauses } }
+
+    /// Records one pause and returns how many there have been, this one included.
+    func increment() -> Int {
+        lock.withLock {
+            pauses += 1
+            return pauses
+        }
+    }
 }

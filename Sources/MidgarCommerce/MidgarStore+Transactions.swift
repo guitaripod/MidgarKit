@@ -40,8 +40,46 @@ extension MidgarStore {
             emit(.purchaseApproved(productID: transaction.productID))
         }
         await refreshLocal()
+        await awaitLocalGrant(of: transaction)
         publishIfChanged()
         Task { [weak self] in await self?.refresh() }
+    }
+
+    /// The pauses between re-reads of StoreKit's entitlements while a transaction that grants something is not listed yet, three seconds in all.
+    static let grantLagDelays: [Duration] = Array(repeating: .milliseconds(250), count: 12)
+
+    /// StoreKit can hand over a transaction before `currentEntitlements` lists it (the macOS 27 betas trail by up to a second, seen with an approved Ask to Buy and with renewals), and nothing would read the list again. A transaction that grants something right now is waited for in bounded steps, so the change is published once, with the grant in it.
+    private func awaitLocalGrant(of transaction: StoreTransaction) async {
+        guard let expected = localEntitlement(for: transaction), expected.isActive(at: clock()) else {
+            return
+        }
+        for delay in Self.grantLagDelays {
+            if isListed(expected) {
+                return
+            }
+            do {
+                try await grantLagSleep(delay)
+            } catch {
+                return
+            }
+            await refreshLocal()
+        }
+        if !isListed(expected) {
+            log("commerce: StoreKit still does not list \(transaction.productID) after a verified transaction; the next refresh grants it")
+        }
+    }
+
+    /// True when the local grants hold the entitlement at least until the transaction's expiry, so a renewal counts only once its new period is listed.
+    private func isListed(_ expected: MidgarEntitlement) -> Bool {
+        localEntitlements.contains { granted in
+            guard granted.name == expected.name else {
+                return false
+            }
+            guard let expiry = expected.expirationDate else {
+                return true
+            }
+            return (granted.expirationDate ?? .distantFuture) >= expiry
+        }
     }
 
     /// True the first time this transaction in this revocation state reaches the store. A purchase result and the updates listener may both deliver one transaction; a refund of it is a different state and is processed.
