@@ -22,6 +22,7 @@ public actor MidgarCredits {
     let sleep: @Sendable (Duration) async throws -> Void
     let log: @Sendable (String) -> Void
     let reconciles: Bool
+    let adAttribution: MidgarAdAttribution
 
     var cachedBalance: MidgarCreditsBalance?
     var pending: [PendingCredit]
@@ -81,6 +82,14 @@ public actor MidgarCredits {
         self.sleep = sleep
         self.log = logger
         self.reconciles = reconciles
+        self.adAttribution = MidgarAdAttribution(
+            submitter: api,
+            tokenProvider: configuration.attributionTokenProvider,
+            isProductionLaunch: configuration.isProductionLaunch,
+            store: AdAttributionStateStore(directory: configuration.directory, appID: http.appID),
+            sleep: sleep,
+            logger: logger
+        )
         self.pending = store.load()
         if startsRefreshing {
             Task { [weak self] in
@@ -196,14 +205,21 @@ public actor MidgarCredits {
 
     func readBalance() async throws -> MidgarCreditsBalance {
         let wire = try await api.balance()
-        return record(credits: wire.balance)
+        let allowances = wire.allowances.map {
+            MidgarCreditsAllowance(id: $0.id, remaining: max(0, $0.remaining), limit: max(0, $0.limit), resetsAt: CreditsDates.parse($0.resetsAt))
+        }
+        return record(credits: wire.balance, allowances: allowances)
     }
 
-    /// Stores a balance mako confirmed and tells observers when it differs from the last one.
+    /// Stores a balance mako confirmed and tells observers when it or its allowances differ from the last one. A caller that has no allowances to report (the validation's `new_balance`) keeps the ones already known.
     @discardableResult
-    func record(credits: Int) -> MidgarCreditsBalance {
-        let balance = MidgarCreditsBalance(credits: credits, updatedAt: clock())
-        let changed = cachedBalance?.credits != credits
+    func record(credits: Int, allowances: [MidgarCreditsAllowance]? = nil) -> MidgarCreditsBalance {
+        let balance = MidgarCreditsBalance(
+            credits: credits,
+            updatedAt: clock(),
+            allowances: allowances ?? cachedBalance?.allowances ?? []
+        )
+        let changed = cachedBalance?.credits != credits || cachedBalance?.allowances != balance.allowances
         cachedBalance = balance
         if changed {
             emit(.balanceChanged(balance))

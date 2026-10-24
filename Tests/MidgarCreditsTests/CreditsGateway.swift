@@ -175,3 +175,10 @@ final class CreditsGateway: @unchecked Sendable {
         )
     }
 }
+
+extension CreditsReply {
+    static func attribution(_ status: String, retryAfter: Int? = nil) -> CreditsReply {
+        let retry = retryAfter.map { #","retry_after_seconds":\#($0)"# } ?? ""
+        return .json(200, #"{"status":"\#(status)","attributed":\#(status == "attributed")\#(retry)}"#)
+    }
+}

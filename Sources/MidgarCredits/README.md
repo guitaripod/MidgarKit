@@ -2,7 +2,7 @@
 
 AI credit packs on the Midgar ID wallet (roadmap P2.09, decision D2). It replaces the `AICredits` package for MidgarKit 4 apps: the balance, the pack purchase and the credit all go through mako's wallet for the Midgar ID, partitioned per app.
 
-It is its own target, not part of MidgarCommerce, so an app that sells no credits links none of it. It depends on MidgarCore and MidgarCommerce. The `MidgarKit` umbrella re-exports it.
+It is its own target, not part of MidgarCommerce, so an app that sells no credits links none of it. It depends on MidgarCore and MidgarCommerce. The `MidgarKit` umbrella re-exports it. The credit store screen (`MidgarCreditStoreView`) is its own target, MidgarCreditsUI, so a paywall-only app links no credits code.
 
 ```swift
 let identity = MidgarIdentity(httpConfiguration: configuration)
@@ -39,6 +39,46 @@ for await event in await credits.events() { ... }
 ```
 
 Pass the app's base `MidgarHTTPConfiguration` (no token provider) as `http`: MidgarCredits authorizes it itself, because a legacy API key and the Midgar token travel in different headers.
+
+## Free allowances
+
+`MidgarCreditsBalance.allowances` lists the free allowances mako sends next to the balance (`weekly` on `GET /v1/credits/balance`, keyed by the capability or alias id): `MidgarCreditsAllowance(id:remaining:limit:resetsAt:)`, sorted by id. The array is empty when mako sends none, so an app without allowances sees no change. A bucket that cannot be read is skipped instead of failing the balance, a negative `remaining` is read as 0, and `resetsAt` is nil when mako sends no date. `balanceChanged` also fires when only an allowance changed.
+
+## Apple Ads attribution
+
+`MidgarAdAttribution` ports the reporting of `AICredits` (the AdServices token, exchanged by mako with Apple and kept against the Midgar ID's partition). The app calls it once per launch, after the first frame is on screen:
+
+```swift
+let credits = MidgarCredits(
+    configuration: MidgarCreditsConfiguration(
+        packs: packs,
+        isProductionLaunch: { !isDebugBuild && !isUITest && !isDemoMode }
+    ),
+    ...
+)
+Task { await credits.reportAdAttributionOnce() }
+```
+
+- **Who decides.** Every app that calls `reportAdAttributionOnce()` must pass `isProductionLaunch` to `MidgarCreditsConfiguration`: false in DEBUG builds, UI tests and demo mode, true only for a real launch of the shipped app. It is asked on every call, and false means nothing is captured or sent. The parameter defaults to true so the configuration still builds for an app that never reports attribution; an app that reports and leaves the default sends test installs to mako as real ones. The token source is `MidgarAdServicesTokenProvider` (`AAAttribution.attributionToken()`); `attributionTokenProvider` replaces it in tests.
+- **Request.** `POST /v1/intelligence/v1/attribution` with `{"attribution_token": "<token>"}`, the body `AICredits` sends, authorized like every other call here: the Midgar access token as the bearer, or the legacy key as the bearer plus `X-Midgar-Token` when the app passes `legacyAPIKey`. Timeout 20 seconds, because the token is short-lived.
+- **Once per install.** `<directory>/attribution-<app>.json` holds mako's final verdict (`attributed`, `organic` or `duplicate`); after that no launch captures or sends anything. The file is in the app's container, so a reinstall is a new install. The token itself is never written or logged.
+- **Retries.** A network failure, a server error or a `pending` or `invalid` verdict leave the install open and the next launch captures a fresh token. `pending` is also retried inside the launch (up to 3 submissions, after mako's `retry_after_seconds` when that is 10 seconds or less). Launches that reached mako without a verdict stop after 5; being offline does not count.
+- **Nothing to send.** A token call that throws (the Simulator, no attribution record yet), no token, or a token that mako's shape check would refuse (16 to 8192 characters of base64) sends nothing and counts for nothing.
+- **Result.** `reportAdAttributionOnce()` never throws and returns a `MidgarAdAttributionResult` (`settled`, `alreadySettled`, `deferred`, `skipped`, `noToken`, `exhausted`) whose `logDescription` is safe for the app's file log.
+
+## Delete Account
+
+How an app erases the wallet depends on how it authenticates:
+
+- **Midgar-ID-native** (no `legacyAPIKey`): the app deletes the Midgar ID through the identity service, and the identity service calls mako's internal erase, which removes this app's wallet partition. MidgarCredits sends nothing for this and `deleteLegacyAccount()` has nothing to do: it returns without a request.
+- **Legacy key** (the app passes `legacyAPIKey`): the app also has an old per-app account at mako, and the key is the only way to name it. `deleteLegacyAccount()` is only for that old per-app key, and Delete Account calls it before it deletes the Midgar ID:
+
+```swift
+try await credits.deleteLegacyAccount()
+try await identity.deleteAccount()
+```
+
+`deleteLegacyAccount()` sends `DELETE /v1/intelligence/v1/identity` with the legacy key as the only credential (no Midgar token, so the deletion never waits on or fails for the Midgar ID). 200, 204, 401 and 404 count as done, because a rejected key or a missing account means nothing is left to delete; any other answer throws a `MidgarCreditsError` (`offline`, `rateLimited`, `walletUnavailable`, `server(...)`) and the app should stop and let the person retry. mako removes the old account's data and, for a user already linked to a wallet, erases this app's partition of the wallet.
 
 ## Which pack, which product
 

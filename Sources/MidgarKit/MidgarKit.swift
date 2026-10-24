@@ -3,6 +3,7 @@
 @_exported import MidgarCommerceUI
 @_exported import MidgarCore
 @_exported import MidgarCredits
+@_exported import MidgarCreditsUI
 @_exported import MidgarDemo
 @_exported import MidgarIntelligence
 @_exported import MidgarPortal

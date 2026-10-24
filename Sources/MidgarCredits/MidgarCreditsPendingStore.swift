@@ -46,7 +46,7 @@ struct CreditsPendingStore: Sendable {
     }
 
     /// Keeps an app id from escaping the directory.
-    private static func safeName(_ appID: String) -> String {
+    static func safeName(_ appID: String) -> String {
         String(appID.map { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") ? $0 : "_" })
     }
 }

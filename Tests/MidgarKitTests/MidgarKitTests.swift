@@ -7,6 +7,7 @@ import MidgarKit
         #expect(MidgarCommerceModule.name == "MidgarCommerce")
         #expect(MidgarCommerceUIModule.name == "MidgarCommerceUI")
         #expect(MidgarCreditsModule.name == "MidgarCredits")
+        #expect(MidgarCreditsUIModule.name == "MidgarCreditsUI")
         #expect(MidgarAccountModule.name == "MidgarAccount")
         #expect(MidgarUIModule.name == "MidgarUI")
         #expect(MidgarIntelligenceModule.name == "MidgarIntelligence")
