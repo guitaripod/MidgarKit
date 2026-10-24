@@ -22,6 +22,7 @@ public actor MidgarCredits {
     let sleep: @Sendable (Duration) async throws -> Void
     let log: @Sendable (String) -> Void
     let reconciles: Bool
+    let adAttribution: MidgarAdAttribution
 
     var cachedBalance: MidgarCreditsBalance?
     var pending: [PendingCredit]
@@ -81,6 +82,14 @@ public actor MidgarCredits {
         self.sleep = sleep
         self.log = logger
         self.reconciles = reconciles
+        self.adAttribution = MidgarAdAttribution(
+            submitter: api,
+            tokenProvider: configuration.attributionTokenProvider,
+            isProductionLaunch: configuration.isProductionLaunch,
+            store: AdAttributionStateStore(directory: configuration.directory, appID: http.appID),
+            sleep: sleep,
+            logger: logger
+        )
         self.pending = store.load()
         if startsRefreshing {
             Task { [weak self] in

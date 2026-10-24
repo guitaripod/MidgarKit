@@ -42,6 +42,54 @@ final class FakeCreditsIdentity: MidgarCreditsIdentity, @unchecked Sendable {
     }
 }
 
+let fakeAttributionToken = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-token_0123456789+/=="
+
+/// The AdServices token source the test controls. It is a class so a harness and the client it builds share one; `behavior` and `calls` are touched only inside `lock`.
+final class FakeAttributionTokens: MidgarAdAttributionTokenProviding, @unchecked Sendable {
+    enum Behavior {
+        case token(String)
+        case nothing
+        case failing
+    }
+
+    struct Unsupported: Error {}
+
+    private let lock = NSLock()
+    private var behavior: Behavior = .token(fakeAttributionToken)
+    private var calls = 0
+
+    var callCount: Int { lock.withLock { calls } }
+
+    func set(_ newBehavior: Behavior) { lock.withLock { behavior = newBehavior } }
+
+    func attributionToken() throws -> String? {
+        let current = lock.withLock { () -> Behavior in
+            calls += 1
+            return behavior
+        }
+        switch current {
+        case .token(let token):
+            return token
+        case .nothing:
+            return nil
+        case .failing:
+            throw Unsupported()
+        }
+    }
+}
+
+/// Whether the app calls this launch a production one. `value` is touched only inside `lock`.
+final class FakeProductionFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Bool
+
+    init(_ value: Bool = true) { self.value = value }
+
+    var isProduction: Bool { lock.withLock { value } }
+
+    func set(_ newValue: Bool) { lock.withLock { value = newValue } }
+}
+
 /// A scripted store. Results come off a queue; an empty queue means the customer cancelled. All fields are touched only inside `lock`.
 final class FakeCreditsStore: MidgarCreditsPurchasing, @unchecked Sendable {
     private let lock = NSLock()
@@ -118,6 +166,9 @@ struct CreditsHarness {
     let sleeper: InstantSleeper
     let clock: CreditsClock
     let logs: CreditsLogCapture
+    let tokens: FakeAttributionTokens
+    let production: FakeProductionFlag
+    let legacyAPIKey: (@Sendable () async -> String?)?
     let directory: URL
 
     init(
@@ -127,6 +178,8 @@ struct CreditsHarness {
         identity: FakeCreditsIdentity = FakeCreditsIdentity(),
         store: FakeCreditsStore = FakeCreditsStore(),
         clock: CreditsClock = CreditsClock(),
+        tokens: FakeAttributionTokens = FakeAttributionTokens(),
+        production: FakeProductionFlag = FakeProductionFlag(),
         directory: URL = FileManager.default.temporaryDirectory.appendingPathComponent("credits-" + UUID().uuidString, isDirectory: true),
         reconciles: Bool = false,
         startsRefreshing: Bool = false
@@ -139,9 +192,17 @@ struct CreditsHarness {
         self.sleeper = sleeper
         self.clock = clock
         self.logs = logs
+        self.tokens = tokens
+        self.production = production
+        self.legacyAPIKey = legacyAPIKey
         self.directory = directory
         credits = MidgarCredits(
-            configuration: MidgarCreditsConfiguration(packs: packs, directory: directory),
+            configuration: MidgarCreditsConfiguration(
+                packs: packs,
+                directory: directory,
+                attributionTokenProvider: tokens,
+                isProductionLaunch: { production.isProduction }
+            ),
             http: gateway.configuration(),
             identity: identity,
             purchasing: store,
@@ -160,7 +221,16 @@ struct CreditsHarness {
 
     /// A second client over the same directory and gateway, as after a relaunch.
     func relaunched() -> CreditsHarness {
-        CreditsHarness(gateway: gateway, identity: identity, store: store, clock: clock, directory: directory)
+        CreditsHarness(
+            legacyAPIKey: legacyAPIKey,
+            gateway: gateway,
+            identity: identity,
+            store: store,
+            clock: clock,
+            tokens: tokens,
+            production: production,
+            directory: directory
+        )
     }
 }
 

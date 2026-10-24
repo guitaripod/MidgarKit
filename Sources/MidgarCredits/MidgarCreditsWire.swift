@@ -130,3 +130,23 @@ enum CreditsDates {
         return sqlite.date(from: text)
     }
 }
+
+/// The body of mako's `POST /v1/attribution`: the AdServices token, as `attribution_token`. mako also reads `app_id`, which must match the caller's app when present, so it is left out.
+struct CreditsAttributionBody: Encodable, Sendable {
+    let attributionToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case attributionToken = "attribution_token"
+    }
+}
+
+/// mako's answer: `{"status": "attributed" | "organic" | "duplicate" | "pending" | "invalid" | "unavailable", "attributed": bool, "retry_after_seconds": 5}`. The last field is only present while the status is `pending`.
+struct CreditsAttributionWire: Decodable, Sendable {
+    let status: String
+    let retryAfterSeconds: TimeInterval?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}

@@ -21,12 +21,23 @@ public struct MidgarCreditsPack: Sendable, Equatable, Identifiable, Codable {
 /// What MidgarCredits needs to know about the app.
 public struct MidgarCreditsConfiguration: Sendable {
     public let packs: [MidgarCreditsPack]
-    /// Where purchases that mako has not confirmed yet are kept across launches. Defaults to `<Application Support>/Midgar`, beside the commerce state.
+    /// Where purchases that mako has not confirmed yet, and the Apple Ads attribution state, are kept across launches. Defaults to `<Application Support>/Midgar`, beside the commerce state.
     public let directory: URL?
+    /// Where ``MidgarCredits/reportAdAttributionOnce()`` gets the AdServices token. Defaults to AdServices itself; only tests and previews replace it.
+    public let attributionTokenProvider: any MidgarAdAttributionTokenProviding
+    /// Asked on every ``MidgarCredits/reportAdAttributionOnce()``: false means this launch is not a real install of the shipped app (a debug build, a UI test, demo mode) and nothing is captured or sent. Defaults to true, so an app that runs debug builds or UI tests must pass its own answer.
+    public let isProductionLaunch: @Sendable () -> Bool
 
-    public init(packs: [MidgarCreditsPack], directory: URL? = nil) {
+    public init(
+        packs: [MidgarCreditsPack],
+        directory: URL? = nil,
+        attributionTokenProvider: any MidgarAdAttributionTokenProviding = MidgarAdServicesTokenProvider(),
+        isProductionLaunch: @escaping @Sendable () -> Bool = { true }
+    ) {
         self.packs = packs
         self.directory = directory
+        self.attributionTokenProvider = attributionTokenProvider
+        self.isProductionLaunch = isProductionLaunch
     }
 
     /// The product ids to add to the store's ``MidgarStoreConfiguration/productIDs``.
