@@ -28,7 +28,7 @@ public struct MidgarConfig: Sendable {
     public var excludedBundleIDs: [String]
 
     /// When `true`, anonymous impression/tap counts are reported through ``MidgarSignals``. Nothing is
-    /// sent until the host app configures ``MidgarSignals/configure(configuration:config:directory:appVersion:existingInstall:)``.
+    /// sent until the host app configures ``MidgarSignals/configure(configuration:config:directory:appVersion:)``.
     public var enableTelemetry: Bool
 
     /// Two-letter App Store country override (e.g. `"us"`). `nil` uses the device region.

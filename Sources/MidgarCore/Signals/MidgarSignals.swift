@@ -41,7 +41,7 @@ public actor MidgarSignals {
     private let configProvider: @Sendable () -> MidgarConfig
     let store: MidgarSignalsStore
     let consent: MidgarSignalsConsent
-    let existingInstall: Bool
+    let installDate: @Sendable () -> Date?
     let policy: MidgarSignalsPolicy
     private let platform: String
     private let appVersion: String?
@@ -71,14 +71,12 @@ public actor MidgarSignals {
     ///   - config: The app's current remote config, read for the `signals` kill switch. Pass `{ store.current }` from a ``MidgarConfigStore``.
     ///   - directory: Where the queue file lives. Defaults to `<Application Support>/Midgar`.
     ///   - appVersion: Sent as `X-App-Version`. Defaults to the host bundle's `CFBundleShortVersionString`.
-    ///   - existingInstall: True when this install of the app existed before it ran Lifestream. Its cohort is then `legacy` instead of the week of its first launch with this code. Only the first launch that sends a cohort event reads it.
     ///   - logger: Receives one line when a batch is dropped. Never receives event contents.
     public init(
         configuration: MidgarHTTPConfiguration,
         config: @escaping @Sendable () -> MidgarConfig = { MidgarConfig() },
         directory: URL? = nil,
         appVersion: String? = nil,
-        existingInstall: Bool = false,
         logger: @escaping @Sendable (String) -> Void = { MidgarLog.notice($0, category: .network) }
     ) {
         self.init(
@@ -86,7 +84,7 @@ public actor MidgarSignals {
             config: config,
             directory: directory,
             appVersion: appVersion ?? MidgarSignalsPlatform.bundleVersion(),
-            existingInstall: existingInstall,
+            installDate: { MidgarSignalsInstallDate.ofThisApp() },
             logger: logger,
             policy: .standard,
             platform: MidgarSignalsPlatform.current,
@@ -100,7 +98,7 @@ public actor MidgarSignals {
         config: @escaping @Sendable () -> MidgarConfig,
         directory: URL?,
         appVersion: String?,
-        existingInstall: Bool = false,
+        installDate: @escaping @Sendable () -> Date? = { MidgarSignalsInstallDate.ofThisApp() },
         logger: @escaping @Sendable (String) -> Void,
         policy: MidgarSignalsPolicy,
         platform: String,
@@ -113,7 +111,7 @@ public actor MidgarSignals {
         self.configProvider = config
         self.store = store
         self.consent = MidgarSignalsConsent(store: store)
-        self.existingInstall = existingInstall
+        self.installDate = installDate
         self.policy = policy
         self.platform = platform
         self.appVersion = appVersion

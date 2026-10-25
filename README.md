@@ -113,14 +113,13 @@ MidgarDemo enters demo mode only in DEBUG builds, or in a release build whose In
 ```swift
 MidgarSignals.configure(
     configuration: MidgarHTTPConfiguration(appID: "dream-eater"),
-    config: { configStore.current },
-    existingInstall: false
+    config: { configStore.current }
 )
 await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 ```
 
 - `send(_:)` takes a generated `MidgarSignal` (from `registry/signals.yaml`, so names, props and values are closed sets) and enforces on the device how often one install may send it. `each` always goes. `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar per distinct combination of props, `lifetime` once per install per combination, and `per-period` (`app.active`) once per period named by its `period` prop. The uniqueness ledger is one small file, `signals-ledger-<app>.json`, kept in memory and written at most every 5 seconds and on `flush()`, with the entries of passed periods dropped on each write. `send` does no disk or network work. `record(_:props:)` stays for raw names and skips the uniqueness.
-- Events whose registry entry says `cohort: true` carry a `cohort` prop: the ISO week (`YYYY-Www`) of the first launch that ran this code, decided once and kept in `signals-cohort-<app>.json`. Pass `existingInstall: true` from an app whose installs predate Lifestream and their cohort is `legacy`; so is the cohort of an install that had already reported `app.active` under the version before this one.
+- Events whose registry entry says `cohort: true` carry a `cohort` prop: the install's ISO week (`YYYY-Www`), taken from the creation date of the app's own container (the home directory on iOS, tvOS, visionOS and a sandboxed Mac app, which the system creates at install and keeps across updates; `<Application Support>/<bundle id>` for a Mac app outside the sandbox), so installs that predate Lifestream get their real install week and no app has to say anything. A date in the future is clamped to now, a date before 2020 is `legacy`, and a date that cannot be read falls back to the week of the first launch. The week is decided once and kept in `signals-cohort-<app>.json`.
 - `MidgarSignals.isEnabled` (get and set; also on the instance) is the person's choice, on by default and kept per app. Off stops `send` and `record`, empties the queue and deletes the ledger. `MidgarSettingsSection.usageCounts()` (or `MidgarSettingsRow.usageCounts()`) in MidgarUI is the ready Settings switch, "Share anonymous usage counts".
 
 - Props are `String`, `Int`, `Double` or `Bool` (`MidgarSignalValue` takes literals). Strings are cut to 64 characters. Only names and props from the server schema are kept; the server drops an event with an unknown name or prop and counts it.

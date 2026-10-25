@@ -102,27 +102,20 @@ extension MidgarSignals {
         return fresh
     }
 
-    /// Loads the ledger and the cohort on first use. The cohort is decided here, once: `legacy` when the app says the install predates Lifestream or an earlier version had already been reporting activity, otherwise the ISO week of this launch. It is written at once, because losing it would move the install to another cohort.
+    /// Loads the ledger and the cohort on first use. The cohort is decided here, once, and written at once, because losing it would move the install to another cohort. See ``MidgarSignalsInstallDate/cohort(installedAt:now:calendar:)``.
     private func ensureInstall(at date: Date) {
         guard install == nil else {
             return
         }
         let ledgerStore = MidgarSignalsLedgerStore(store: store)
-        let loaded = ledgerStore.load()
         let cohortStore = MidgarSignalsCohortStore(store: store)
         let cohort: String
         if let saved = cohortStore.load() {
             cohort = saved
         } else {
-            cohort = existingInstall || loaded.migratedFromActivity
-                ? MidgarSignalsCohortStore.legacy
-                : currentPeriodKeys(at: date).week
+            cohort = MidgarSignalsInstallDate.cohort(installedAt: installDate(), now: date, calendar: Self.activityCalendar)
             cohortStore.save(cohort)
         }
-        install = InstallState(ledger: loaded.ledger, ledgerStore: ledgerStore, cohort: cohort)
-        ledgerIsDirty = loaded.migratedFromActivity
-        if ledgerIsDirty {
-            schedulePersist()
-        }
+        install = InstallState(ledger: ledgerStore.load(), ledgerStore: ledgerStore, cohort: cohort)
     }
 }

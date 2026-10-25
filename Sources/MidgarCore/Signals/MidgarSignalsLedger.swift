@@ -64,37 +64,17 @@ extension MidgarSignalValue {
 /// The uniqueness ledger on disk, `<directory>/signals-ledger-<app>.json`.
 struct MidgarSignalsLedgerStore: Sendable {
     let fileURL: URL
-    private let legacyActivityURL: URL
 
     init(store: MidgarSignalsStore) {
         fileURL = store.sibling("ledger")
-        legacyActivityURL = store.sibling("activity")
     }
 
-    /// What the file holds, or nothing when it is missing or unreadable. When the file is missing but earlier versions left their activity file, its periods are taken over as `app.active` entries and it is deleted, so no install reports a period twice across the update.
-    func load() -> Loaded {
-        if let data = try? Data(contentsOf: fileURL), let marks = try? JSONDecoder().decode([String: String].self, from: data) {
-            return Loaded(ledger: MidgarSignalsLedger(marks: marks), migratedFromActivity: false)
+    /// What the file holds, or an empty ledger when it is missing or unreadable.
+    func load() -> MidgarSignalsLedger {
+        guard let data = try? Data(contentsOf: fileURL), let marks = try? JSONDecoder().decode([String: String].self, from: data) else {
+            return MidgarSignalsLedger()
         }
-        guard let data = try? Data(contentsOf: legacyActivityURL),
-              let activity = try? JSONDecoder().decode([String: String].self, from: data)
-        else {
-            return Loaded(ledger: MidgarSignalsLedger(), migratedFromActivity: false)
-        }
-        var marks: [String: String] = [:]
-        for period in MidgarActivePeriod.allCases {
-            if let mark = activity[period.rawValue] {
-                marks[MidgarSignalsLedger.key(name: "app.active", props: ["period": .string(period.rawValue)])] = mark
-            }
-        }
-        try? FileManager.default.removeItem(at: legacyActivityURL)
-        return Loaded(ledger: MidgarSignalsLedger(marks: marks), migratedFromActivity: true)
-    }
-
-    struct Loaded: Sendable {
-        let ledger: MidgarSignalsLedger
-        /// True when an earlier version of the app had already been reporting activity, so the install is older than this code.
-        let migratedFromActivity: Bool
+        return MidgarSignalsLedger(marks: marks)
     }
 
     func save(_ ledger: MidgarSignalsLedger) {
@@ -110,10 +90,8 @@ struct MidgarSignalsLedgerStore: Sendable {
         }
     }
 
-    /// Removes the ledger and any activity file of an earlier version, so nothing is taken over from it later.
     func delete() {
         try? FileManager.default.removeItem(at: fileURL)
-        try? FileManager.default.removeItem(at: legacyActivityURL)
     }
 }
 

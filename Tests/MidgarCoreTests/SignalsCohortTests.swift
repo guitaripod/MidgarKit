@@ -39,10 +39,50 @@ import Testing
         #expect(cohort(sent, "funnel.step") == week)
     }
 
-    @Test func anAppThatSaysTheInstallPredatesLifestreamGetsLegacy() async {
+    private func week(_ date: Date) -> String {
+        MidgarSignals.periodKey(.week, at: date, calendar: MidgarSignals.activityCalendar)
+    }
+
+    @Test func anInstallFromAnEarlierWeekIsInThatWeeksCohort() async {
         let harness = SignalsHarness()
         defer { harness.cleanUp() }
-        let signals = harness.makeSignals(existingInstall: true)
+        let installed = harness.clock.now.addingTimeInterval(-3_600 * 24 * 40)
+        let signals = harness.makeSignals(installDate: { installed })
+
+        await signals.noteActive()
+        let sent = await harness.drain(signals)
+
+        #expect(sent.count == 3)
+        #expect(sent.allSatisfy { $0.props["cohort"] as? String == week(installed) })
+        #expect(week(installed) != week(harness.clock.now))
+    }
+
+    @Test func aDateInTheFutureIsClampedToNow() async {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let signals = harness.makeSignals(installDate: { harness.clock.now.addingTimeInterval(3_600 * 24 * 90) })
+
+        await signals.send(.funnelStep(step: .samplePlayed))
+        let sent = await harness.drain(signals)
+
+        #expect(cohort(sent, "funnel.step") == week(harness.clock.now))
+    }
+
+    @Test func anInstallDateThatCannotBeReadFallsBackToTheWeekOfTheFirstLaunch() async {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let signals = harness.makeSignals(installDate: { nil })
+
+        await signals.send(.funnelStep(step: .samplePlayed))
+        let sent = await harness.drain(signals)
+
+        #expect(cohort(sent, "funnel.step") == week(harness.clock.now))
+    }
+
+    @Test func aDateBefore2020IsLegacy() async {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let signals = harness.makeSignals(installDate: { Date(timeIntervalSince1970: 1_500_000_000) })
 
         await signals.noteActive()
         let sent = await harness.drain(signals)
@@ -51,47 +91,31 @@ import Testing
         #expect(sent.allSatisfy { $0.props["cohort"] as? String == "legacy" })
     }
 
-    @Test func legacyIsKeptWhenALaterLaunchStopsSayingSo() async {
+    @Test func theCohortNeverMovesOnceItIsPersisted() async {
         let harness = SignalsHarness()
         defer { harness.cleanUp() }
-        await harness.makeSignals(existingInstall: true).send(.funnelStep(step: .samplePlayed))
+        let installed = harness.clock.now.addingTimeInterval(-3_600 * 24 * 40)
+        await harness.makeSignals(installDate: { installed }).send(.funnelStep(step: .samplePlayed))
+        #expect(harness.storedCohort == week(installed))
 
-        let later = harness.makeSignals(existingInstall: false)
-        await later.send(.funnelStep(step: .trialStarted))
-        let sent = await harness.drain(later)
+        let relaunched = harness.makeSignals(installDate: { harness.clock.now })
+        await relaunched.send(.funnelStep(step: .trialStarted))
+        let sent = await harness.drain(relaunched)
 
-        #expect(sent.allSatisfy { $0.props["cohort"] as? String == "legacy" })
+        #expect(cohort(sent, "funnel.step") == week(installed))
     }
 
-    @Test func aFreshInstallIsNotLegacyEvenWhenItSaysSoNever() async {
+    @Test func theInstallDateComesFromTheCreationDateOfTheFolder() throws {
         let harness = SignalsHarness()
         defer { harness.cleanUp() }
-        let signals = harness.makeSignals()
-
-        await signals.send(.appActive(period: .day))
-        let sent = await harness.drain(signals)
-
-        #expect(cohort(sent, "app.active") != "legacy")
-    }
-
-    @Test func anInstallThatAlreadyReportedActivityBeforeThisCodeIsLegacyAndKeepsItsPeriods() async throws {
-        let harness = SignalsHarness()
-        defer { harness.cleanUp() }
-        let store = MidgarSignalsStore(directory: harness.directory, appID: harness.appID)
-        let keys = MidgarSignalPeriodKeys(at: harness.clock.now)
         try FileManager.default.createDirectory(at: harness.directory, withIntermediateDirectories: true)
-        try JSONEncoder().encode(["day": keys.day, "week": keys.week, "month": keys.month]).write(to: store.sibling("activity"))
-        let signals = harness.makeSignals()
+        let past = Date(timeIntervalSince1970: 1_700_000_000)
+        try FileManager.default.setAttributes([.creationDate: past], ofItemAtPath: harness.directory.path)
 
-        await signals.noteActive()
-        #expect(await signals.pendingCount == 0)
+        let read = MidgarSignalsInstallDate.creationDate(of: harness.directory, fileManager: .default)
 
-        harness.advance(toNext: .day)
-        await signals.noteActive()
-        let sent = await harness.drain(signals)
-
-        #expect(sent.contains { $0.props["period"] as? String == "day" })
-        #expect(sent.allSatisfy { $0.props["cohort"] as? String == "legacy" })
-        #expect(!FileManager.default.fileExists(atPath: store.sibling("activity").path))
+        #expect(read == past)
+        #expect(MidgarSignalsInstallDate.creationDate(of: harness.directory.appendingPathComponent("missing"), fileManager: .default) == nil)
+        #expect(MidgarSignalsInstallDate.creationDate(of: nil, fileManager: .default) == nil)
     }
 }
