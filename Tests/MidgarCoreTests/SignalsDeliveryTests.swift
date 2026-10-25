@@ -129,6 +129,7 @@ import Testing
         await signals.record("app.launch")
         await signals.record("onboarding.complete")
         #expect(await signals.pendingCount == 2)
+        await signals.persistPending()
         #expect(harness.queueFileExists)
 
         harness.config.value = try killedSignalsConfig()

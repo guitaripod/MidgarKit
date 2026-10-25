@@ -10,7 +10,8 @@ struct MidgarSignalsPolicy: Sendable {
         maximumBatchBytes: 32 * 1024,
         maximumQueued: 500,
         defaultRetryAfter: 60,
-        maximumRetryAfter: 3_600
+        maximumRetryAfter: 3_600,
+        persistInterval: 5
     )
 
     /// A flush starts as soon as this many events are queued.
@@ -27,4 +28,6 @@ struct MidgarSignalsPolicy: Sendable {
     let defaultRetryAfter: TimeInterval
     /// A `Retry-After` above this is shortened to it.
     let maximumRetryAfter: TimeInterval
+    /// Queued events and the uniqueness ledger are written to disk at most this many seconds after they change, and at once on a flush.
+    let persistInterval: TimeInterval
 }

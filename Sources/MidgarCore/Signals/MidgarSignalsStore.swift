@@ -39,6 +39,12 @@ struct MidgarSignalsStore: Sendable {
         }
     }
 
+    /// The file of another kind of state for the same app, next to the queue: `signals-<kind>-<app>.json`.
+    func sibling(_ kind: String) -> URL {
+        fileURL.deletingLastPathComponent()
+            .appendingPathComponent(fileURL.lastPathComponent.replacingOccurrences(of: "signals-", with: "signals-\(kind)-"))
+    }
+
     /// Keeps an app id from escaping the directory.
     private static func safeName(_ appID: String) -> String {
         String(appID.map { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") ? $0 : "_" })

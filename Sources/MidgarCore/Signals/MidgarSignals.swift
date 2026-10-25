@@ -7,9 +7,11 @@ import Foundation
 /// Sending rules:
 /// - A batch holds at most 50 events and 32 KB.
 /// - Events are sent when 20 are queued, and every 60 seconds while any are waiting. Automatic requests are at least 10 seconds apart.
-/// - The queue holds 500 events; the oldest go first when it is full. It is saved to a file in Application Support after every change, so unsent events survive a relaunch.
+/// - The queue holds 500 events; the oldest go first when it is full. It is saved to a file in Application Support at most 5 seconds after it changes and whenever a batch leaves it or ``flush()`` runs, so unsent events survive a relaunch.
 /// - Offline, a timeout or a 5xx keeps the events for the next attempt. A 429 keeps them and waits for `Retry-After` (60 seconds when it is missing, at most an hour). Any other 4xx drops the batch and logs once.
-/// - A `signals` kill switch in the app's ``MidgarConfig`` turns ``record(_:props:)`` into a no-op and empties the queue.
+/// - A `signals` kill switch in the app's ``MidgarConfig``, or the person turning ``isEnabled`` off, turns ``record(_:props:)`` and ``send(_:)`` into no-ops and empties the queue.
+///
+/// ``send(_:)`` is the way to send an event: it takes a generated ``MidgarSignal``, enforces on the device how often the registry lets one install send it, and stamps the install's cohort where the registry asks for it.
 ///
 /// The host app calls ``flush()`` when it moves to the background, because the OS may suspend it before the next timer.
 public actor MidgarSignals {
@@ -37,16 +39,23 @@ public actor MidgarSignals {
 
     private let client: MidgarHTTPClient
     private let configProvider: @Sendable () -> MidgarConfig
-    private let store: MidgarSignalsStore
-    let activityDirectory: URL?
-    let activityAppID: String
-    private let policy: MidgarSignalsPolicy
+    let store: MidgarSignalsStore
+    let consent: MidgarSignalsConsent
+    let existingInstall: Bool
+    let policy: MidgarSignalsPolicy
     private let platform: String
     private let appVersion: String?
     let now: @Sendable () -> Date
     private let sleep: @Sendable (Duration) async throws -> Void
     private let logger: @Sendable (String) -> Void
     private var queue: [Entry]
+    var install: InstallState?
+    var periodKeys: MidgarSignalPeriodKeys?
+    var queueIsDirty = false
+    var ledgerIsDirty = false
+    var persistTask: Task<Void, Never>?
+    /// How many times the queue or the ledger was written to disk. Tests read it to prove `send` does not write per call.
+    private(set) var writeCount = 0
     private var nextSequence: UInt64
     private var flushTask: Task<Void, Never>?
     private var timer: Task<Void, Never>?
@@ -62,12 +71,14 @@ public actor MidgarSignals {
     ///   - config: The app's current remote config, read for the `signals` kill switch. Pass `{ store.current }` from a ``MidgarConfigStore``.
     ///   - directory: Where the queue file lives. Defaults to `<Application Support>/Midgar`.
     ///   - appVersion: Sent as `X-App-Version`. Defaults to the host bundle's `CFBundleShortVersionString`.
+    ///   - existingInstall: True when this install of the app existed before it ran Lifestream. Its cohort is then `legacy` instead of the week of its first launch with this code. Only the first launch that sends a cohort event reads it.
     ///   - logger: Receives one line when a batch is dropped. Never receives event contents.
     public init(
         configuration: MidgarHTTPConfiguration,
         config: @escaping @Sendable () -> MidgarConfig = { MidgarConfig() },
         directory: URL? = nil,
         appVersion: String? = nil,
+        existingInstall: Bool = false,
         logger: @escaping @Sendable (String) -> Void = { MidgarLog.notice($0, category: .network) }
     ) {
         self.init(
@@ -75,6 +86,7 @@ public actor MidgarSignals {
             config: config,
             directory: directory,
             appVersion: appVersion ?? MidgarSignalsPlatform.bundleVersion(),
+            existingInstall: existingInstall,
             logger: logger,
             policy: .standard,
             platform: MidgarSignalsPlatform.current,
@@ -88,6 +100,7 @@ public actor MidgarSignals {
         config: @escaping @Sendable () -> MidgarConfig,
         directory: URL?,
         appVersion: String?,
+        existingInstall: Bool = false,
         logger: @escaping @Sendable (String) -> Void,
         policy: MidgarSignalsPolicy,
         platform: String,
@@ -99,8 +112,8 @@ public actor MidgarSignals {
         self.client = MidgarHTTPClient(configuration: configuration.settingTokenProvider(nil))
         self.configProvider = config
         self.store = store
-        self.activityDirectory = directory
-        self.activityAppID = configuration.appID
+        self.consent = MidgarSignalsConsent(store: store)
+        self.existingInstall = existingInstall
         self.policy = policy
         self.platform = platform
         self.appVersion = appVersion
@@ -119,33 +132,40 @@ public actor MidgarSignals {
         queue.count
     }
 
-    /// Queues one event. Does nothing while the kill switch is on, and empties the queue.
+    /// Queues one event as it is, with no uniqueness and no cohort. Prefer ``send(_:)``. Does nothing while the kill switch is on or ``isEnabled`` is off, and empties the queue.
     ///
     /// - Parameters:
     ///   - name: An event name from the signals schema. The server drops names it does not know.
     ///   - props: The event's props, only the ones the schema lists for that name.
     public func record(_ name: String, props: [String: MidgarSignalValue] = [:]) {
-        if isKilled {
+        guard !isSuppressed else {
             clearQueue()
             return
         }
         guard let event = MidgarSignalEvent(name: name, props: props) else {
             return
         }
+        enqueue(event)
+    }
+
+    /// Appends an event that passed every check. The queue file follows within ``MidgarSignalsPolicy/persistInterval`` seconds, not on every call.
+    func enqueue(_ event: MidgarSignalEvent) {
         queue.append(Entry(sequence: nextSequence, event: event))
         nextSequence += 1
         if queue.count > policy.maximumQueued {
             queue.removeFirst(queue.count - policy.maximumQueued)
         }
-        persist()
+        queueIsDirty = true
+        schedulePersist()
         if queue.count >= policy.flushThreshold {
             beginFlush(explicit: false)
         }
         scheduleTimer(after: policy.flushInterval)
     }
 
-    /// Sends everything queued now, batch after batch, and returns when the queue is empty or a batch could not be sent. Call it when the app moves to the background. It ignores the 10 second spacing of automatic requests but still waits out a `Retry-After`.
+    /// Sends everything queued now, batch after batch, and returns when the queue is empty or a batch could not be sent. Call it when the app moves to the background. It ignores the 10 second spacing of automatic requests but still waits out a `Retry-After`. It also writes the queue and the uniqueness ledger to disk.
     public func flush() async {
+        persistPending()
         while let running = flushTask {
             await running.value
         }
@@ -170,16 +190,63 @@ public actor MidgarSignals {
         configProvider().isKilled(Self.killSwitchKey)
     }
 
-    private func clearQueue() {
+    /// True while nothing may be recorded: the remote kill switch is on or the person turned usage counts off.
+    var isSuppressed: Bool {
+        !consent.isEnabled || isKilled
+    }
+
+    func clearQueue() {
         guard !queue.isEmpty else {
             return
         }
         queue.removeAll()
-        persist()
+        persistQueueNow()
     }
 
-    private func persist() {
-        store.save(queue.map(\.event))
+    /// Empties the queue and removes its file, even when the queue in memory is already empty and only an earlier run left the file.
+    func discardQueue() {
+        queue.removeAll()
+        persistQueueNow()
+    }
+
+    /// Writes the queue at once, and the ledger too if it changed, so a relaunch never finds a sent event still queued or a queued one forgotten.
+    private func persistQueueNow() {
+        queueIsDirty = true
+        persistPending()
+    }
+
+    /// Arms the one write that follows a change, unless one is already armed. The task holds the actor weakly, so an instance that goes away takes its pending write with it.
+    func schedulePersist() {
+        guard persistTask == nil else {
+            return
+        }
+        let delay = policy.persistInterval
+        persistTask = Task(priority: .utility) { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else {
+                return
+            }
+            await self?.persistPending()
+        }
+    }
+
+    /// Writes whatever changed since the last write: the queue file, and the ledger with the entries of passed periods pruned.
+    func persistPending() {
+        persistTask?.cancel()
+        persistTask = nil
+        if queueIsDirty {
+            queueIsDirty = false
+            writeCount += 1
+            store.save(queue.map(\.event))
+        }
+        if ledgerIsDirty, install != nil {
+            ledgerIsDirty = false
+            writeCount += 1
+            install?.ledger.prune(keeping: currentPeriodKeys(at: now()))
+            if let state = install {
+                state.ledgerStore.save(state.ledger)
+            }
+        }
     }
 
     private func scheduleSavedEvents() {
@@ -189,7 +256,7 @@ public actor MidgarSignals {
     /// Starts a flush task when one may run now: not killed, nothing in flight, events waiting, and the spacing and `Retry-After` waits over. Otherwise schedules the timer for the end of the wait.
     @discardableResult
     private func beginFlush(explicit: Bool) -> Task<Void, Never>? {
-        if isKilled {
+        if isSuppressed {
             clearQueue()
             return nil
         }
@@ -252,7 +319,7 @@ public actor MidgarSignals {
     private func performFlush(drainAll: Bool) async {
         var outcome = Outcome.delivered
         repeat {
-            if isKilled {
+            if isSuppressed {
                 clearQueue()
                 break
             }
@@ -287,7 +354,7 @@ public actor MidgarSignals {
         }
         if !oversized.isEmpty {
             queue.removeAll { oversized.contains($0.sequence) }
-            persist()
+            persistQueueNow()
         }
         return batch.isEmpty ? nil : batch
     }
@@ -358,7 +425,7 @@ public actor MidgarSignals {
     private func remove(_ batch: [Entry]) {
         let sent = Set(batch.map(\.sequence))
         queue.removeAll { sent.contains($0.sequence) }
-        persist()
+        persistQueueNow()
     }
 
     private func logDropOnce(count: Int, status: Int, code: String?) {

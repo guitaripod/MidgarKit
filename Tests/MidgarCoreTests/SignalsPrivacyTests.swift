@@ -130,6 +130,11 @@ import Testing
         )
 
         #expect(MidgarSignals.shared === signals)
+        #expect(MidgarSignals.isEnabled)
+        MidgarSignals.isEnabled = false
+        #expect(!signals.isEnabled)
+        #expect(!MidgarSignals.isEnabled)
         MidgarSignalsRegistry.install(nil)
+        #expect(MidgarSignals.isEnabled)
     }
 }

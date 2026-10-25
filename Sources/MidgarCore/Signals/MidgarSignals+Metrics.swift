@@ -54,31 +54,23 @@ enum MidgarHistogram {
 }
 
 extension MidgarSignals {
-    /// Records one `metrics.daily` event for a daily MetricKit payload, with the props `coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds` and `peakMemoryMB`.
+    /// Sends one `metrics.daily` event for a daily MetricKit payload, with the props `coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds` and `peakMemoryMB`.
     public func recordDailyMetrics(_ payload: some MidgarMetricPayload) {
-        record("metrics.daily", props: Self.props(for: payload))
+        send(.metricsDaily(
+            coldLaunchMs: payload.coldLaunchMedianMilliseconds,
+            hangSecondsPerHour: payload.hangSecondsPerHour,
+            foregroundSeconds: payload.cumulativeForegroundSeconds,
+            peakMemoryMB: payload.peakMemoryMegabytes
+        ))
     }
 
-    /// Records one `metrics.diagnostics` event for a MetricKit diagnostic payload, with the counts `crashes`, `hangs`, `diskWrites` and `cpuExceptions`.
+    /// Sends one `metrics.diagnostics` event for a MetricKit diagnostic payload, with the counts `crashes`, `hangs`, `diskWrites` and `cpuExceptions`.
     public func recordDiagnostics(_ payload: some MidgarDiagnosticPayload) {
-        record("metrics.diagnostics", props: Self.props(for: payload))
-    }
-
-    static func props(for payload: some MidgarMetricPayload) -> [String: MidgarSignalValue] {
-        var props: [String: MidgarSignalValue] = [:]
-        if let value = payload.coldLaunchMedianMilliseconds { props["coldLaunchMs"] = .double(value) }
-        if let value = payload.hangSecondsPerHour { props["hangSecondsPerHour"] = .double(value) }
-        if let value = payload.cumulativeForegroundSeconds { props["foregroundSeconds"] = .double(value) }
-        if let value = payload.peakMemoryMegabytes { props["peakMemoryMB"] = .double(value) }
-        return props
-    }
-
-    static func props(for payload: some MidgarDiagnosticPayload) -> [String: MidgarSignalValue] {
-        [
-            "crashes": .int(payload.crashCount),
-            "hangs": .int(payload.hangCount),
-            "diskWrites": .int(payload.diskWriteCount),
-            "cpuExceptions": .int(payload.cpuExceptionCount)
-        ]
+        send(.metricsDiagnostics(
+            crashes: payload.crashCount,
+            hangs: payload.hangCount,
+            diskWrites: payload.diskWriteCount,
+            cpuExceptions: payload.cpuExceptionCount
+        ))
     }
 }

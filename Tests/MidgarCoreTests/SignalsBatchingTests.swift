@@ -114,6 +114,7 @@ import Testing
         let first = harness.makeSignals()
         await first.record("paywall.view", props: ["placement": "settings"])
         await first.record("app.launch")
+        await first.persistPending()
         #expect(harness.queueFileExists)
 
         let second = harness.makeSignals()

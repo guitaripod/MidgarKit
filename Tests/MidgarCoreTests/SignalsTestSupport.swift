@@ -91,6 +91,8 @@ final class SignalsHarness: @unchecked Sendable {
     func makeSignals(
         platform: String = "ios",
         appVersion: String? = "2.1",
+        existingInstall: Bool = false,
+        policy: MidgarSignalsPolicy = .standard,
         tokenProvider: (@Sendable () async throws -> String?)? = nil
     ) -> MidgarSignals {
         let configuration = MidgarHTTPConfiguration(
@@ -110,8 +112,9 @@ final class SignalsHarness: @unchecked Sendable {
             config: { config.value },
             directory: directory,
             appVersion: appVersion,
+            existingInstall: existingInstall,
             logger: { logs.record($0) },
-            policy: .standard,
+            policy: policy,
             platform: platform,
             now: { clock.now },
             sleep: { try await gate.sleep($0) }
@@ -122,6 +125,48 @@ final class SignalsHarness: @unchecked Sendable {
     func seed(_ events: [(name: String, props: [String: MidgarSignalValue])]) {
         let store = MidgarSignalsStore(directory: directory, appID: appID)
         store.save(events.compactMap { MidgarSignalEvent(name: $0.name, props: $0.props) })
+    }
+
+    var ledgerFile: URL {
+        MidgarSignalsLedgerStore(store: MidgarSignalsStore(directory: directory, appID: appID)).fileURL
+    }
+
+    var ledgerFileExists: Bool {
+        FileManager.default.fileExists(atPath: ledgerFile.path)
+    }
+
+    /// The marks the ledger file holds, or none when there is no file.
+    var ledgerOnDisk: [String: String] {
+        guard let data = try? Data(contentsOf: ledgerFile) else { return [:] }
+        return (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+    }
+
+    var storedCohort: String? {
+        MidgarSignalsCohortStore(store: MidgarSignalsStore(directory: directory, appID: appID)).load()
+    }
+
+    /// Moves the clock to one hour after the start of the current day, week or month of the device's calendar, so a later advance of hours stays inside that period and an advance of days or more leaves it.
+    func align(to component: Calendar.Component) {
+        let calendar = MidgarSignals.activityCalendar
+        guard let start = calendar.dateInterval(of: component, for: clock.now)?.start else { return }
+        clock.advance(by: start.timeIntervalSince(clock.now) + 3_600)
+    }
+
+    /// Moves the clock to one hour into the next day, week or month.
+    func advance(toNext component: Calendar.Component) {
+        let calendar = MidgarSignals.activityCalendar
+        guard let end = calendar.dateInterval(of: component, for: clock.now)?.end else { return }
+        clock.advance(by: end.timeIntervalSince(clock.now) + 3_600)
+    }
+
+    /// Sends what is queued and returns the names and props of what the host received since the last call.
+    func drain(_ signals: MidgarSignals) async -> [(name: String, props: [String: Any])] {
+        let before = host.requests.count
+        host.enqueue([acceptedReply])
+        await signals.flush()
+        return host.requests.dropFirst(before).flatMap(Self.events(in:)).map {
+            (name: $0["name"] as? String ?? "", props: $0["props"] as? [String: Any] ?? [:])
+        }
     }
 
     var queueFileExists: Bool {
@@ -165,5 +210,22 @@ func eventually(timeout: TimeInterval = 5, _ condition: @Sendable () async -> Bo
 func recordTaps(_ signals: MidgarSignals, _ range: Range<Int>) async {
     for index in range {
         await signals.record("tap", props: ["n": .int(index)])
+    }
+}
+
+extension MidgarSignalsPolicy {
+    /// The standard thresholds with another write delay.
+    func persisting(after interval: TimeInterval) -> MidgarSignalsPolicy {
+        MidgarSignalsPolicy(
+            flushThreshold: flushThreshold,
+            flushInterval: flushInterval,
+            minimumSpacing: minimumSpacing,
+            maximumBatchEvents: maximumBatchEvents,
+            maximumBatchBytes: maximumBatchBytes,
+            maximumQueued: maximumQueued,
+            defaultRetryAfter: defaultRetryAfter,
+            maximumRetryAfter: maximumRetryAfter,
+            persistInterval: interval
+        )
     }
 }
