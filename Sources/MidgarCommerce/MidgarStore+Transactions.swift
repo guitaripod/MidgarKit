@@ -34,7 +34,7 @@ extension MidgarStore {
         await finishOnce(transaction)
         let isNewPurchase = Self.isNewPurchase(transaction)
         if origin == .purchase || isNewPurchase {
-            await signal("paywall.purchase", ["product": .string(transaction.productID)])
+            await signal(.paywallPurchase(product: transaction.productID))
         }
         if origin == .update && isNewPurchase {
             emit(.purchaseApproved(productID: transaction.productID))

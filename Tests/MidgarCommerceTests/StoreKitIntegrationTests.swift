@@ -39,7 +39,7 @@ final class BundleToken {}
             storeKit: LiveStoreKit(),
             clock: { Date() },
             sleep: { try await Task.sleep(for: $0) },
-            signal: { await signals.record($0, $1) },
+            signal: { await signals.record($0) },
             logger: { _ in },
             observesForeground: false
         )

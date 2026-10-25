@@ -153,8 +153,8 @@ final class LogCapture: @unchecked Sendable {
 actor SignalCapture {
     private(set) var events: [(name: String, props: [String: MidgarSignalValue])] = []
 
-    func record(_ name: String, _ props: [String: MidgarSignalValue]) {
-        events.append((name, props))
+    func record(_ signal: MidgarSignal) {
+        events.append((signal.name, signal.props))
     }
 }
 
@@ -238,7 +238,7 @@ struct StoreHarness {
             storeKit: storeKit,
             clock: { clock.now },
             sleep: { try await sleeper.sleep($0) },
-            signal: { await signals.record($0, $1) },
+            signal: { await signals.record($0) },
             logger: { logs.record($0) },
             observesForeground: false,
             grantLagSleep: grantLagSleep

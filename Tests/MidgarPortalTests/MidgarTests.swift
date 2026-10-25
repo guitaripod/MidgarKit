@@ -161,10 +161,10 @@ final class MidgarTests: XCTestCase {
     }
 
     func testTelemetryPropsCarryStorefrontPlacementAndPromotedApp() {
-        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "portal"))
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "entry"))
         XCTAssertEqual(
             telemetry.props(.tap, appId: "123"),
-            ["appId": "123", "storefront": "fi", "placement": "portal"]
+            ["appId": "123", "storefront": "fi", "placement": "entry"]
         )
         XCTAssertEqual(MidgarEvent.portalOpen.rawValue, "portal_open")
     }

@@ -26,20 +26,30 @@ struct Telemetry {
     }
 
     func record(_ event: MidgarEvent, appId: String? = nil) async {
-        guard config.enableTelemetry, let signals = signals() else { return }
-        await signals.record(event.rawValue, props: props(event, appId: appId))
+        guard config.enableTelemetry, let signals = signals(), let signal = signal(event, appId: appId) else { return }
+        await signals.send(signal)
     }
 
-    /// The props the signals schema lists for the event: `portal_open` has no promoted app, the others
-    /// carry its id. The storefront is left out when it is unknown.
+    /// The typed signals event: `portal_open` has no promoted app, the others carry its id and are left out without one. The storefront is left out when it is not one the registry lists, and a placement the registry does not list (an app's own, such as `create`) is counted as `feature`, the generic in-app surface.
+    func signal(_ event: MidgarEvent, appId: String?) -> MidgarSignal? {
+        let placement = MidgarSignal.Placement(rawValue: config.placement) ?? .feature
+        let storefront = config.resolvedStorefront.flatMap { MidgarSignal.Storefront(rawValue: $0) }
+        if event == .portalOpen {
+            return .portalOpen(storefront: storefront, placement: placement)
+        }
+        guard let appId else { return nil }
+        switch event {
+        case .portalOpen: return nil
+        case .impression: return .impression(appId: appId, storefront: storefront, placement: placement)
+        case .tap: return .tap(appId: appId, storefront: storefront, placement: placement)
+        case .loaded: return .loaded(appId: appId, storefront: storefront, placement: placement)
+        case .launch: return .launch(appId: appId, storefront: storefront, placement: placement)
+        case .overlay: return .overlay(appId: appId, storefront: storefront, placement: placement)
+        }
+    }
+
+    /// The props the signals schema lists for the event.
     func props(_ event: MidgarEvent, appId: String?) -> [String: MidgarSignalValue] {
-        var props: [String: MidgarSignalValue] = ["placement": .string(config.placement)]
-        if let storefront = config.resolvedStorefront, !storefront.isEmpty {
-            props["storefront"] = .string(storefront)
-        }
-        if event != .portalOpen, let appId {
-            props["appId"] = .string(appId)
-        }
-        return props
+        signal(event, appId: appId)?.props ?? [:]
     }
 }

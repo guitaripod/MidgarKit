@@ -29,7 +29,7 @@ public actor MidgarStore {
     let clock: @Sendable () -> Date
     let sleep: @Sendable (Duration) async throws -> Void
     let grantLagSleep: @Sendable (Duration) async throws -> Void
-    let signal: @Sendable (String, [String: MidgarSignalValue]) async -> Void
+    let signal: @Sendable (MidgarSignal) async -> Void
     let log: @Sendable (String) -> Void
 
     var state: CommerceState
@@ -65,7 +65,7 @@ public actor MidgarStore {
             storeKit: LiveStoreKit(),
             clock: { Date() },
             sleep: { try await Task.sleep(for: $0) },
-            signal: { name, props in await MidgarSignals.shared?.record(name, props: props) },
+            signal: { await MidgarSignals.shared?.send($0) },
             logger: logger,
             observesForeground: true
         )
@@ -78,7 +78,7 @@ public actor MidgarStore {
         storeKit: any MidgarStoreKit,
         clock: @escaping @Sendable () -> Date,
         sleep: @escaping @Sendable (Duration) async throws -> Void,
-        signal: @escaping @Sendable (String, [String: MidgarSignalValue]) async -> Void,
+        signal: @escaping @Sendable (MidgarSignal) async -> Void,
         logger: @escaping @Sendable (String) -> Void,
         observesForeground: Bool,
         grantLagSleep: (@Sendable (Duration) async throws -> Void)? = nil

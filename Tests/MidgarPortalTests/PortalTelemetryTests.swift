@@ -83,7 +83,7 @@ private final class PortalSignalsStub: URLProtocol, @unchecked Sendable {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let signals = makeSignals(directory: directory)
-        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "portal"), signals: { signals })
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "FI", placement: "entry"), signals: { signals })
 
         await telemetry.record(.portalOpen)
         await telemetry.record(.impression, appId: "123")
@@ -97,9 +97,9 @@ private final class PortalSignalsStub: URLProtocol, @unchecked Sendable {
         let events = try #require(object["events"] as? [[String: Any]])
         #expect(events.compactMap { $0["name"] as? String } == ["portal_open", "impression", "tap", "loaded", "launch"])
         let propsByEvent = events.compactMap { $0["props"] as? [String: String] }
-        #expect(propsByEvent.first == ["storefront": "fi", "placement": "portal"])
+        #expect(propsByEvent.first == ["storefront": "fi", "placement": "entry"])
         for props in propsByEvent.dropFirst() {
-            #expect(props == ["appId": "123", "storefront": "fi", "placement": "portal"])
+            #expect(props == ["appId": "123", "storefront": "fi", "placement": "entry"])
         }
         let text = String(decoding: body, as: UTF8.self)
         #expect(!text.contains("source"))
@@ -202,6 +202,22 @@ private final class PortalSignalsStub: URLProtocol, @unchecked Sendable {
         let props = telemetry.props(.tap, appId: "9")
         #expect(props["placement"] == .string("settings"))
         #expect(props["appId"] == .string("9"))
+    }
+
+    @Test func aPlacementTheRegistryDoesNotListIsCountedAsFeature() {
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "us", placement: "create"))
+        #expect(telemetry.signal(.tap, appId: "9") == .tap(appId: "9", storefront: .us, placement: .feature))
+        #expect(telemetry.props(.tap, appId: "9")["placement"] == .string("feature"))
+    }
+
+    @Test func aStorefrontTheRegistryDoesNotListIsLeftOut() {
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "zz", placement: "settings"))
+        #expect(telemetry.signal(.portalOpen, appId: nil) == .portalOpen(storefront: nil, placement: .settings))
+    }
+
+    @Test func aPromotedAppEventWithoutAnAppIsNotSent() {
+        let telemetry = Telemetry(config: MidgarConfig(storefront: "us", placement: "settings"))
+        #expect(telemetry.signal(.impression, appId: nil) == nil)
     }
 
     @Test func portalOpenCarriesNoPromotedApp() {
