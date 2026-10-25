@@ -188,7 +188,7 @@ private final class PortalSignalsStub: URLProtocol, @unchecked Sendable {
         let schema = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("services/signals/src/schema.ts")
+            .appendingPathComponent("services/signals/src/generated/schema.ts")
         guard let source = try? String(contentsOf: schema, encoding: .utf8) else { return }
         let all: [MidgarEvent] = [.portalOpen, .impression, .tap, .loaded, .launch, .overlay]
         for event in all {
