@@ -113,20 +113,25 @@ MidgarDemo enters demo mode only in DEBUG builds, or in a release build whose In
 ```swift
 MidgarSignals.configure(
     configuration: MidgarHTTPConfiguration(appID: "dream-eater"),
-    config: { configStore.current }
+    config: { configStore.current },
+    existingInstall: false
 )
-await MidgarSignals.shared?.record("paywall.view", props: ["placement": "settings"])
+await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 ```
 
+- `send(_:)` takes a generated `MidgarSignal` (from `registry/signals.yaml`, so names, props and values are closed sets) and enforces on the device how often one install may send it. `each` always goes. `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar per distinct combination of props, `lifetime` once per install per combination, and `per-period` (`app.active`) once per period named by its `period` prop. The uniqueness ledger is one small file, `signals-ledger-<app>.json`, kept in memory and written at most every 5 seconds and on `flush()`, with the entries of passed periods dropped on each write. `send` does no disk or network work. `record(_:props:)` stays for raw names and skips the uniqueness.
+- Events whose registry entry says `cohort: true` carry a `cohort` prop: the ISO week (`YYYY-Www`) of the first launch that ran this code, decided once and kept in `signals-cohort-<app>.json`. Pass `existingInstall: true` from an app whose installs predate Lifestream and their cohort is `legacy`; so is the cohort of an install that had already reported `app.active` under the version before this one.
+- `MidgarSignals.isEnabled` (get and set; also on the instance) is the person's choice, on by default and kept per app. Off stops `send` and `record`, empties the queue and deletes the ledger. `MidgarSettingsSection.usageCounts()` (or `MidgarSettingsRow.usageCounts()`) in MidgarUI is the ready Settings switch, "Share anonymous usage counts".
+
 - Props are `String`, `Int`, `Double` or `Bool` (`MidgarSignalValue` takes literals). Strings are cut to 64 characters. Only names and props from the server schema are kept; the server drops an event with an unknown name or prop and counts it.
-- Events go out when 20 are queued, every 60 seconds while any wait, and at least 10 seconds apart, in batches of at most 50 events and 32 KB. The queue holds 500 events (oldest dropped first) and is saved to `Application Support/Midgar/signals-<app>.json`, so unsent events survive a relaunch.
+- Events go out when 20 are queued, every 60 seconds while any wait, and at least 10 seconds apart, in batches of at most 50 events and 32 KB. The queue holds 500 events (oldest dropped first) and is saved to `Application Support/Midgar/signals-<app>.json` within 5 seconds of a change and whenever a batch leaves or `flush()` runs, so unsent events survive a relaunch.
 - Offline, a timeout and 5xx keep the events. 429 keeps them and waits for `Retry-After` (60 seconds without one). Any other 4xx drops the batch and logs once.
 - Call `await MidgarSignals.shared?.flush()` when the app moves to the background (for example on `scenePhase == .background`): the OS may suspend the app before the next timer. `flush()` sends everything queued and ignores the 10 second spacing, but still waits out a `Retry-After`.
-- The `signals` key in the app's remote config `kill` list turns `record` into a no-op and empties the queue. Pass `config: { store.current }` so the client reads it.
+- The `signals` key in the app's remote config `kill` list turns `send` and `record` into no-ops and empties the queue. Pass `config: { store.current }` so the client reads it.
 - `X-Platform` comes from the OS (`ios`, `ipados`, `macos`, `tvos`, `visionos`, `watchos`, `android`, `linux`) and `X-App-Version` from `CFBundleShortVersionString`.
-- `MidgarSignals.configure` reports the install active: one `app.active` event per calendar day, ISO week and month (`period` `day`, `week`, `month`), at launch and on each return to the foreground, so summing a period's daily counts gives the distinct active installs with no identifier sent. Nothing to call.
+- `MidgarSignals.configure` reports the install active: one `app.active` event per calendar day, ISO week and month (`period` `day`, `week`, `month`, through the generic `send` path), at launch and on each return to the foreground, so summing a period's daily counts gives the distinct active installs with no identifier sent. Nothing to call.
 - iOS and macOS: `await MidgarSignals.shared?.startCollectingMetrics()` subscribes to MetricKit. Each daily metrics payload becomes one `metrics.daily` event (`coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds`, `peakMemoryMB`) and each diagnostic payload one `metrics.diagnostics` event (`crashes`, `hangs`, `diskWrites`, `cpuExceptions`).
-- The portal reports `portal_open`, `impression`, `tap`, `loaded` and `launch` through `MidgarSignals.shared` with the props `appId`, `storefront` and `placement`. It sends nothing, and keeps working, until the host calls `MidgarSignals.configure`. The host app is identified by the client's `X-App-ID`, so a host must configure signals with its registry slug.
+- The portal reports `portal_open`, `impression`, `tap`, `loaded` and `launch` through `MidgarSignals.shared` with the props `appId`, `storefront` and `placement` (an app's own placement that the registry does not list, such as `create`, is sent as `feature`). It sends nothing, and keeps working, until the host calls `MidgarSignals.configure`. The host app is identified by the client's `X-App-ID`, so a host must configure signals with its registry slug.
 
 Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter SignalsLive` sends one real `app.launch` for `dream-eater` to production, which leaves a row in `daily` that must be deleted afterwards.
 
