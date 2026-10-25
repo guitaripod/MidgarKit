@@ -6,7 +6,7 @@ extension MidgarSignals {
         MidgarSignalsRegistry.current
     }
 
-    /// Creates the app's signals client and makes it ``shared``. Call it once at launch; a later call replaces the earlier instance, whose saved events the new one reads from the same file.
+    /// Creates the app's signals client and makes it ``shared``. Call it once at launch; a later call replaces the earlier instance, whose saved events the new one reads from the same file. It reports the install active (``noteActive()``) now and on every return to the foreground.
     @discardableResult
     public static func configure(
         configuration: MidgarHTTPConfiguration,
@@ -21,6 +21,13 @@ extension MidgarSignals {
             appVersion: appVersion
         )
         MidgarSignalsRegistry.install(signals)
+        let observer = MidgarForegroundObserver { [weak signals] in
+            Task { await signals?.noteActive() }
+        }
+        Task {
+            await signals.retain(observer)
+            await signals.noteActive()
+        }
         return signals
     }
 }

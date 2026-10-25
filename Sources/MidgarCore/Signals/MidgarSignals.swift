@@ -38,10 +38,12 @@ public actor MidgarSignals {
     private let client: MidgarHTTPClient
     private let configProvider: @Sendable () -> MidgarConfig
     private let store: MidgarSignalsStore
+    let activityDirectory: URL?
+    let activityAppID: String
     private let policy: MidgarSignalsPolicy
     private let platform: String
     private let appVersion: String?
-    private let now: @Sendable () -> Date
+    let now: @Sendable () -> Date
     private let sleep: @Sendable (Duration) async throws -> Void
     private let logger: @Sendable (String) -> Void
     private var queue: [Entry]
@@ -97,6 +99,8 @@ public actor MidgarSignals {
         self.client = MidgarHTTPClient(configuration: configuration.settingTokenProvider(nil))
         self.configProvider = config
         self.store = store
+        self.activityDirectory = directory
+        self.activityAppID = configuration.appID
         self.policy = policy
         self.platform = platform
         self.appVersion = appVersion
@@ -162,7 +166,7 @@ public actor MidgarSignals {
         }
     }
 
-    private var isKilled: Bool {
+    var isKilled: Bool {
         configProvider().isKilled(Self.killSwitchKey)
     }
 
