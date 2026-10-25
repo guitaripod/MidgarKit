@@ -109,4 +109,16 @@ enum MidgarUIStrings {
     static var whatsNew: String {
         String(localized: "What's New", bundle: .module, comment: "Title of the sheet that lists the changes of the new app version")
     }
+
+    static var usageCounts: String {
+        String(localized: "Share anonymous usage counts", bundle: .module, comment: "Settings switch that lets the app send anonymous counts of how it is used")
+    }
+
+    static var usageCountsFooter: String {
+        String(
+            localized: "Counts only, never anything that identifies you.",
+            bundle: .module,
+            comment: "Footer under the usage counts switch in settings"
+        )
+    }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import MidgarCore
 
 /// One row of a settings screen. Build rows with the standard factories or `custom`, `link`, `toggle` and `info`.
 public struct MidgarSettingsRow: Identifiable, Sendable {
@@ -214,6 +215,16 @@ extension MidgarSettingsRow {
         )
     }
 
+    /// The switch for anonymous usage counts, "Share anonymous usage counts". It reads and sets ``MidgarSignals/isEnabled``: off stops `MidgarSignals` sending and deletes its queue and uniqueness ledger. Use ``MidgarSettingsSection/usageCounts(id:)`` to get it with its footer.
+    public static func usageCounts() -> MidgarSettingsRow {
+        MidgarSettingsRow(
+            id: "midgar.usageCounts",
+            title: MidgarUIStrings.usageCounts,
+            systemImage: "chart.bar",
+            kind: .toggle(get: { MidgarSignals.isEnabled }, set: { MidgarSignals.isEnabled = $0 })
+        )
+    }
+
     /// Deletes the account after a confirmation. The handler throws when the deletion fails.
     public static func deleteAccount(
         confirmation: Confirmation = .deleteAccount,
@@ -265,5 +276,12 @@ public struct MidgarSettingsSection: Identifiable, Sendable {
         self.title = title
         self.footer = footer
         self.rows = rows
+    }
+}
+
+extension MidgarSettingsSection {
+    /// A section holding ``MidgarSettingsRow/usageCounts()`` with a one-line footer that says what is shared.
+    public static func usageCounts(id: String = "midgar.usageCounts") -> MidgarSettingsSection {
+        MidgarSettingsSection(id: id, footer: MidgarUIStrings.usageCountsFooter, rows: [.usageCounts()])
     }
 }

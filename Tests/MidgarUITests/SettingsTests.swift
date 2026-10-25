@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import MidgarCore
 @testable import MidgarUI
 
 @Suite struct SettingsRowTests {
@@ -39,6 +40,29 @@ import Testing
 
     @Test func blankSupportAddressHasNoMailItem() {
         #expect(MidgarSettingsRow.support(address: "  ").menu.map(\.id) == ["midgar.support.copy"])
+    }
+
+    @MainActor @Test func usageCountsRowIsASwitchOnMidgarSignals() {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("usage-counts-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        MidgarSignals.configure(configuration: MidgarHTTPConfiguration(appID: "usage-counts-test"), directory: directory)
+        let row = MidgarSettingsRow.usageCounts()
+        #expect(row.title == "Share anonymous usage counts")
+        guard case .toggle(let get, let set) = row.kind else { Issue.record("expected toggle"); return }
+        #expect(get())
+
+        set(false)
+
+        #expect(!get())
+        #expect(!MidgarSignals.isEnabled)
+        set(true)
+        #expect(get())
+    }
+
+    @Test func usageCountsSectionCarriesAOneLineFooter() {
+        let section = MidgarSettingsSection.usageCounts()
+        #expect(section.rows.map(\.id) == ["midgar.usageCounts"])
+        #expect(section.footer == "Counts only, never anything that identifies you.")
     }
 
     @Test func legalRowsOpenTheirURLs() throws {
