@@ -275,7 +275,8 @@
       "accent": "#73C7FF",
       "family": "flaccy",
       "platforms": [
-        "ios"
+        "ios",
+        "mac"
       ],
       "topics": [
         "music",

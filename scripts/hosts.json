@@ -6,7 +6,7 @@
     { "name": "App of the Dead", "repo": "~/Dev/ios/appofthedead", "bundleId": "com.marcusziade.aotd", "platforms": ["ios"] },
     { "name": "Double Kick", "repo": "~/Dev/ios/doublekick", "bundleId": "com.marcusziade.doublekick", "platforms": ["ios"] },
     { "name": "Embr", "repo": "~/Dev/ios/embr", "bundleId": "com.guitaripod.embr", "platforms": ["ios"] },
-    { "name": "Flaccy", "repo": "~/Dev/ios/flaccy", "bundleId": "com.midgarcorp.flaccy", "platforms": ["ios"] },
+    { "name": "Flaccy", "repo": "~/Dev/ios/flaccy", "bundleId": "com.midgarcorp.flaccy", "platforms": ["ios", "mac"] },
     { "name": "Flaccy Mac", "repo": "~/Dev/ios/flaccy", "bundleId": "com.midgarcorp.flaccy.mac", "platforms": ["mac"] },
     { "name": "Master of Inventory", "repo": "~/Dev/ios/inventory", "bundleId": "com.marcusziade.inventory", "platforms": ["ios"] },
     { "name": "Psybeam", "repo": "~/Dev/ios/psybeam", "bundleId": "com.guitaripod.psybeam", "platforms": ["ios"] },
