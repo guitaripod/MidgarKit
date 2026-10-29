@@ -6,6 +6,11 @@ extension MidgarSignals {
         MidgarSignalsRegistry.current
     }
 
+    /// The registry slug of the app, as given to ``configure(configuration:config:directory:appVersion:)``, or nil until the host app configures signals. A screen that shows what this app sends or its public numbers reads it.
+    public static var appID: String? {
+        shared?.appID
+    }
+
     /// Whether usage counts are sent, for the app's settings screen: the choice of the ``shared`` instance, on until the person turns it off, and on while signals are not configured. Setting it does nothing until they are. See ``isEnabled``.
     public static var isEnabled: Bool {
         get { shared?.isEnabled ?? true }

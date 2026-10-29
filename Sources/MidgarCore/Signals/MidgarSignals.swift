@@ -37,6 +37,9 @@ public actor MidgarSignals {
         }
     }
 
+    /// The registry slug the app configured signals with, which is also the `X-App-ID` of its requests.
+    public nonisolated let appID: String
+
     private let client: MidgarHTTPClient
     private let configProvider: @Sendable () -> MidgarConfig
     let store: MidgarSignalsStore
@@ -107,6 +110,7 @@ public actor MidgarSignals {
     ) {
         let store = MidgarSignalsStore(directory: directory, appID: configuration.appID)
         let saved = store.load()
+        self.appID = configuration.appID
         self.client = MidgarHTTPClient(configuration: configuration.settingTokenProvider(nil))
         self.configProvider = config
         self.store = store
