@@ -42,7 +42,7 @@ public struct MidgarSettings<PortalCard: View>: View {
                 } header: {
                     if let title = section.title { Text(verbatim: title) }
                 } footer: {
-                    if let footer = section.footer { Text(verbatim: footer) }
+                    if let footer = section.footer { Text(verbatim: footer).lineLimit(nil).fixedSize(horizontal: false, vertical: true) }
                 }
             }
         }
@@ -50,6 +50,7 @@ public struct MidgarSettings<PortalCard: View>: View {
         .midgarHidingListBackground()
         .background(theme.background.color)
         .navigationTitle(title)
+        .onAppear { model.engine.refresh() }
         .midgarToast(toastBinding)
         .alert(pendingTitle, isPresented: pendingBinding) {
             Button(pendingConfirmTitle, role: .destructive) { model.engine.beginConfirmedAction() }

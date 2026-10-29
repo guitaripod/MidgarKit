@@ -88,6 +88,11 @@ public final class MidgarSettingsViewController: UIViewController {
         portalCardView != nil || swiftUIPortalCard != nil
     }
 
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reloadVisibleRows()
+    }
+
     private func applyTheme() {
         view.backgroundColor = theme.uiBackground
         tableView.backgroundColor = theme.uiBackground
@@ -139,12 +144,13 @@ public final class MidgarSettingsViewController: UIViewController {
     }
 
     private func configure(_ cell: UITableViewCell, with row: MidgarSettingsRow) {
-        var content: UIListContentConfiguration = row.detail != nil ? .valueCell() : .subtitleCell()
+        let detail = row.currentDetail
+        var content: UIListContentConfiguration = detail != nil ? .valueCell() : .subtitleCell()
         content.text = row.title
-        content.secondaryText = row.detail ?? row.subtitle
+        content.secondaryText = detail ?? row.subtitle
         content.textProperties.font = theme.uiFont(.body)
         content.textProperties.color = row.role == .destructive ? theme.uiDestructive : theme.uiLabel
-        content.secondaryTextProperties.font = theme.uiFont(row.detail != nil ? .body : .footnote)
+        content.secondaryTextProperties.font = theme.uiFont(detail != nil ? .body : .footnote)
         content.secondaryTextProperties.color = theme.uiSecondaryLabel
         if let name = row.systemImage {
             content.image = UIImage(systemName: name)

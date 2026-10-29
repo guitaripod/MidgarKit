@@ -6,6 +6,7 @@ public struct MidgarSettingsRow: Identifiable, Sendable {
     public typealias Handler = @MainActor @Sendable () async throws -> Void
     public typealias ToggleGetter = @MainActor @Sendable () -> Bool
     public typealias ToggleSetter = @MainActor @Sendable (Bool) -> Void
+    public typealias DetailProvider = @MainActor @Sendable () -> String
 
     public enum Role: Sendable, Hashable {
         case standard
@@ -62,6 +63,8 @@ public struct MidgarSettingsRow: Identifiable, Sendable {
     public var confirmation: Confirmation?
     public var successMessage: String?
     public var menu: [MenuItem]
+    /// Reads the detail each time the row is drawn, for a value another screen can change, such as On or Off. Without it the row shows ``detail``.
+    public var detailProvider: DetailProvider?
 
     public init(
         id: String,
@@ -74,7 +77,8 @@ public struct MidgarSettingsRow: Identifiable, Sendable {
         showsDisclosure: Bool = false,
         confirmation: Confirmation? = nil,
         successMessage: String? = nil,
-        menu: [MenuItem] = []
+        menu: [MenuItem] = [],
+        detailProvider: DetailProvider? = nil
     ) {
         self.id = id
         self.title = title
@@ -87,6 +91,13 @@ public struct MidgarSettingsRow: Identifiable, Sendable {
         self.confirmation = confirmation
         self.successMessage = successMessage
         self.menu = menu
+        self.detailProvider = detailProvider
+    }
+
+    /// The detail to draw now: what ``detailProvider`` answers, else ``detail``.
+    @MainActor
+    public var currentDetail: String? {
+        detailProvider?() ?? detail
     }
 
     public var isInteractive: Bool {
@@ -222,6 +233,22 @@ extension MidgarSettingsRow {
             title: MidgarUIStrings.usageCounts,
             systemImage: "chart.bar",
             kind: .toggle(get: { MidgarSignals.isEnabled }, set: { MidgarSignals.isEnabled = $0 })
+        )
+    }
+
+    /// A row that shows whether usage counts are On or Off and opens the Usage Counts screen (``MidgarUsageCounts`` in SwiftUI, ``MidgarUsageCountsViewController`` in UIKit), which says what the app sends and holds the switch. `perform` presents the screen: push it, or set the state that shows it. The value is read from ``MidgarSignals/isEnabled`` each time the row is drawn (``currentDetail``), so it is right again after the person turned counts off on that screen. ``usageCounts()`` stays the plain switch.
+    public static func usageCountsDetail(perform: @escaping Handler) -> MidgarSettingsRow {
+        usageCountsDetail(isEnabled: { MidgarSignals.isEnabled }, perform: perform)
+    }
+
+    static func usageCountsDetail(isEnabled: @escaping ToggleGetter, perform: @escaping Handler) -> MidgarSettingsRow {
+        MidgarSettingsRow(
+            id: "midgar.usageCountsDetail",
+            title: MidgarUIStrings.usageCountsTitle,
+            systemImage: "chart.bar",
+            kind: .action(perform),
+            showsDisclosure: true,
+            detailProvider: { MidgarUIStrings.onOff(isEnabled: isEnabled()) }
         )
     }
 

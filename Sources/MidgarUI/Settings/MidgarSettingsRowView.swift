@@ -92,7 +92,7 @@ struct MidgarSettingsRowView: View {
     /// The detail stays on one line and shrinks before it wraps: details are addresses, versions and values, and a line break inside one (with an inserted hyphen) reads as a different value. Beside the title it also wins the width it needs over the title.
     @ViewBuilder
     private var detailText: some View {
-        if let detail = row.detail {
+        if let detail = row.currentDetail {
             Text(verbatim: detail)
                 .midgarFont(.body)
                 .foregroundStyle(theme.secondaryLabel.color)

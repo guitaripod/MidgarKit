@@ -120,7 +120,7 @@ await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 
 - `send(_:)` takes a generated `MidgarSignal` (from `registry/signals.yaml`, so names, props and values are closed sets) and enforces on the device how often one install may send it. `each` always goes. `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar per distinct combination of props, `lifetime` once per install per combination, and `per-period` (`app.active`) once per period named by its `period` prop. The uniqueness ledger is one small file, `signals-ledger-<app>.json`, kept in memory and written at most every 5 seconds and on `flush()`, with the entries of passed periods dropped on each write. `send` does no disk or network work. `record(_:props:)` stays for raw names and skips the uniqueness.
 - Events whose registry entry says `cohort: true` carry a `cohort` prop: the install's ISO week (`YYYY-Www`), taken from the creation date of the app's own container (the home directory on iOS, tvOS, visionOS and a sandboxed Mac app, which the system creates at install and keeps across updates; `<Application Support>/<bundle id>` for a Mac app outside the sandbox), so installs that predate Lifestream get their real install week and no app has to say anything. A date in the future is clamped to now, a date before 2020 is `legacy`, and a date that cannot be read falls back to the week of the first launch. The week is decided once and kept in `signals-cohort-<app>.json`.
-- `MidgarSignals.isEnabled` (get and set; also on the instance) is the person's choice, on by default and kept per app. Off stops `send` and `record`, empties the queue and deletes the ledger. `MidgarSettingsSection.usageCounts()` (or `MidgarSettingsRow.usageCounts()`) in MidgarUI is the ready Settings switch, "Share anonymous usage counts".
+- `MidgarSignals.isEnabled` (get and set; also on the instance) is the person's choice, on by default and kept per app. Off stops `send` and `record`, empties the queue and deletes the ledger. `MidgarSettingsSection.usageCounts()` (or `MidgarSettingsRow.usageCounts()`) in MidgarUI is the ready Settings switch, "Share anonymous usage counts". `MidgarSettingsRow.usageCountsDetail(perform:)` opens the Usage Counts screen (below), which holds the same switch.
 
 - Props are `String`, `Int`, `Double` or `Bool` (`MidgarSignalValue` takes literals). Strings are cut to 64 characters. Only names and props from the server schema are kept; the server drops an event with an unknown name or prop and counts it.
 - Events go out when 20 are queued, every 60 seconds while any wait, and at least 10 seconds apart, in batches of at most 50 events and 32 KB. The queue holds 500 events (oldest dropped first) and is saved to `Application Support/Midgar/signals-<app>.json` within 5 seconds of a change and whenever a batch leaves or `flush()` runs, so unsent events survive a relaunch.
@@ -131,6 +131,37 @@ await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 - `MidgarSignals.configure` reports the install active: one `app.active` event per calendar day, ISO week and month (`period` `day`, `week`, `month`, through the generic `send` path), at launch and on each return to the foreground, so summing a period's daily counts gives the distinct active installs with no identifier sent. Nothing to call.
 - iOS and macOS: `await MidgarSignals.shared?.startCollectingMetrics()` subscribes to MetricKit. Each daily metrics payload becomes one `metrics.daily` event (`coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds`, `peakMemoryMB`) and each diagnostic payload one `metrics.diagnostics` event (`crashes`, `hangs`, `diskWrites`, `cpuExceptions`).
 - The portal reports `portal_open`, `impression`, `tap`, `loaded` and `launch` through `MidgarSignals.shared` with the props `appId`, `storefront` and `placement` (an app's own placement that the registry does not list, such as `create`, is sent as `feature`). It sends nothing, and keeps working, until the host calls `MidgarSignals.configure`. The host app is identified by the client's `X-App-ID`, so a host must configure signals with its registry slug.
+
+## Usage Counts screen
+
+`MidgarUsageCounts` (MidgarUI) is the Settings screen that makes Lifestream's privacy visible. It shows, in this order:
+
+1. One short paragraph: usage counts are counts, not people; nothing in them identifies the device or the person; small numbers are never shown.
+2. The switch, the same row as `MidgarSettingsRow.usageCounts()` ("Share anonymous usage counts", backed by `MidgarSignals.isEnabled`), with a line saying that off stops sending and deletes what is waiting.
+3. "What this app sends": every event of `MidgarSignalCatalog` that this app may send, meaning the events with no app limit plus those limited to the app's slug, each with its purpose in plain words and how often it can be sent ("Sent at most once a day", "Sent every time it happens", and so on) and, where it carries the install week, a note saying so. Events no code sends yet (`reserved` in the registry) are left out. While the switch is off a line says that none of these are sent.
+4. "This app's numbers": the latest finished week of `apps[<slug>]` in `https://api.midgarcorp.cc/v1/ops/public/stats` (weekly active installs and new installs; `"<10"` reads "fewer than 10", and a figure under the answer's own `min_count` is shown that way too). The section is not there while the numbers load, when the request fails or times out, and when the answer has nothing for the app. It is one `GET` per screen opening with no retry, eight seconds at most, straight to that URL on a session without cookies, credentials or disk cache, and with no header or identifier of its own (no `X-App-ID`, no token).
+5. A link, "All of Midgar's numbers", to https://midgarcorp.cc/open.
+
+The app's slug is the registry slug it passed to `MidgarSignals.configure` (`MidgarSignals.appID`); `MidgarUsageCounts(appID:)` takes it explicitly when signals are configured later. Without a slug only the events with no app limit are listed and no numbers are requested.
+
+Open it from a row. `MidgarSettingsRow.usageCountsDetail(perform:)` shows On or Off (read each time the row is drawn, so it is right after the person came back from the screen) and runs `perform` on a tap; `usageCounts()` stays the plain switch for apps that want only that.
+
+```swift
+MidgarSettings(sections: [
+    MidgarSettingsSection(id: "privacy", rows: [.usageCountsDetail { showUsageCounts = true }])
+])
+.navigationDestination(isPresented: $showUsageCounts) { MidgarUsageCounts() }
+```
+
+```swift
+let row = MidgarSettingsRow.usageCountsDetail { [weak self] in
+    self?.navigationController?.pushViewController(MidgarUsageCountsViewController(), animated: true)
+}
+```
+
+`MidgarUsageCountsViewController` is the host for UIKit apps (iOS, tvOS, visionOS), and the same name is an `NSHostingController` on macOS. It sets its own title.
+
+The screen reads what it shows instead of repeating it. The events come from `MidgarSignalCatalog.entries`, which `midgar gen --write` writes next to `MidgarEvents.swift` (`Signals/Generated/MidgarSignalCatalog.swift`: name, purpose, uniqueness, `carriesCohort`, `isReserved`, props with their allowed values, measurements and the app slugs an event is limited to). The English purpose of an event is the key of its translation in MidgarUI's string catalog, so a new or reworded purpose in `registry/signals.yaml` needs its 22 translations there; `UsageCountsStringsTests` fails until they exist.
 
 Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter SignalsLive` sends one real `app.launch` for `dream-eater` to production, which leaves a row in `daily` that must be deleted afterwards.
 

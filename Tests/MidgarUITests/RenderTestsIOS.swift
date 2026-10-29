@@ -6,6 +6,7 @@ import UIKit
 
 @Suite @MainActor struct RenderTestsIOS {
     private let size = CGSize(width: 420, height: 912)
+    private let tallSize = CGSize(width: 420, height: 2100)
 
     private func host<Content: View>(_ content: Content) -> UIViewController {
         UIHostingController(rootView: content.midgarTheme(RenderFixtures.theme))
@@ -13,7 +14,8 @@ import UIKit
 
     /// Renders the controller's layer tree in a window that is never put on screen. A package test has no
     /// app scene, so `drawHierarchy` would capture nothing; rendering the layers works without one.
-    private func snapshot(_ make: () -> UIViewController, dark: Bool, name: String) throws -> Data {
+    private func snapshot(_ make: () -> UIViewController, dark: Bool, name: String, size: CGSize? = nil) throws -> Data {
+        let size = size ?? self.size
         let window = UIWindow(frame: CGRect(origin: .zero, size: size))
         let style: UIUserInterfaceStyle = dark ? .dark : .light
         window.overrideUserInterfaceStyle = style
@@ -94,9 +96,9 @@ import UIKit
         return seen.count
     }
 
-    private func check(_ name: String, _ make: () -> UIViewController) throws {
-        let light = try snapshot(make, dark: false, name: name)
-        let dark = try snapshot(make, dark: true, name: name)
+    private func check(_ name: String, tall: Bool = false, _ make: () -> UIViewController) throws {
+        let light = try snapshot(make, dark: false, name: name, size: tall ? tallSize : nil)
+        let dark = try snapshot(make, dark: true, name: name, size: tall ? tallSize : nil)
         #expect(distinctPixelCount(light) > 2, "\(name) light rendered blank")
         #expect(distinctPixelCount(dark) > 2, "\(name) dark rendered blank")
         #expect(light != dark, "\(name) looks the same in light and dark")
@@ -126,6 +128,19 @@ import UIKit
         for style in MidgarToast.Style.allCases {
             try check("toast-\(style)") { host(RenderFixtures.toast(style)) }
         }
+    }
+
+    @Test func usageCountsRenders() async throws {
+        let screen = try await RenderFixtures.usageCounts()
+        try check("usage-counts", tall: true) { host(screen) }
+    }
+
+    @Test func usageCountsViewControllerRendersInANavigationController() async throws {
+        let model = try await RenderFixtures.usageCountsModel()
+        let controller = MidgarUsageCountsViewController(model: model, theme: RenderFixtures.theme)
+
+        #expect(controller.title == "Usage Counts")
+        try check("usage-counts-controller", tall: true) { UINavigationController(rootViewController: controller) }
     }
 
     @Test func settingsViewControllerRenders() throws {

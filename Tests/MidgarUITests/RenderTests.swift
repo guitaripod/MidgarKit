@@ -6,8 +6,10 @@ import Testing
 
 @Suite @MainActor struct RenderTests {
     private let size = CGSize(width: 390, height: 640)
+    private let tallSize = CGSize(width: 390, height: 1500)
 
-    private func render<Content: View>(_ content: Content, dark: Bool, name: String) throws -> Data {
+    private func render<Content: View>(_ content: Content, dark: Bool, name: String, size: CGSize? = nil) throws -> Data {
+        let size = size ?? self.size
         let themed = content
             .midgarTheme(MidgarTheme(accent: MidgarColor(hex: 0x2A9D8F)))
             .environment(\.colorScheme, dark ? .dark : .light)
@@ -51,9 +53,9 @@ import Testing
         return seen.count
     }
 
-    private func check<Content: View>(_ name: String, _ content: Content) throws {
-        let light = try render(content, dark: false, name: name)
-        let dark = try render(content, dark: true, name: name)
+    private func check<Content: View>(_ name: String, _ content: Content, tall: Bool = false) throws {
+        let light = try render(content, dark: false, name: name, size: tall ? tallSize : nil)
+        let dark = try render(content, dark: true, name: name, size: tall ? tallSize : nil)
         #expect(distinctPixelCount(light) > 2, "\(name) light rendered blank")
         #expect(distinctPixelCount(dark) > 2, "\(name) dark rendered blank")
         #expect(light != dark, "\(name) looks the same in light and dark")
@@ -61,6 +63,14 @@ import Testing
 
     @Test func settingsRenders() throws {
         try check("settings", RenderFixtures.settings())
+    }
+
+    @Test func usageCountsRenders() async throws {
+        try check("usage-counts", try await RenderFixtures.usageCounts(), tall: true)
+    }
+
+    @Test func usageCountsRendersWithoutNumbers() throws {
+        try check("usage-counts-no-numbers", RenderFixtures.usageCountsWithoutNumbers(), tall: true)
     }
 
     @Test func onboardingRenders() throws {

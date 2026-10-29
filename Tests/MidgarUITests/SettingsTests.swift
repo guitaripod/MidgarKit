@@ -3,7 +3,7 @@ import Testing
 import MidgarCore
 @testable import MidgarUI
 
-@Suite struct SettingsRowTests {
+@Suite(.serialized) struct SettingsRowTests {
     @Test func versionShowsBuildOnlyWhenItDiffers() {
         #expect(MidgarVersionInfo(name: "Pay Day", version: "1.4.2", build: "87").display == "1.4.2 (87)")
         #expect(MidgarVersionInfo(name: "Pay Day", version: "1.4", build: "1.4").display == "1.4")

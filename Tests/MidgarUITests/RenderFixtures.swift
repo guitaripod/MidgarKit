@@ -1,4 +1,5 @@
 import SwiftUI
+import MidgarCore
 @testable import MidgarUI
 
 @MainActor
@@ -24,6 +25,22 @@ enum RenderFixtures {
 
     static func settings() -> some View {
         MidgarSettings(sections: settingsSections) { portalCard }
+    }
+
+    static func usageCountsModel() async throws -> MidgarUsageCountsModel {
+        let model = MidgarUsageCountsModel(appID: "flaccy", catalog: MidgarSignalCatalog.entries, loader: FakeStatsLoader(.stats(try decodePublicStats())))
+        await model.load()
+        return model
+    }
+
+    static func usageCounts() async throws -> some View {
+        let model = try await usageCountsModel()
+        return NavigationStack { MidgarUsageCounts(model: model) }
+    }
+
+    static func usageCountsWithoutNumbers() -> some View {
+        let model = MidgarUsageCountsModel(appID: "flaccy", loader: FakeStatsLoader(.failure(MidgarPublicStatsError.status(503))))
+        return NavigationStack { MidgarUsageCounts(model: model) }
     }
 
     static let onboardingPages: [MidgarOnboardingPage] = [

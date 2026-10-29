@@ -70,6 +70,11 @@ final class MidgarSettingsEngine {
         state.toast = nil
     }
 
+    /// Draws the rows again, because something outside the engine, such as another screen, may have changed what they show.
+    func refresh() {
+        state.revision += 1
+    }
+
     func show(_ toast: MidgarToast) {
         state.toast = toast
     }
