@@ -165,25 +165,6 @@
       "slot": "midgar-02"
     },
     {
-      "appId": "6736438070",
-      "bundleId": "com.marcusziade.sforesight",
-      "slug": "sforesight",
-      "platforms": [
-        "mac"
-      ],
-      "topics": [
-        "developer",
-        "design"
-      ],
-      "related": [
-        "com.guitaripod.tailscode"
-      ],
-      "value": 0.3,
-      "featured": false,
-      "order": 11,
-      "slot": "midgar-12"
-    },
-    {
       "appId": "6746733380",
       "bundleId": "com.marcusziade.aotd",
       "slug": "app-of-the-dead",
@@ -332,9 +313,7 @@
         "ai",
         "productivity"
       ],
-      "related": [
-        "com.marcusziade.sforesight"
-      ],
+      "related": [],
       "value": 1.0,
       "featured": true,
       "order": 3,

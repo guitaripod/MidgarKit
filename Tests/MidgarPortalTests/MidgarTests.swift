@@ -5,7 +5,7 @@ final class MidgarTests: XCTestCase {
 
     func testBundledCatalogLoadsEveryApp() {
         let entries = CatalogService.bundledCatalog()
-        XCTAssertEqual(entries.count, 18, "Bundled fallback should ship all 18 store records")
+        XCTAssertEqual(entries.count, 17, "Bundled fallback should ship all 17 store records that have a catalog_index")
         XCTAssertTrue(entries.allSatisfy { !$0.appId.isEmpty && !$0.bundleId.isEmpty })
         XCTAssertTrue(entries.allSatisfy { !($0.platforms ?? []).isEmpty })
         XCTAssertTrue(entries.allSatisfy { midgarRGBA(hex: $0.accent) != nil })

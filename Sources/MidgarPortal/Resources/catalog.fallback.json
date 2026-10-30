@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updatedAt": "2026-10-22T21:30:53Z",
+  "updatedAt": "2026-10-30T21:55:34Z",
   "developer": {
     "name": "Midgar",
     "artistId": "1484270247"
@@ -16,7 +16,8 @@
       "accent": "#73C7FF",
       "family": "flaccy",
       "platforms": [
-        "ios"
+        "ios",
+        "mac"
       ],
       "topics": [
         "music",
@@ -123,9 +124,7 @@
         "ai",
         "productivity"
       ],
-      "related": [
-        "com.marcusziade.sforesight"
-      ],
+      "related": [],
       "value": 1.0,
       "featured": true,
       "order": 3,
@@ -349,36 +348,6 @@
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8d/0c/86/8d0c868c-e712-8be0-07b8-094c7c0815cd/dreameater_iphone_1_interpret.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a6/8f/c1/a68fc17e-5e3d-0a6e-1eb8-cef81ef64375/dreameater_iphone_2_home.png/800x1738bb.jpg",
         "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/47/7b/24/477b24a6-aaa9-aba3-7977-90d267ffb970/dreameater_iphone_3_journal.png/800x1738bb.jpg"
-      ]
-    },
-    {
-      "appId": "6736438070",
-      "bundleId": "com.marcusziade.sforesight",
-      "slug": "sforesight",
-      "name": "SForesight: SF Symbols Search",
-      "tagline": "Search every SF Symbol, instantly.",
-      "genre": "Developer Tools",
-      "accent": "#0EA5E9",
-      "platforms": [
-        "mac"
-      ],
-      "topics": [
-        "developer",
-        "design"
-      ],
-      "related": [
-        "com.guitaripod.tailscode"
-      ],
-      "value": 0.3,
-      "featured": false,
-      "order": 11,
-      "slot": "midgar-12",
-      "status": "live",
-      "icon": null,
-      "screenshots": [
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5f/da/cf/5fdacf9b-997d-62fa-6340-47b3e081a177/c72c4dd6-f8cb-42ed-adfe-f36e2a122148_sforesight-appstore-1.png/800x500bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b8/9b/28/b89b2803-5cbf-c603-24ed-16de31d10552/68136458-822f-4237-b608-efb3e61f14a3_sforesight-appstore-2.png/800x500bb.jpg",
-        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a8/a7/8b/a8a78ba3-c3bc-220b-913a-5a975f89545d/da7d44cf-14b4-4c42-9df6-663cb4be9d8a_sforesight-appstore-3.png/800x500bb.jpg"
       ]
     },
     {
