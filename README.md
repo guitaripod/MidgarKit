@@ -12,26 +12,28 @@ The doorway between Midgar apps. One card in a host app's Settings opens the **p
 ## Install
 
 ```swift
-.package(url: "https://github.com/guitaripod/MidgarKit", from: "3.2.0")
+.package(url: "https://github.com/guitaripod/MidgarKit", from: "4.4.0")
 ```
 
-Hosts use `from: "3.2.0"` until MidgarKit 4.0.0 is tagged (roadmap P2.18); after that, `from: "4.0.0"`. Add `MidgarKit` to every app target that ships. From 4.0.0 on, MidgarKit is one package with several products (the layout below is the monorepo's). `import MidgarKit` keeps working for every 3.x host: the `MidgarKit` product is an umbrella that re-exports all the others, so `MidgarEntryView`, `MidgarEntryCard`, `MidgarStoreView`, `Midgar.present` and `MidgarConfig` are unchanged.
+Add `MidgarKit` to every app target that ships. MidgarKit is one package with several products; the `MidgarKit` product re-exports all of them, so `import MidgarKit` and the 3.x entry points (`MidgarEntryView`, `MidgarEntryCard`, `MidgarStoreView`, `Midgar.present`, `MidgarConfig`) keep working. Inside the Midgar monorepo, apps reference `packages/MidgarKit` by path.
 
 ## Products
 
 | Product | Holds | May import |
 | --- | --- | --- |
 | `MidgarKit` | Umbrella: `@_exported import` of every product below | all products |
-| `MidgarCore` | Logging, config, HTTP, identity, `MidgarKitVersion` (signals planned, P2.06) | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
+| `MidgarCore` | Logging, config, HTTP, identity, signals, `MidgarKitVersion` | Foundation, os, Security, DeviceCheck, MetricKit, CryptoKit (Apple only) |
 | `MidgarCommerce` | StoreKit purchases and entitlements | MidgarCore, StoreKit |
+| `MidgarCommerceUI` | The shared paywalls: `MidgarPaywall` and the plan picker `MidgarPlanPaywall` (fold-aware, every platform) | MidgarCommerce, MidgarUI, StoreKit, SwiftUI |
 | `MidgarCredits` | AI credit packs on the Midgar ID wallet: balance, history, pack purchase and fast-track credit (replaces `AICredits`) | MidgarCore, MidgarCommerce |
+| `MidgarCreditsUI` | The credit store screen for packs on the Midgar ID wallet | MidgarCommerceUI, MidgarCredits, MidgarUI |
 | `MidgarAccount` | Sign in with Apple and account linking | MidgarCore, AuthenticationServices |
 | `MidgarUI` | Shared UIKit, AppKit and SwiftUI scaffolding | MidgarCore, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
 | `MidgarPortal` | The portal: catalog, entry card and view, `Midgar.present`, telemetry, resources, privacy manifest | MidgarUI, MidgarCore, StoreKit, UIKit, AppKit, SwiftUI, QuartzCore, CoreText, ImageIO |
 | `MidgarIntelligence` | On-device and cloud model access, FoundationModels behind `#if canImport(FoundationModels)` | MidgarCore, FoundationModels |
 | `MidgarDemo` | Demo mode and seeded data | MidgarCore |
 
-No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. `MidgarUI`, `MidgarIntelligence` and `MidgarDemo` are built. `MidgarCommerce` and `MidgarAccount` are still stubs (one placeholder type each) until their roadmap tasks (P2.07 and P2.08 for Commerce, P2.10 for Account) fill them; `MidgarCore` has Logging, HTTP, Config, Identity and Signals. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
+No product re-exports an Apple framework. A host that only wants the portal can depend on `MidgarPortal` and `import MidgarPortal`. `MidgarAccount` is still a placeholder; Sign in with Apple linking lives on `MidgarIdentity` in MidgarCore. Package traits are not used: FoundationModels is gated with `canImport`, which needs no host configuration.
 
 ## Integrate a host app
 
@@ -120,7 +122,7 @@ await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 
 - `send(_:)` takes a generated `MidgarSignal` (from `registry/signals.yaml`, so names, props and values are closed sets) and enforces on the device how often one install may send it. `each` always goes. `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar per distinct combination of props, `lifetime` once per install per combination, and `per-period` (`app.active`) once per period named by its `period` prop. The uniqueness ledger is one small file, `signals-ledger-<app>.json`, kept in memory and written at most every 5 seconds and on `flush()`, with the entries of passed periods dropped on each write. `send` does no disk or network work. `record(_:props:)` stays for raw names and skips the uniqueness.
 - Events whose registry entry says `cohort: true` carry a `cohort` prop: the install's ISO week (`YYYY-Www`), taken from the creation date of the app's own container (the home directory on iOS, tvOS, visionOS and a sandboxed Mac app, which the system creates at install and keeps across updates; `<Application Support>/<bundle id>` for a Mac app outside the sandbox), so installs that predate Lifestream get their real install week and no app has to say anything. A date in the future is clamped to now, a date before 2020 is `legacy`, and a date that cannot be read falls back to the week of the first launch. The week is decided once and kept in `signals-cohort-<app>.json`.
-- `MidgarSignals.isEnabled` (get and set; also on the instance) is the person's choice, on by default and kept per app. Off stops `send` and `record`, empties the queue and deletes the ledger. `MidgarSettingsSection.usageCounts()` (or `MidgarSettingsRow.usageCounts()`) in MidgarUI is the ready Settings switch, "Share anonymous usage counts". `MidgarSettingsRow.usageCountsDetail(perform:)` opens the Usage Counts screen (below), which holds the same switch.
+- `MidgarSignals.isEnabled` (on by default, kept per app) turns sending off, empties the queue and deletes the ledger. Midgar apps leave it on and show no switch: the counts carry no identifier (D7).
 
 - Props are `String`, `Int`, `Double` or `Bool` (`MidgarSignalValue` takes literals). Strings are cut to 64 characters. Only names and props from the server schema are kept; the server drops an event with an unknown name or prop and counts it.
 - Events go out when 20 are queued, every 60 seconds while any wait, and at least 10 seconds apart, in batches of at most 50 events and 32 KB. The queue holds 500 events (oldest dropped first) and is saved to `Application Support/Midgar/signals-<app>.json` within 5 seconds of a change and whenever a batch leaves or `flush()` runs, so unsent events survive a relaunch.
@@ -134,34 +136,7 @@ await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 
 ## Usage Counts screen
 
-`MidgarUsageCounts` (MidgarUI) is the Settings screen that makes Lifestream's privacy visible. It shows, in this order:
-
-1. One short paragraph: usage counts are counts, not people; nothing in them identifies the device or the person; small numbers are never shown.
-2. The switch, the same row as `MidgarSettingsRow.usageCounts()` ("Share anonymous usage counts", backed by `MidgarSignals.isEnabled`), with a line saying that off stops sending and deletes what is waiting.
-3. "What this app sends": every event of `MidgarSignalCatalog` that this app may send, meaning the events with no app limit plus those limited to the app's slug, each with its purpose in plain words and how often it can be sent ("Sent at most once a day", "Sent every time it happens", and so on) and, where it carries the install week, a note saying so. Events no code sends yet (`reserved` in the registry) are left out. While the switch is off a line says that none of these are sent.
-4. "This app's numbers": the latest finished week of `apps[<slug>]` in `https://api.midgarcorp.cc/v1/ops/public/stats` (weekly active installs and new installs; `"<10"` reads "fewer than 10", and a figure under the answer's own `min_count` is shown that way too). The section is not there while the numbers load, when the request fails or times out, and when the answer has nothing for the app. It is one `GET` per screen opening with no retry, eight seconds at most, straight to that URL on a session without cookies, credentials or disk cache, and with no header or identifier of its own (no `X-App-ID`, no token).
-5. A link, "All of Midgar's numbers", to https://midgarcorp.cc/open.
-
-The app's slug is the registry slug it passed to `MidgarSignals.configure` (`MidgarSignals.appID`); `MidgarUsageCounts(appID:)` takes it explicitly when signals are configured later. Without a slug only the events with no app limit are listed and no numbers are requested.
-
-Open it from a row. `MidgarSettingsRow.usageCountsDetail(perform:)` shows On or Off (read each time the row is drawn, so it is right after the person came back from the screen) and runs `perform` on a tap; `usageCounts()` stays the plain switch for apps that want only that.
-
-```swift
-MidgarSettings(sections: [
-    MidgarSettingsSection(id: "privacy", rows: [.usageCountsDetail { showUsageCounts = true }])
-])
-.navigationDestination(isPresented: $showUsageCounts) { MidgarUsageCounts() }
-```
-
-```swift
-let row = MidgarSettingsRow.usageCountsDetail { [weak self] in
-    self?.navigationController?.pushViewController(MidgarUsageCountsViewController(), animated: true)
-}
-```
-
-`MidgarUsageCountsViewController` is the host for UIKit apps (iOS, tvOS, visionOS), and the same name is an `NSHostingController` on macOS. It sets its own title.
-
-The screen reads what it shows instead of repeating it. The events come from `MidgarSignalCatalog.entries`, which `midgar gen --write` writes next to `MidgarEvents.swift` (`Signals/Generated/MidgarSignalCatalog.swift`: name, purpose, uniqueness, `carriesCohort`, `isReserved`, props with their allowed values, measurements and the app slugs an event is limited to). The English purpose of an event is the key of its translation in MidgarUI's string catalog, so a new or reworded purpose in `registry/signals.yaml` needs its 22 translations there; `UsageCountsStringsTests` fails until they exist.
+`MidgarUsageCounts` (MidgarUI; `MidgarUsageCountsViewController` for UIKit and AppKit hosts) is an optional Settings screen that lists every event the app may send with its purpose and frequency, read from the generated `MidgarSignalCatalog`, shows the app's latest weekly numbers from `https://api.midgarcorp.cc/v1/ops/public/stats` (one uncredentialed `GET`, no retry) and links to https://midgarcorp.cc/open. `MidgarSettingsRow.usageCountsDetail(perform:)` opens it. A new or reworded purpose in `registry/signals.yaml` needs its translations in MidgarUI's string catalog; `UsageCountsStringsTests` fails until they exist.
 
 Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter SignalsLive` sends one real `app.launch` for `dream-eater` to production, which leaves a row in `daily` that must be deleted afterwards.
 
