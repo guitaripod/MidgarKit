@@ -50,7 +50,7 @@ public enum MidgarSignal: Sendable, Equatable {
 
     /// The closed set Placement; the worker stores any other value as `other`.
     public enum Placement: String, Sendable, CaseIterable {
-        case settings, entry, onboarding, launch, paywall, feature, limit
+        case settings, entry, onboarding, launch, paywall, feature, limit, moment
     }
 
     /// The closed set Outcome; the worker stores any other value as `other`.

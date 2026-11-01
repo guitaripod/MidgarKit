@@ -60,7 +60,7 @@ import Testing
 
     @Test func theClosedSetsMatchWhatTheClientsSendToday() {
         #expect(MidgarSignal.Period.allCases.map(\.rawValue) == MidgarActivePeriod.allCases.map(\.rawValue))
-        #expect(MidgarSignal.Placement.allCases.map(\.rawValue) == ["settings", "entry", "onboarding", "launch", "paywall", "feature", "limit"])
+        #expect(MidgarSignal.Placement.allCases.map(\.rawValue) == ["settings", "entry", "onboarding", "launch", "paywall", "feature", "limit", "moment"])
         #expect(MidgarSignal.FunnelStep.allCases.map(\.rawValue) == ["sample_played", "add_music_opened", "library_filled", "import_succeeded", "import_failed", "trial_started"])
         #expect(MidgarSignal.Outcome.allCases.map(\.rawValue) == ["started", "purchased", "pending", "cancelled", "failed"])
     }
