@@ -30,7 +30,7 @@ final class MidgarTests: XCTestCase {
 
     func testBundledAppsAreAllVisibleAndMergeEveryField() {
         let apps = CatalogService.bundledApps()
-        XCTAssertEqual(apps.count, 18)
+        XCTAssertEqual(apps.count, 17)
         let flaccyMac = apps.first { $0.bundleId == "com.midgarcorp.flaccy.mac" }
         XCTAssertEqual(flaccyMac?.platforms, [.mac])
         XCTAssertEqual(flaccyMac?.family, "flaccy")
