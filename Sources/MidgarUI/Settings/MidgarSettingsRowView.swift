@@ -54,7 +54,7 @@ struct MidgarSettingsRowView: View {
         HStack(spacing: theme.spacing.m) {
             if let image = row.systemImage {
                 Image(systemName: image)
-                    .foregroundStyle(tint)
+                    .midgarRowInk(tint, focused: row.role == .destructive ? tint : Self.focusedInk)
                     .frame(width: iconWidth)
                     .accessibilityHidden(true)
             }
@@ -76,11 +76,14 @@ struct MidgarSettingsRowView: View {
         VStack(alignment: .leading, spacing: theme.spacing.xxs) {
             Text(verbatim: row.title)
                 .midgarFont(.body)
-                .foregroundStyle(row.role == .destructive ? theme.destructive.color : theme.label.color)
+                .midgarRowInk(
+                    row.role == .destructive ? theme.destructive.color : theme.label.color,
+                    focused: row.role == .destructive ? theme.destructive.color : Self.focusedInk
+                )
             if let subtitle = row.subtitle {
                 Text(verbatim: subtitle)
                     .midgarFont(.footnote)
-                    .foregroundStyle(theme.secondaryLabel.color)
+                    .midgarRowInk(theme.secondaryLabel.color, focused: Self.focusedSecondaryInk)
             }
             if stacksDetailBelowTitle {
                 detailText
@@ -95,7 +98,7 @@ struct MidgarSettingsRowView: View {
         if let detail = row.currentDetail {
             Text(verbatim: detail)
                 .midgarFont(.body)
-                .foregroundStyle(theme.secondaryLabel.color)
+                .midgarRowInk(theme.secondaryLabel.color, focused: Self.focusedSecondaryInk)
                 .multilineTextAlignment(stacksDetailBelowTitle ? .leading : .trailing)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -112,7 +115,7 @@ struct MidgarSettingsRowView: View {
         } else if row.showsDisclosure {
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(theme.secondaryLabel.color.opacity(0.7))
+                .midgarRowInk(theme.secondaryLabel.color.opacity(0.7), focused: Self.focusedSecondaryInk)
                 .accessibilityHidden(true)
         }
     }
@@ -120,9 +123,35 @@ struct MidgarSettingsRowView: View {
     private var tint: Color {
         row.role == .destructive ? theme.destructive.color : theme.accent.color
     }
+
+    private static let focusedInk = Color.black.opacity(0.88)
+    private static let focusedSecondaryInk = Color.black.opacity(0.62)
 }
 
+#if os(tvOS)
+/// Draws `color` until the row is under the focus cursor, then `focused`: tvOS lifts a focused row on a light platter that the theme's white text would disappear into.
+private struct MidgarFocusedInk: ViewModifier {
+    let color: Color
+    let focused: Color
+    @Environment(\.isFocused) private var isFocused
+
+    func body(content: Content) -> some View {
+        content.foregroundStyle(isFocused ? focused : color)
+    }
+}
+#endif
+
 extension View {
+    /// The row's ink, which on tvOS turns dark while the row is focused and everywhere else is `color`.
+    @ViewBuilder
+    fileprivate func midgarRowInk(_ color: Color, focused: Color) -> some View {
+        #if os(tvOS)
+        modifier(MidgarFocusedInk(color: color, focused: focused))
+        #else
+        foregroundStyle(color)
+        #endif
+    }
+
     /// The switch style where the platform has one; tvOS before 18 draws its own toggle.
     @ViewBuilder
     fileprivate func midgarSwitchToggleStyle() -> some View {
