@@ -23,12 +23,13 @@ private let day: TimeInterval = 86_400
 private struct ReviewRig {
     let storage = MemoryReviewStorage()
     let clock = TestClock()
+    let center = NotificationCenter()
     let policy: MidgarReviewPolicy
 
     init(version: String = "2.0", sessions: Int = 6, daysSinceInstall: Double = 10) {
         let storage = storage
         let clock = clock
-        policy = MidgarReviewPolicy(storage: storage, appVersion: version, clock: { clock.now })
+        policy = MidgarReviewPolicy(storage: storage, appVersion: version, clock: { clock.now }, center: center)
         clock.advance(daysSinceInstall * day)
         for _ in 0..<sessions {
             policy.beginSession()
@@ -171,6 +172,84 @@ private struct ReviewRig {
         #expect(rig.storage.saved.sessions == 3)
     }
 
+    @Test func notInASessionWhereAPaywallWentUnanswered() {
+        let rig = ReviewRig()
+        MidgarPaywallMoments.noteShown(placement: .moment, center: rig.center)
+
+        #expect(rig.policy.noteSuccess() == false)
+        #expect(rig.policy.evaluate() == .hold(.paywallUnanswered))
+    }
+
+    @Test func anUnansweredPaywallHoldsOnlyItsOwnSession() {
+        let rig = ReviewRig()
+        rig.policy.notePaywallShown()
+
+        let relaunched = MidgarReviewPolicy(storage: rig.storage, appVersion: "2.0", clock: { rig.clock.now }, center: NotificationCenter())
+
+        #expect(relaunched.noteSuccess())
+    }
+
+    @Test func aPurchaseAnswersThePaywallAndTheNextMomentPrompts() {
+        let rig = ReviewRig()
+        rig.policy.noteSuccess()
+        rig.center.post(name: MidgarPaywallMoments.shown, object: nil)
+        rig.center.post(name: MidgarPaywallMoments.purchased, object: nil)
+
+        #expect(rig.policy.evaluate() == .hold(.noPositiveMoment))
+        #expect(rig.policy.noteSuccess())
+        #expect(rig.storage.saved.lastPurchase == rig.clock.now)
+    }
+
+    @Test func aPayerIsAskedWithoutWaitingOutTheInstallAgeOrSessions() {
+        let rig = ReviewRig(sessions: 1, daysSinceInstall: 0)
+        rig.policy.notePurchase()
+
+        #expect(rig.policy.noteSuccess())
+    }
+
+    @Test func aPayerStillWaitsOutTheIntervalAndTheVersion() {
+        let rig = ReviewRig(version: "2.0", sessions: 1, daysSinceInstall: 0)
+        rig.policy.notePurchase()
+        rig.policy.noteSuccess()
+        rig.policy.notePrompted()
+        rig.clock.advance(130 * day)
+
+        #expect(rig.policy.noteSuccess() == false)
+        #expect(rig.policy.evaluate() == .hold(.versionAlreadyPrompted))
+    }
+
+    @Test func aPayerStaysAPayerAfterARelaunch() {
+        let rig = ReviewRig(sessions: 0, daysSinceInstall: 0)
+        rig.policy.notePurchase()
+
+        let relaunched = MidgarReviewPolicy(storage: rig.storage, appVersion: "2.0", clock: { rig.clock.now }, center: NotificationCenter())
+        relaunched.beginSession()
+
+        #expect(relaunched.noteSuccess())
+    }
+
+    @Test func aPolicyHearsNothingAfterItIsGone() {
+        let center = NotificationCenter()
+        let storage = MemoryReviewStorage()
+        _ = MidgarReviewPolicy(storage: storage, appVersion: "2.0", center: center)
+
+        center.post(name: MidgarPaywallMoments.purchased, object: nil)
+
+        #expect(storage.saved.lastPurchase == nil)
+    }
+
+    @Test func aPaywallSessionTurnsUnansweredUntilAPurchase() {
+        let center = NotificationCenter()
+        let session = MidgarPaywallSession(center: center)
+        #expect(session.isUnanswered == false)
+
+        MidgarPaywallMoments.noteShown(placement: .feature, center: center)
+        #expect(session.isUnanswered)
+
+        center.post(name: MidgarPaywallMoments.purchased, object: nil)
+        #expect(session.isUnanswered == false)
+    }
+
     @Test func everyRuleSurvivesARelaunchThroughTheFileStorage() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("review-" + UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -195,6 +274,7 @@ private struct ReviewRig {
         #expect(saved.lastPromptedVersion == "2.0")
         #expect(saved.lastPurchaseFailure != nil)
         #expect(saved.lastRefund != nil)
+        #expect(saved.lastPurchase == nil)
         second.noteSuccess()
         #expect(second.evaluate() == .hold(.versionAlreadyPrompted))
     }

@@ -31,6 +31,33 @@ import AppKit
         #expect(events.first?.props["product"] == .string(Products.pro))
     }
 
+    @Test func aPurchaseTheCustomerMadeMakesThemAPayerForTheReviewPolicy() async throws {
+        let h = StoreHarness()
+        let review = MidgarReviewPolicy(storage: MemoryReviewStorage(), appVersion: "2.0", clock: { h.clock.now }, center: h.notifications)
+        h.ledger.serve(midgarId: FakeIdentity.first)
+        let transaction = h.transaction()
+        h.storeKit.queue(.success(.verified(transaction)))
+        h.storeKit.setCurrent([.verified(transaction)])
+
+        _ = try await h.store.purchase(Products.pro)
+
+        #expect(review.noteSuccess())
+    }
+
+    @Test func aPurchaseArrivingThroughUpdatesDoesNotCountAsTheCustomerBuying() async throws {
+        let h = StoreHarness()
+        let storage = MemoryReviewStorage()
+        let review = MidgarReviewPolicy(storage: storage, appVersion: "2.0", clock: { h.clock.now }, center: h.notifications)
+        h.ledger.serve(midgarId: FakeIdentity.first)
+        let transaction = h.transaction()
+        h.storeKit.setCurrent([.verified(transaction)])
+        h.storeKit.emit(.verified(transaction))
+        #expect(await eventually { h.finishes.ids.contains(1) })
+
+        #expect(storage.saved.lastPurchase == nil)
+        #expect(review.noteSuccess() == false)
+    }
+
     @Test func purchaseWithoutAnIdentityProceedsAndIsReportedForAttributionOnceOneExists() async throws {
         let identity = FakeIdentity(nil)
         let h = StoreHarness(identity: identity)

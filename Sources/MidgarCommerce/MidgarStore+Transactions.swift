@@ -39,6 +39,9 @@ extension MidgarStore {
         if origin == .update && isNewPurchase {
             emit(.purchaseApproved(productID: transaction.productID))
         }
+        if origin == .purchase {
+            notifications.post(name: MidgarPaywallMoments.purchased, object: nil)
+        }
         await refreshLocal()
         await awaitLocalGrant(of: transaction)
         publishIfChanged()

@@ -1,3 +1,4 @@
+import MidgarCommerce
 import MidgarCommerceUI
 import MidgarCredits
 import MidgarUI
@@ -11,6 +12,7 @@ import SwiftUI
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
 public struct MidgarCreditStoreView: View {
     @State private var model: MidgarCreditStoreModel
+    @State private var hasNotedShown = false
     private let allowanceTitles: [String: String]
 
     @Environment(\.midgarTheme) private var theme
@@ -57,6 +59,14 @@ public struct MidgarCreditStoreView: View {
         .tint(theme.accent.color)
         .task { await model.observe() }
         .task { await model.load() }
+        .onAppear(perform: noteShownOnce)
+    }
+
+    /// Reports the store once per presentation through ``MidgarPaywallMoments``: a `limit` when an action ran short of credits, otherwise a `feature`.
+    private func noteShownOnce() {
+        guard !hasNotedShown else { return }
+        hasNotedShown = true
+        MidgarPaywallMoments.noteShown(placement: model.shortfall == nil ? .feature : .limit)
     }
 
     @ViewBuilder

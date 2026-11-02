@@ -30,6 +30,7 @@ public actor MidgarStore {
     let sleep: @Sendable (Duration) async throws -> Void
     let grantLagSleep: @Sendable (Duration) async throws -> Void
     let signal: @Sendable (MidgarSignal) async -> Void
+    let notifications: NotificationCenter
     let log: @Sendable (String) -> Void
 
     var state: CommerceState
@@ -81,7 +82,8 @@ public actor MidgarStore {
         signal: @escaping @Sendable (MidgarSignal) async -> Void,
         logger: @escaping @Sendable (String) -> Void,
         observesForeground: Bool,
-        grantLagSleep: (@Sendable (Duration) async throws -> Void)? = nil
+        grantLagSleep: (@Sendable (Duration) async throws -> Void)? = nil,
+        notifications: NotificationCenter = .default
     ) {
         let storage = CommerceStorage(directory: configuration.directory, appID: configuration.appID)
         self.configuration = configuration
@@ -94,6 +96,7 @@ public actor MidgarStore {
         self.sleep = sleep
         self.grantLagSleep = grantLagSleep ?? { try await Task.sleep(for: $0) }
         self.signal = signal
+        self.notifications = notifications
         self.log = logger
         self.state = storage.load()
         let updates = configuration.mode == .purchases ? storeKit.updates() : nil

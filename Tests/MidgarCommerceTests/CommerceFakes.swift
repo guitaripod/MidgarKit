@@ -198,6 +198,7 @@ struct StoreHarness {
     let signals: SignalCapture
     let sleeper: ManualSleeper
     let directory: URL
+    let notifications = NotificationCenter()
 
     static let entitlementMap = [Products.pro: "pro", Products.monthly: "pro"]
 
@@ -241,7 +242,8 @@ struct StoreHarness {
             signal: { await signals.record($0) },
             logger: { logs.record($0) },
             observesForeground: false,
-            grantLagSleep: grantLagSleep
+            grantLagSleep: grantLagSleep,
+            notifications: notifications
         )
     }
 

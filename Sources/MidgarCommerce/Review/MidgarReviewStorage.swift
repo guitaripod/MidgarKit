@@ -14,6 +14,8 @@ public struct MidgarReviewState: Codable, Sendable, Equatable {
     public var lastPurchaseFailure: Date?
     /// When the app last reported a refund.
     public var lastRefund: Date?
+    /// When the customer last bought something in this app, which makes them a payer.
+    public var lastPurchase: Date?
 
     public init(
         firstLaunch: Date? = nil,
@@ -21,7 +23,8 @@ public struct MidgarReviewState: Codable, Sendable, Equatable {
         lastPrompt: Date? = nil,
         lastPromptedVersion: String? = nil,
         lastPurchaseFailure: Date? = nil,
-        lastRefund: Date? = nil
+        lastRefund: Date? = nil,
+        lastPurchase: Date? = nil
     ) {
         self.firstLaunch = firstLaunch
         self.sessions = sessions
@@ -29,6 +32,7 @@ public struct MidgarReviewState: Codable, Sendable, Equatable {
         self.lastPromptedVersion = lastPromptedVersion
         self.lastPurchaseFailure = lastPurchaseFailure
         self.lastRefund = lastRefund
+        self.lastPurchase = lastPurchase
     }
 }
 
