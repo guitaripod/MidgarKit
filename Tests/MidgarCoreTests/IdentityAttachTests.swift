@@ -227,8 +227,7 @@ private let challengeReply = StubReply.json(200, #"{"challenge":"chal-1","expire
         #expect(harness.paths.suffix(2) == ["POST /v1/identity/attach", "POST /v1/identity/mint/unverified"])
         #expect(try harness.storedShared() == SharedIdentity(midgarId: "id-fork", credential: "CRED-FORK"))
         #expect(try harness.storedPendingSync() == nil)
-        let warning = try #require(harness.logs.warnings.first)
-        #expect(warning.contains("seven days"))
+        #expect(harness.logs.warnings.contains { $0.contains("seven days") })
     }
 
     @Test func justUnderSevenDaysStillKeepsTheSharedItem() async throws {

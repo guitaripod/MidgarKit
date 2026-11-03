@@ -166,10 +166,29 @@ public actor MidgarIdentity {
             cached = session
             result = .success(session)
         } catch {
+            log.warning("identity: no session (\(Self.failureKind(error)))")
             result = .failure(error)
         }
         flight = nil
         return result
+    }
+
+    /// The case of a failed session flow for the log: the identity error's case with the HTTP status class or server code, never a message, token or ID.
+    static func failureKind(_ error: any Error) -> String {
+        switch error {
+        case MidgarIdentityError.http(let http):
+            return "http \(http.logName)\(http.serverCode.map { " \($0)" } ?? "")"
+        case MidgarIdentityError.keychain(let status):
+            return "keychain \(status)"
+        case MidgarIdentityError.attestation(let attestation):
+            return "attestation \(attestation)"
+        case let identity as MidgarIdentityError:
+            return "\(identity)"
+        case is MidgarIdentityGone:
+            return "identity gone"
+        default:
+            return String(describing: type(of: error))
+        }
     }
 
     /// Converts everything the flow throws into a ``MidgarIdentityError``, except the internal signal that the identity no longer exists.

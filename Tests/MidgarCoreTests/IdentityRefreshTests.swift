@@ -84,6 +84,17 @@ private func attachReply(refresh: String = "refresh-attached") -> StubReply {
         #expect(try harness.storedSession() == StoredSession(refreshToken: "refresh-attached", keyId: "key-1", midgarId: "id-shared"))
     }
 
+    @Test func aKeyThatCannotSignSkipsTheRefreshAndAttachesWithANewKey() async throws {
+        let harness = try IdentityHarness(attested: true, shared: shared, session: keyedSession)
+        harness.attestation.failAssertion(with: .failed)
+        harness.enqueue(.json(200, #"{"challenge":"chal-1","expiresIn":300}"#), attachReply())
+
+        _ = try await harness.identity.accessToken()
+
+        #expect(harness.paths == ["POST /v1/identity/challenge", "POST /v1/identity/attach"])
+        #expect(try harness.storedSession() == StoredSession(refreshToken: "refresh-attached", keyId: "key-1", midgarId: "id-shared"))
+    }
+
     @Test func aKeyedSessionOnADeviceWithoutAppAttestAttachesUnattested() async throws {
         let harness = try IdentityHarness(attested: false, shared: shared, session: keyedSession)
         harness.enqueue(attachReply())

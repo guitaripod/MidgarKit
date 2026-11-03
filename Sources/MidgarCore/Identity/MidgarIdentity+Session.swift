@@ -65,7 +65,7 @@ extension MidgarIdentity {
         return try await mint(replacingShared: false)
     }
 
-    /// Step 1: exchanges the stored refresh token, signed with an assertion when the session has a key. Only the documented failures send the caller to attach again; everything else leaves the stored session as it is and throws.
+    /// Step 1: exchanges the stored refresh token, signed with an assertion when the session has a key. Only the documented failures send the caller to attach again; everything else leaves the stored session as it is and throws. A key App Attest cannot sign with for any reason but its service being unreachable is one of them: after a reinstall DeviceCheck can refuse the old key with a generic failure instead of `invalidKey`, and keeping that session would fail every launch.
     private func refresh(_ stored: StoredSession) async throws -> RefreshOutcome {
         var assertion: String?
         if let keyID = stored.keyId {
@@ -82,6 +82,8 @@ extension MidgarIdentity {
                 return .attachAgain(reason: "session key is gone")
             } catch MidgarAttestationError.unsupported {
                 return .attachAgain(reason: "App Attest unavailable for the session key")
+            } catch MidgarAttestationError.failed {
+                return .attachAgain(reason: "the session key cannot sign")
             }
         }
         do {
