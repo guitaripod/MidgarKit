@@ -51,3 +51,19 @@ import Testing
         #expect(throws: MidgarIntelligenceError.onDeviceOutputRewritten) { try accumulator.delta(for: "") }
     }
 }
+
+#if canImport(FoundationModels) && !os(tvOS) && compiler(>=6.4)
+import FoundationModels
+
+@Suite struct OnDeviceErrorMappingTests {
+    @Test func iOS27GuardrailsAndRefusalsAreAnswersNotOutages() {
+        guard #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) else { return }
+        let guardrail = LanguageModelError.guardrailViolation(.init(debugDescription: "test"))
+        let refusal = LanguageModelError.refusal(.init(explanation: "no", debugDescription: "test"))
+        #expect(FoundationModelsBackend.mapped(guardrail as any Error) as? MidgarIntelligenceError == .onDeviceRefused)
+        #expect(FoundationModelsBackend.mapped(refusal as any Error) as? MidgarIntelligenceError == .onDeviceRefused)
+        let timeout = LanguageModelError.timeout(.init(debugDescription: "test"))
+        #expect(FoundationModelsBackend.mapped(timeout as any Error) as? MidgarIntelligenceError == .onDeviceUnavailable(.modelNotReady))
+    }
+}
+#endif

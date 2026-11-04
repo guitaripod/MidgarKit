@@ -149,6 +149,11 @@ enum FoundationModelsBackend {
 
     /// Turns a Foundation Models failure into the module's typed errors where the router must tell them apart: missing assets are an outage, a guardrail or a refusal is an answer. Anything else passes through and is reported by type name.
     static func mapped(_ error: any Error) -> any Error {
+        #if compiler(>=6.4)
+        if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *), let modern = error as? LanguageModelError {
+            return mapped(modern)
+        }
+        #endif
         guard let failure = error as? LanguageModelSession.GenerationError else {
             return error
         }
@@ -161,6 +166,22 @@ enum FoundationModelsBackend {
             return error
         }
     }
+
+    #if compiler(>=6.4)
+    /// The errors iOS 27 and macOS 27 throw in place of `GenerationError`, sorted the same way: a guardrail or a
+    /// refusal is an answer, a timeout an outage.
+    @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
+    static func mapped(_ error: LanguageModelError) -> any Error {
+        switch error {
+        case .guardrailViolation, .refusal:
+            return MidgarIntelligenceError.onDeviceRefused
+        case .timeout:
+            return MidgarIntelligenceError.onDeviceUnavailable(.modelNotReady)
+        default:
+            return error
+        }
+    }
+    #endif
 
     private static func options(for prompt: MidgarPrompt) -> GenerationOptions {
         GenerationOptions(temperature: prompt.temperature, maximumResponseTokens: prompt.maxOutputTokens)
