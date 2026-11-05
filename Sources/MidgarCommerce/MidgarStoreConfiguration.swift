@@ -18,7 +18,7 @@ public struct MidgarStoreConfiguration: Sendable {
     /// Product id to entitlement name. Products without an entry are bought and reported but grant nothing on this device.
     public let entitlementsByProduct: [String: String]
     public let mode: Mode
-    /// Entitlement names the ledger may grant here from another app's purchase (the Midgar Pass). Empty by default: the ledger answers for every app of the Midgar ID, and a purchase in one app grants nothing in another unless the name is listed here. This is the switch for the cross-app access decision (P4.00), which belongs to the founder; do not fill it from code.
+    /// Entitlement names the ledger may grant here from another app's purchase. Empty by default: the ledger answers for every app of the Midgar ID, and a purchase in one app grants nothing in another unless the name is listed here. No app lists one since D29 dropped the Midgar Pass; cross-app access is the founder's decision, so do not fill it from code.
     public let crossAppEntitlements: Set<String>
     /// Where the queue and the ledger cache live. Defaults to `<Application Support>/Midgar`.
     public let directory: URL?
