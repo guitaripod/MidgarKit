@@ -5,7 +5,7 @@
     { "name": "Pay Day", "repo": "~/Dev/midgar/apps/pay-day", "bundleId": "com.guitaripod.payday", "platforms": ["ios"] },
     { "name": "App of the Dead", "repo": "~/Dev/midgar/apps/app-of-the-dead", "bundleId": "com.marcusziade.aotd", "platforms": ["ios"] },
     { "name": "Double Kick", "repo": "~/Dev/midgar/apps/double-kick", "bundleId": "com.marcusziade.doublekick", "platforms": ["ios"] },
-    { "name": "Embr", "repo": "~/Dev/ios/embr", "bundleId": "com.guitaripod.embr", "platforms": ["ios"] },
+    { "name": "Embr", "repo": "~/Dev/ios/embr", "bundleId": "com.guitaripod.embr", "platforms": ["ios", "tvos"] },
     { "name": "Flaccy", "repo": "~/Dev/ios/flaccy", "bundleId": "com.midgarcorp.flaccy", "platforms": ["ios", "mac"] },
     { "name": "Flaccy Mac", "repo": "~/Dev/ios/flaccy", "bundleId": "com.midgarcorp.flaccy.mac", "platforms": ["mac"] },
     { "name": "Master of Inventory", "repo": "~/Dev/midgar/apps/master-of-inventory", "bundleId": "com.marcusziade.inventory", "platforms": ["ios"] },
