@@ -6,9 +6,9 @@ public enum MidgarReviewHold: Sendable, Equatable {
     case noPositiveMoment
     /// A paywall came on screen in this session and no purchase followed: someone who just said no to paying is the wrong audience.
     case paywallUnanswered
-    /// The app was first launched less than ``MidgarReviewPolicy/minimumDaysSinceFirstLaunch`` days ago.
+    /// The app was first launched less than the policy's ``MidgarReviewFloors/daysSinceFirstLaunch`` days ago.
     case tooSoonAfterInstall
-    /// The app has not run more than ``MidgarReviewPolicy/minimumSessions`` sessions.
+    /// The app has not run more than the policy's ``MidgarReviewFloors/sessions`` sessions.
     case tooFewSessions
     /// The app version that is running is the one that already prompted.
     case versionAlreadyPrompted
@@ -24,12 +24,31 @@ public enum MidgarReviewDecision: Sendable, Equatable {
     case hold(MidgarReviewHold)
 }
 
+/// How long a customer who has not bought anything must have used the app before the first ask. A purchase waives both.
+public struct MidgarReviewFloors: Sendable, Equatable {
+    /// Full days since the first launch that must have passed.
+    public var daysSinceFirstLaunch: Int
+    /// Sessions the app must have run more than.
+    public var sessions: Int
+
+    public init(daysSinceFirstLaunch: Int, sessions: Int) {
+        self.daysSinceFirstLaunch = daysSinceFirstLaunch
+        self.sessions = sessions
+    }
+
+    /// Three days and more than five sessions, for apps whose good moments come several times a day.
+    public static let standard = MidgarReviewFloors(
+        daysSinceFirstLaunch: MidgarReviewPolicy.minimumDaysSinceFirstLaunch,
+        sessions: MidgarReviewPolicy.minimumSessions
+    )
+}
+
 /// The one review-prompt policy of every Midgar app. It decides when the app may call StoreKit's `requestReview`; it never calls it.
 ///
 /// The rules, all of which must hold:
 /// - The app reported a positive moment this session with ``noteSuccess()``: an invoice sent, a playlist saved, a goal reached. Nothing else is a reason to ask. After a purchase, only a moment that follows it counts, so a buyer is asked once they have used what they bought.
 /// - No paywall went unanswered this session: one came on screen (``MidgarPaywallMoments/noteShown(placement:)``) and no purchase followed.
-/// - Not in the first 3 days after the first launch and not in the first 5 sessions, unless the customer bought something: a payer has already shown they value the app.
+/// - Past the policy's ``MidgarReviewFloors``, by default not in the first 3 days after the first launch and not in the first 5 sessions, unless the customer bought something: a payer has already shown they value the app.
 /// - Not within 120 days of the last prompt, and not on the app version that already prompted.
 /// - Not within 7 days of a purchase failure or a refund the app reported, because a customer who just lost money or time is the wrong audience.
 ///
@@ -46,6 +65,9 @@ public final class MidgarReviewPolicy: @unchecked Sendable {
     public static let minimumDaysBetweenPrompts = 120
     public static let troubleCooldownDays = 7
 
+    /// The install-age and session floors this policy holds a non-payer to.
+    public let floors: MidgarReviewFloors
+
     private let storage: any MidgarReviewStorage
     private let clock: @Sendable () -> Date
     private let appVersion: String
@@ -61,21 +83,27 @@ public final class MidgarReviewPolicy: @unchecked Sendable {
     ///   - appVersion: The running app version, compared with the version of the last prompt. Defaults to the main bundle's `CFBundleShortVersionString`.
     ///   - clock: The current date, injectable for tests.
     ///   - center: Where ``MidgarPaywallMoments`` are heard. Tests pass their own.
+    ///   - floors: How long a non-payer must have used the app before the first ask. Defaults to ``MidgarReviewFloors/standard``.
     public convenience init(
         appID: String,
         appVersion: String = MidgarReviewPolicy.bundleVersion,
         clock: @escaping @Sendable () -> Date = { Date() },
-        center: NotificationCenter = .default
+        center: NotificationCenter = .default,
+        floors: MidgarReviewFloors = .standard
     ) {
-        self.init(storage: MidgarReviewFileStorage(appID: appID), appVersion: appVersion, clock: clock, center: center)
+        self.init(
+            storage: MidgarReviewFileStorage(appID: appID), appVersion: appVersion, clock: clock, center: center,
+            floors: floors)
     }
 
     public init(
         storage: any MidgarReviewStorage,
         appVersion: String = MidgarReviewPolicy.bundleVersion,
         clock: @escaping @Sendable () -> Date = { Date() },
-        center: NotificationCenter = .default
+        center: NotificationCenter = .default,
+        floors: MidgarReviewFloors = .standard
     ) {
+        self.floors = floors
         self.storage = storage
         self.appVersion = appVersion
         self.clock = clock
@@ -196,10 +224,10 @@ public final class MidgarReviewPolicy: @unchecked Sendable {
             return .hold(.paywallUnanswered)
         }
         let isPayer = state.lastPurchase != nil
-        if !isPayer, let firstLaunch = state.firstLaunch, isWithin(Self.minimumDaysSinceFirstLaunch, since: firstLaunch, now: now) {
+        if !isPayer, let firstLaunch = state.firstLaunch, isWithin(floors.daysSinceFirstLaunch, since: firstLaunch, now: now) {
             return .hold(.tooSoonAfterInstall)
         }
-        if !isPayer, state.sessions <= Self.minimumSessions {
+        if !isPayer, state.sessions <= floors.sessions {
             return .hold(.tooFewSessions)
         }
         if let version = state.lastPromptedVersion, version == appVersion {

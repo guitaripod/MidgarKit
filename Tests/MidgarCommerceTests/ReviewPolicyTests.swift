@@ -26,10 +26,11 @@ private struct ReviewRig {
     let center = NotificationCenter()
     let policy: MidgarReviewPolicy
 
-    init(version: String = "2.0", sessions: Int = 6, daysSinceInstall: Double = 10) {
+    init(version: String = "2.0", sessions: Int = 6, daysSinceInstall: Double = 10, floors: MidgarReviewFloors = .standard) {
         let storage = storage
         let clock = clock
-        policy = MidgarReviewPolicy(storage: storage, appVersion: version, clock: { clock.now }, center: center)
+        policy = MidgarReviewPolicy(
+            storage: storage, appVersion: version, clock: { clock.now }, center: center, floors: floors)
         clock.advance(daysSinceInstall * day)
         for _ in 0..<sessions {
             policy.beginSession()
@@ -73,6 +74,34 @@ private struct ReviewRig {
         rig.policy.beginSession()
 
         #expect(rig.policy.evaluate() == .prompt)
+    }
+
+    @Test func anAppWithShallowFloorsMayAskOnTheSecondLaunchOfTheFirstDay() {
+        let rig = ReviewRig(sessions: 1, daysSinceInstall: 0, floors: MidgarReviewFloors(daysSinceFirstLaunch: 0, sessions: 1))
+
+        #expect(rig.policy.noteSuccess() == false)
+        #expect(rig.policy.evaluate() == .hold(.tooFewSessions))
+
+        rig.policy.beginSession()
+
+        #expect(rig.policy.evaluate() == .prompt)
+    }
+
+    @Test func shallowFloorsKeepTheIntervalBetweenPrompts() {
+        let floors = MidgarReviewFloors(daysSinceFirstLaunch: 0, sessions: 1)
+        let rig = ReviewRig(version: "2.0", sessions: 2, daysSinceInstall: 0, floors: floors)
+        rig.policy.noteSuccess()
+        rig.policy.notePrompted()
+        let nextVersion = MidgarReviewPolicy(
+            storage: rig.storage, appVersion: "2.1", clock: { rig.clock.now }, center: rig.center, floors: floors)
+        nextVersion.noteSuccess()
+
+        #expect(nextVersion.evaluate() == .hold(.promptedRecently))
+    }
+
+    @Test func theStandardFloorsAreThreeDaysAndFiveSessions() {
+        #expect(MidgarReviewFloors.standard == MidgarReviewFloors(daysSinceFirstLaunch: 3, sessions: 5))
+        #expect(ReviewRig().policy.floors == .standard)
     }
 
     @Test func neverWithin120DaysOfThePreviousPrompt() {
