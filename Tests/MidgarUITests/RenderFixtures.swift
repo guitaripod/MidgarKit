@@ -13,7 +13,7 @@ enum RenderFixtures {
         ]),
         MidgarSettingsSection(id: "about", title: "About", rows: [
             .restorePurchases {},
-            .support(address: "support@midgarcorp.cc"),
+            .support(),
             .version(MidgarVersionInfo(name: "Pay Day", version: "1.4.2", build: "87"))
         ]),
         MidgarSettingsSection(id: "account", rows: [.deleteAccount {}])

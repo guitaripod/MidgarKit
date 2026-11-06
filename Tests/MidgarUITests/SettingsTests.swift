@@ -23,19 +23,24 @@ import MidgarCore
         #expect(text == "Pay Day 1.4.2 (87)")
     }
 
-    @Test func supportRowShowsTheAddressAndCopiesIt() {
-        let row = MidgarSettingsRow.support(address: "support@midgarcorp.cc")
-        #expect(row.detail == "support@midgarcorp.cc")
+    @Test func supportRowShowsMidgarsAddressAndCopiesIt() {
+        let row = MidgarSettingsRow.support()
+        #expect(MidgarSupport.address == "marcus@midgarcorp.cc")
+        #expect(row.detail == MidgarSupport.address)
         guard case .copy(let text) = row.kind else { Issue.record("expected copy"); return }
-        #expect(text == "support@midgarcorp.cc")
+        #expect(text == MidgarSupport.address)
         #expect(row.menu.map(\.id) == ["midgar.support.copy", "midgar.support.mail"])
     }
 
+    @Test func supportRowShowsAnotherAddressWhenGivenOne() {
+        #expect(MidgarSettingsRow.support(address: "help@example.com").detail == "help@example.com")
+    }
+
     @Test func supportMailIsAConvenienceLink() {
-        let row = MidgarSettingsRow.support(address: "support@midgarcorp.cc", subject: "Pay Day 1.4")
+        let row = MidgarSettingsRow.support(subject: "Pay Day 1.4")
         guard case .link(let url) = row.menu.last?.kind else { Issue.record("expected link"); return }
         #expect(url.scheme == "mailto")
-        #expect(url.absoluteString == "mailto:support@midgarcorp.cc?subject=Pay%20Day%201.4")
+        #expect(url.absoluteString == "mailto:marcus@midgarcorp.cc?subject=Pay%20Day%201.4")
     }
 
     @Test func blankSupportAddressHasNoMailItem() {

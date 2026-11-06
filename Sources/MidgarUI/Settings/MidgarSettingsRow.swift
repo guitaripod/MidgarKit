@@ -179,8 +179,8 @@ extension MidgarSettingsRow {
         )
     }
 
-    /// Shows the support address as text. A tap copies it; the context menu copies it or starts an email.
-    public static func support(address: String, subject: String? = nil) -> MidgarSettingsRow {
+    /// Shows the support address as text, Midgar's own unless another is given. A tap copies it; the context menu copies it or starts an email.
+    public static func support(address: String = MidgarSupport.address, subject: String? = nil) -> MidgarSettingsRow {
         var menu = [
             MenuItem(
                 id: "midgar.support.copy",
