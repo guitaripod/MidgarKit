@@ -31,7 +31,7 @@ The store owns state several tasks touch (the `Transaction.updates` listener, a 
 3. The queue sends `POST /v1/ledger/transactions` with the transaction's JWS. A report leaves the queue when the ledger answers 2xx or refuses it for good (`account_mismatch`, `bundle_mismatch`, `unverifiable_payload`, `invalid_request`). Every other failure keeps it and a background loop retries after 5 s, 30 s, 2 min, 10 min, then hourly, and on every launch, foreground and transaction.
 4. An unverified transaction is never granted, finished or reported. `purchase` throws `MidgarStoreError.unverifiedTransaction`; the listener logs it and emits `.refused`.
 5. Family Sharing transactions and transactions signed by Xcode's local certificate (StoreKit testing) are never reported: the ledger cannot attribute the first and cannot verify the second. Refunds and revocations are reported (their JWS carries `revocationDate`) so the ledger drops the entitlement before Apple's notification arrives.
-6. Transactions for products that are not in `productIDs` are left alone, unfinished: another system (AICredits, RevenueCat) owns them.
+6. Transactions for products that are not in `productIDs` are left alone, unfinished: another system (AICredits) owns them.
 
 ## Which purchase call
 
@@ -49,14 +49,14 @@ Every variant goes through the same path: the account token, verification, finis
 
 Environment: the ledger is asked for `Sandbox` when `AppTransaction.environment` is `sandbox` (TestFlight, sandbox-signed debug builds) or `xcode`, and for Production otherwise. A transaction seen with a non-production environment overrides it. The legacy `sandboxReceipt` URL rule is not used.
 
-## RevenueCat
+## Modes
 
-- `storekit2` and `rc-observer` apps use `MidgarStoreConfiguration.Mode.purchases` (the default). MidgarCommerce buys, finishes and listens. RevenueCat, where still linked, runs in observer mode (`purchasesAreCompletedBy: .myApp`), so it sees transactions but never finishes them; the ledger forwards App Store notifications to RevenueCat (`RC_FORWARD_<SLUG>`) for its dashboard.
-- `rc-full` apps use `Mode.readOnly` until their migration. RevenueCat keeps purchasing and finishing; MidgarCommerce only reads the ledger (and its cache). `purchase`, `restore` and the offer code sheet throw `MidgarStoreError.readOnly`, no listener starts and no transaction is touched.
+- Every app uses `MidgarStoreConfiguration.Mode.purchases` (the default): MidgarCommerce buys, finishes and listens.
+- `Mode.readOnly` is for an app where another system owns the purchase path: MidgarCommerce only reads the ledger (and its cache). `purchase`, `restore` and the offer code sheet throw `MidgarStoreError.readOnly`, no listener starts and no transaction is touched.
 
 ## Restore and offer codes
 
-`restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. `reportPurchaseHistory()` does the same without the sync and its sign-in, once per install (`historyReportedAt` in the state file): an app moving its purchases onto the store calls it at launch so customers who bought through RevenueCat or plain StoreKit reach their Midgar ID. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
+`restore()` calls `AppStore.sync()`, re-reads current entitlements, queues each for the ledger again (the ledger ignores known transactions and raises no sale alert for old ones) and refreshes. `reportPurchaseHistory()` does the same without the sync and its sign-in, once per install (`historyReportedAt` in the state file): an app moving its purchases onto the store calls it at launch so customers who bought through an older store layer or plain StoreKit reach their Midgar ID. On iOS and visionOS `presentOfferCodeRedeemSheet(from:)` shows the sheet; the redeemed transaction goes through the same path as an update.
 
 ## Promoted in-app purchases
 

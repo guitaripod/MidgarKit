@@ -19,7 +19,7 @@ import MidgarCore
         #expect(result == .credited(packID: "starter", creditsAdded: 150, balance: 156))
         #expect(h.store.purchased == [CreditsProducts.starter])
         #expect(h.gateway.requests.map(\.path) == [
-            "/v1/intelligence/v1/credits/purchase/revenuecat/validate",
+            "/v1/intelligence/v1/credits/purchase/validate",
             "/v1/intelligence/v1/credits/balance"
         ])
         let validate = try #require(h.gateway.requests.first)

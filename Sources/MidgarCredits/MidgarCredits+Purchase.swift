@@ -17,13 +17,13 @@ extension MidgarCredits {
         static let creditPending = "credit_pending"
         /// The transaction was credited before (400).
         static let alreadyProcessed = "already_processed"
-        /// The purchase could not be verified yet or as it stands (400). RevenueCat can lag the App Store by seconds, so it is retried.
+        /// The purchase could not be verified yet or as it stands (400). The ledger can lag the App Store by seconds, so it is retried.
         static let unverifiable = "unverifiable_purchase"
     }
 
     /// mako's text for a purchase it has already credited (400), matched only when the answer has no code (a mako that predates them).
     static let alreadyProcessedMessage = "already been processed"
-    /// mako's text when RevenueCat does not (yet) list the purchase (400), matched only when the answer has no code. RevenueCat can lag the App Store by seconds, so it is retried like a 500.
+    /// mako's text when it cannot (yet) verify the purchase (400), matched only when the answer has no code. Verification can lag the App Store by seconds, so it is retried like a 500.
     static let notYetVerifiedMessage = "could not be verified"
 
     /// Buys a pack and credits it. The store buys, finishes and reports the transaction to the ledger first; then mako's fast-track validation credits the wallet and the balance is read again.

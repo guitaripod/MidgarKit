@@ -93,7 +93,7 @@ import MidgarCore
 
     @Test func aCodelessMakoIsStillUnderstoodByStatusAndText() {
         let processed = MidgarCreditsError.server(status: 400, code: nil, message: "Purchase has already been processed")
-        let unverified = MidgarCreditsError.server(status: 400, code: "bad_request", message: "Purchase could not be verified with RevenueCat")
+        let unverified = MidgarCreditsError.server(status: 400, code: "bad_request", message: "Purchase could not be verified")
         let masked = MidgarCreditsError.server(status: 500, code: "internal_error", message: "An internal error occurred.")
         let final = MidgarCreditsError.server(status: 400, code: "bad_request", message: "product_id does not match pack_id")
         #expect(MidgarCredits.classify(processed) == .alreadyProcessed)

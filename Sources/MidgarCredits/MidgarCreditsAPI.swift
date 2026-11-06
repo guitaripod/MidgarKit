@@ -10,7 +10,7 @@ struct CreditsAPI: Sendable {
     static let service = "intelligence"
     static let balancePath = "v1/credits/balance"
     static let transactionsPath = "v1/credits/transactions"
-    static let validatePath = "v1/credits/purchase/revenuecat/validate"
+    static let validatePath = "v1/credits/purchase/validate"
     static let attributionPath = "v1/attribution"
     static let identityPath = "v1/identity"
     static let midgarTokenHeader = "X-Midgar-Token"

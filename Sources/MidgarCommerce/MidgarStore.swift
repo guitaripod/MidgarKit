@@ -10,7 +10,7 @@ import StoreKit
 /// - Money path: a verified transaction is queued on disk, finished, granted, and reported to the ledger in the background until the ledger acknowledges it. An unverified one is never granted, finished or reported.
 /// - Entitlements: the union of the ledger's answer for the Midgar ID and StoreKit's `currentEntitlements` on this device. The ledger answers for every app of the ID; only this app's own entries count, plus the names in ``MidgarStoreConfiguration/crossAppEntitlements`` (empty by default, the P4.00 switch).
 ///
-/// RevenueCat coexistence follows the registry engine. `storekit2` and `rc-observer` apps use ``MidgarStoreConfiguration/Mode/purchases``: MidgarCommerce buys, finishes and listens, and RevenueCat, where it is still linked, runs in observer mode (`purchasesAreCompletedBy: .myApp`) and only reports what MidgarCommerce finished. `rc-full` apps use ``MidgarStoreConfiguration/Mode/readOnly`` until their migration: RevenueCat keeps purchasing and finishing, and MidgarCommerce reads the ledger and touches no transaction.
+/// Every app uses ``MidgarStoreConfiguration/Mode/purchases``: MidgarCommerce buys, finishes and listens. ``MidgarStoreConfiguration/Mode/readOnly`` is for an app where another system owns the purchase path: MidgarCommerce then reads the ledger and touches no transaction.
 public actor MidgarStore {
     enum Origin {
         case purchase
@@ -261,7 +261,7 @@ public actor MidgarStore {
         await refresh()
     }
 
-    /// Queues the purchases StoreKit already holds for the ledger, once per install, so a customer who bought before the app reported to the ledger (through RevenueCat or plain StoreKit) reaches their Midgar ID without the App Store sync and sign-in a restore costs. Call it at launch in an app moving its purchases onto the store. Later calls, and calls on a read-only store, do nothing. The ledger records an old transaction as history, never as a sale.
+    /// Queues the purchases StoreKit already holds for the ledger, once per install, so a customer who bought before the app reported to the ledger (through an older store layer or plain StoreKit) reaches their Midgar ID without the App Store sync and sign-in a restore costs. Call it at launch in an app moving its purchases onto the store. Later calls, and calls on a read-only store, do nothing. The ledger records an old transaction as history, never as a sale.
     public func reportPurchaseHistory() async {
         guard configuration.mode == .purchases, state.historyReportedAt == nil else {
             return

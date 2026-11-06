@@ -28,11 +28,11 @@ struct CreditsReply: Sendable {
 
     static let creditedShortly = refused(500, "internal_error", "An internal error occurred. Please try again later.")
     static let walletUnavailable = refused(503, "wallet_unavailable", "Your credit balance is temporarily unavailable.")
-    static let notVerified = refused(400, "bad_request", "Purchase could not be verified with RevenueCat")
+    static let notVerified = refused(400, "bad_request", "Purchase could not be verified")
     static let alreadyProcessed = refused(400, "bad_request", "Purchase has already been processed")
 
     static let creditPending = refused(409, "credit_pending", "Could not verify the purchase right now; it will be credited shortly.")
-    static let unverifiable = refused(400, "unverifiable_purchase", "Purchase could not be verified with RevenueCat")
+    static let unverifiable = refused(400, "unverifiable_purchase", "Purchase could not be verified")
     static let processed = refused(400, "already_processed", "Purchase has already been processed")
 }
 

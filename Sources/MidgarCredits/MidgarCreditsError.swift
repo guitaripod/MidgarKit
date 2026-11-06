@@ -14,7 +14,7 @@ public enum MidgarCreditsError: Error, Sendable, Equatable, LocalizedError {
         case unknownPack(String)
         /// The product is not a configured pack, or the store does not handle it: add ``MidgarCreditsConfiguration/productIDs`` to the store's product ids.
         case productNotSold(String)
-        /// The store is read-only (an `rc-full` app until its migration), so it cannot buy.
+        /// The store is read-only (another system owns the purchase path), so it cannot buy.
         case purchasesDisabled
     }
 

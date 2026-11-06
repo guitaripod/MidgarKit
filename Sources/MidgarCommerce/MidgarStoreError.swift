@@ -4,7 +4,7 @@ import Foundation
 public enum MidgarStoreError: Error, Sendable, Equatable {
     /// The product id is not one of the store's configured products, or StoreKit does not sell it.
     case unknownProduct(String)
-    /// The store was configured read-only (an `rc-full` app): it never buys, restores or finishes anything.
+    /// The store was configured read-only (another system owns the purchase path): it never buys, restores or finishes anything.
     case readOnly
     /// StoreKit could not verify the transaction's signature. It was not granted, not finished and not reported.
     case unverifiedTransaction(productID: String)

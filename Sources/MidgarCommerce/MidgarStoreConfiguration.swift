@@ -5,15 +5,15 @@ import MidgarCore
 public struct MidgarStoreConfiguration: Sendable {
     /// How much of the purchase path this app hands to MidgarCommerce.
     public enum Mode: Sendable, Equatable {
-        /// MidgarCommerce owns purchase, restore and finish, and listens to `Transaction.updates`. Registry engines `storekit2` and `rc-observer` (RevenueCat only observes).
+        /// MidgarCommerce owns purchase, restore and finish, and listens to `Transaction.updates`. Registry engine `storekit2`.
         case purchases
-        /// MidgarCommerce only reads the ledger's entitlements and touches no transaction. Registry engine `rc-full`, until the app's migration.
+        /// MidgarCommerce only reads the ledger's entitlements and touches no transaction, because another system owns the purchase path.
         case readOnly
     }
 
     /// The registry slug. Names the persisted file, is the `X-App-ID` of the HTTP client, and is the `app` of the ledger entries this app honours (the ledger names an entry's app by the registry slug of its bundle id).
     public let appID: String
-    /// Every product this app sells and MidgarCommerce may handle. A transaction for any other product is left alone, unfinished and unreported, because another system (AICredits, RevenueCat) owns it.
+    /// Every product this app sells and MidgarCommerce may handle. A transaction for any other product is left alone, unfinished and unreported, because another system (AICredits) owns it.
     public let productIDs: [String]
     /// Product id to entitlement name. Products without an entry are bought and reported but grant nothing on this device.
     public let entitlementsByProduct: [String: String]
