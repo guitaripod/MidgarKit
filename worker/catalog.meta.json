@@ -10,7 +10,8 @@
       "bundleId": "com.guitaripod.embr",
       "slug": "embr",
       "platforms": [
-        "ios"
+        "ios",
+        "tvos"
       ],
       "topics": [
         "entertainment",
