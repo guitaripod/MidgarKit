@@ -209,10 +209,19 @@ struct MidgarPlanChoiceStyle: ButtonStyle {
 private struct MidgarPlanHover<S: Shape>: ViewModifier {
     let shape: S
 
+    @Environment(\.midgarTheme) private var theme
+    @State private var isHovering = false
+
     @ViewBuilder
     func body(content: Content) -> some View {
         #if os(visionOS)
         content.contentShape(.hoverEffect, shape).hoverEffect()
+        #elseif os(macOS)
+        content
+            .overlay { shape.fill(theme.label.color.opacity(isHovering ? 0.05 : 0)).allowsHitTesting(false) }
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
+            }
         #else
         content
         #endif

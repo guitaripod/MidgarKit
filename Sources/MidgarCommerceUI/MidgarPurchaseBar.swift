@@ -103,13 +103,15 @@ struct MidgarPurchaseBar: View {
         64
         #elseif os(visionOS)
         44
+        #elseif os(macOS)
+        34
         #else
         24
         #endif
     }
 
     private static var buttonPadding: CGFloat {
-        #if os(tvOS) || os(visionOS)
+        #if os(tvOS) || os(visionOS) || os(macOS)
         0
         #else
         2
@@ -119,17 +121,66 @@ struct MidgarPurchaseBar: View {
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
 extension View {
-    /// The filled purchase button: Liquid Glass in the accent on iOS, macOS and tvOS 26 and later, the solid bordered-prominent style before that and on visionOS, whose glass is the window's own.
+    /// The filled purchase button: Liquid Glass in the accent on iOS and tvOS 26 and later, the solid bordered-prominent style before that and on visionOS, whose glass is the window's own. A Mac draws the fill itself, because the system's prominent button goes grey while its window is not key and a glass one draws no fill at all there, which leaves a paywall's dark button unreadable.
     @ViewBuilder
     func midgarPurchaseButtonStyle() -> some View {
         #if os(visionOS)
         buttonStyle(.borderedProminent).controlSize(.large)
+        #elseif os(macOS)
+        buttonStyle(MidgarMacPurchaseButtonStyle())
         #else
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, *) {
+        if #available(iOS 26.0, tvOS 26.0, *) {
             buttonStyle(.glassProminent).controlSize(.large)
         } else {
             buttonStyle(.borderedProminent).controlSize(.large)
         }
+        #endif
+    }
+}
+
+/// A Mac's filled purchase button: the accent as a filled bar with the label that reads on it in every key state, a soft glow of the accent under it, and a press and a hover that answer the pointer. The window's focus ring is drawn around it as it is around any button.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
+struct MidgarMacPurchaseButtonStyle: ButtonStyle {
+    @Environment(\.midgarTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(label)
+            .background(theme.accent.color, in: shape)
+            .overlay { shape.strokeBorder(.white.opacity(0.16), lineWidth: 1) }
+            .shadow(color: theme.accent.color.opacity(configuration.isPressed ? 0.12 : 0.3), radius: configuration.isPressed ? 4 : 12, y: configuration.isPressed ? 1 : 5)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .opacity(isEnabled ? 1 : 0.5)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .modifier(MidgarPointerHover())
+    }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: theme.radius.medium, style: .continuous)
+    }
+
+    private var label: Color {
+        MidgarOnAccentLabel.isLight(theme.accent.resolved(isDark: colorScheme == .dark)) ? .black : .white
+    }
+}
+
+/// Lifts a control a little under the pointer, so a Mac's paywall answers the mouse the way its buttons do.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
+private struct MidgarPointerHover: ViewModifier {
+    @State private var isHovering = false
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content
+            .brightness(isHovering ? 0.05 : 0)
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
+            }
+        #else
+        content
         #endif
     }
 }
