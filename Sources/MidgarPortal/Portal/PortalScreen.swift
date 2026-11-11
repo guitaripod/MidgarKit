@@ -238,7 +238,7 @@ struct PortalCard: View {
                     .minimumScaleFactor(0.7)
                 Spacer(minLength: 8)
                 if app.hasRating {
-                    Label(String(format: "%.1f", app.rating ?? 0), systemImage: "star.fill")
+                    Label((app.rating ?? 0).formatted(.number.precision(.fractionLength(1))), systemImage: "star.fill")
                         .font(.system(size: 13 * PortalMetrics.scale, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color(PortalColor(r: 1, g: 0.8, b: 0.25)))
                         .labelStyle(.titleAndIcon)

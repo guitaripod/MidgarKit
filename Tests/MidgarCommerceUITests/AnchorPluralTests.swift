@@ -44,7 +44,7 @@ import Testing
     }
 
     @Test func everyArgumentOfTheLineReachesTheSentenceInEveryLanguage() throws {
-        for language in ["en", "de", "es", "fr", "it", "pl", "pt-BR", "ja", "ko", "zh-Hans", "zh-Hant"] {
+        for language in ["en", "de", "es", "fr", "it", "pl", "pt-BR", "ja", "ko", "zh-Hans", "zh-Hant", "sv", "da", "nb", "fi", "is"] {
             let line = try anchor(2, in: language)
 
             #expect(line.contains("Annual") && line.contains("$39.98") && line.contains("Lifetime") && line.contains("$39.99"), "\(language): \(line)")

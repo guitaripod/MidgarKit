@@ -70,6 +70,36 @@
             "state": "translated",
             "value": "%@ 年的 %@ 費用為 %@。%@ 為 %@，永不續訂。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ år med %@ koster %@. %@ koster %@ og fornyes aldrig."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ vuotta (%@) maksaa %@. %@ on %@ eikä uusiudu koskaan."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ár af %@ kosta %@. %@ kostar %@ og endurnýjast aldrei."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ år med %@ koster %@. %@ er %@ og fornyes aldri."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ år med %@ kostar %@. %@ kostar %@ och förnyas aldrig."
+          }
         }
       }
     },
@@ -372,6 +402,146 @@
               }
             }
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@years@"
+          },
+          "substitutions": {
+            "years": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ koster %3$@. %4$@ koster %5$@ og fornyes aldrig."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ koster %3$@. %4$@ koster %5$@ og fornyes aldrig."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@years@"
+          },
+          "substitutions": {
+            "years": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg vuosi (%2$@) maksaa %3$@. %4$@ on %5$@ eikä uusiudu koskaan."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg vuotta (%2$@) maksaa %3$@. %4$@ on %5$@ eikä uusiudu koskaan."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@years@"
+          },
+          "substitutions": {
+            "years": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg ár af %2$@ kostar %3$@. %4$@ kostar %5$@ og endurnýjast aldrei."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg ár af %2$@ kosta %3$@. %4$@ kostar %5$@ og endurnýjast aldrei."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@years@"
+          },
+          "substitutions": {
+            "years": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ koster %3$@. %4$@ er %5$@ og fornyes aldri."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ koster %3$@. %4$@ er %5$@ og fornyes aldri."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@years@"
+          },
+          "substitutions": {
+            "years": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ kostar %3$@. %4$@ kostar %5$@ och förnyas aldrig."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg år med %2$@ kostar %3$@. %4$@ kostar %5$@ och förnyas aldrig."
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -443,6 +613,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · 隨時可取消"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · annuller når som helst"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · voit perua milloin tahansa"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · hætta við hvenær sem er"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · si opp når som helst"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · avbryt när som helst"
           }
         }
       }
@@ -516,6 +716,36 @@
             "state": "translated",
             "value": "關閉"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luk"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sulje"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loka"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lukk"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stäng"
+          }
         }
       }
     },
@@ -587,6 +817,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "繼續"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortsæt"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jatka"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halda áfram"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortsett"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortsätt"
           }
         }
       }
@@ -660,6 +920,36 @@
             "state": "translated",
             "value": "所有功能免費解鎖。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt låses op gratis."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaikki avautuu, ilmaiseksi."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allt opnast, ókeypis."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt låses opp, gratis."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allt låses upp gratis."
+          }
         }
       }
     },
@@ -731,6 +1021,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "包含家人共享"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familiedeling inkluderet"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perhejako sisältyy"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjölskyldudeiling innifalin"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familiedeling inkludert"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familjedelning ingår"
           }
         }
       }
@@ -804,6 +1124,36 @@
             "state": "translated",
             "value": "免費試用的運作方式"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sådan fungerer din gratis prøveperiode"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Näin ilmainen kokeilusi toimii"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvernig ókeypis prufutími virkar"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slik fungerer din gratis prøveperiode"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Så fungerar din gratis provperiod"
+          }
         }
       }
     },
@@ -875,6 +1225,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "換算每月僅 %@"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun %@ pr. måned"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vain %@ kuukaudessa"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aðeins %@ á mánuði"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bare %@ i måneden"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bara %@ i månaden"
           }
         }
       }
@@ -948,6 +1328,36 @@
             "state": "translated",
             "value": "換算每月僅 %@，按年付費"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun %@ pr. måned, faktureret årligt"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vain %@ kuukaudessa, laskutetaan vuosittain"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aðeins %@ á mánuði, innheimt árlega"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bare %@ i måneden, fakturert årlig"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bara %@ i månaden, faktureras årligen"
+          }
         }
       }
     },
@@ -1019,6 +1429,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在載入方案"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indlæser abonnementer"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ladataan tilausvaihtoehtoja"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hleður áskriftarleiðir"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laster inn abonnementer"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läser in abonnemang"
           }
         }
       }
@@ -1092,6 +1532,36 @@
             "state": "translated",
             "value": "沒有可回復的購買項目"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen køb at gendanne"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palautettavia ostoja ei ole"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engin kaup til að endurheimta"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen kjøp å gjenopprette"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga köp att återställa"
+          }
         }
       }
     },
@@ -1163,6 +1633,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "好"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Í lagi"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
@@ -1236,6 +1736,36 @@
             "state": "translated",
             "value": "一次性購買，價格 %@，無需續訂。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engangskøb for %@. Ingen fornyelse."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kertaluonteinen osto hintaan %@. Ei uusiudu."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einskiptiskaup á %@. Engin endurnýjun."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engangskjøp for %@. Ingen fornyelse."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engångsköp för %@. Ingen förnyelse."
+          }
         }
       }
     },
@@ -1307,6 +1837,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "一次付費，永久使用。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betal én gang. Behold den for altid."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksa kerran. Säilytä ikuisesti."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greiddu einu sinni. Haltu því að eilífu."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betal én gang. Behold den for alltid."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betala en gång. Behåll för alltid."
           }
         }
       }
@@ -1380,6 +1940,36 @@
             "state": "translated",
             "value": "方案暫時無法使用"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnementer er ikke tilgængelige"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilausvaihtoehdot eivät ole saatavilla"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áskriftarleiðir ekki tiltækar"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnementer er ikke tilgjengelige"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnemangen är inte tillgängliga"
+          }
         }
       }
     },
@@ -1451,6 +2041,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "隱私權政策"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privatlivspolitik"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tietosuojakäytäntö"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persónuverndarstefna"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personvernerklæring"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integritetspolicy"
           }
         }
       }
@@ -1524,6 +2144,36 @@
             "state": "translated",
             "value": "已購買"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Købt"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostettu"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keypt"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpt"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köpt"
+          }
         }
       }
     },
@@ -1595,6 +2245,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "目前無法購買。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køb er ikke tilgængelige lige nu."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostot eivät ole tällä hetkellä saatavilla."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaup eru ekki tiltæk eins og er."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøp er ikke tilgjengelige akkurat nå."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köp är inte tillgängliga just nu."
           }
         }
       }
@@ -1668,6 +2348,36 @@
             "state": "translated",
             "value": "無法回復購買項目，請再試一次。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køb kunne ikke gendannes. Prøv igen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostoja ei voitu palauttaa. Yritä uudelleen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að endurheimta kaup. Reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpene kunne ikke gjenopprettes. Prøv igjen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köpen kunde inte återställas. Försök igen."
+          }
         }
       }
     },
@@ -1739,6 +2449,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "已回復購買項目"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køb gendannet"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostot palautettiin"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaup endurheimt"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøp gjenopprettet"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köp återställda"
           }
         }
       }
@@ -1812,6 +2552,36 @@
             "state": "translated",
             "value": "正在購買"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køber…"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostetaan"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaupir…"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøper…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köper…"
+          }
         }
       }
     },
@@ -1883,6 +2653,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "回復購買項目"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gendan køb"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palauta ostot"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endurheimta kaup"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gjenopprett kjøp"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Återställ köp"
           }
         }
       }
@@ -1956,6 +2756,36 @@
             "state": "translated",
             "value": "正在回復購買項目"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gendanner køb"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostoja palautetaan"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endurheimtir kaup…"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gjenoppretter kjøp…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Återställer köp"
+          }
         }
       }
     },
@@ -2027,6 +2857,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "省 %@"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spar %@"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Säästä %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparnaður %@"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spar %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara %@"
           }
         }
       }
@@ -2100,6 +2960,36 @@
             "state": "translated",
             "value": "發生錯誤"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noget gik galt"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jotain meni pieleen"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eitthvað fór úrskeiðis"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noe gikk galt"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Något gick fel"
+          }
         }
       }
     },
@@ -2171,6 +3061,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "訂閱會按所示價格自動續訂，除非在目前週期結束前至少 24 小時取消。你可以隨時在 Apple 帳戶設定中管理或取消訂閱。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnementer fornyes automatisk til den viste pris, medmindre de annulleres mindst 24 timer før slutningen af den aktuelle periode. Administrer eller annuller når som helst i dine indstillinger for Apple-konto."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilaukset uusiutuvat automaattisesti näytettyyn hintaan, ellei niitä peruta vähintään 24 tuntia ennen nykyisen jakson päättymistä. Voit hallita tai perua tilauksen milloin tahansa Apple-tilisi asetuksista."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áskriftir endurnýjast sjálfkrafa á sýnda verðinu nema þeim sé sagt upp að minnsta kosti 24 klukkustundum fyrir lok yfirstandandi tímabils. Stjórnaðu eða segðu upp áskriftinni hvenær sem er í stillingum Apple-aðgangsins þíns."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnementer fornyes automatisk til den viste prisen, med mindre de sies opp minst 24 timer før utløpet av nåværende periode. Du kan administrere eller si opp når som helst i innstillingene for Apple-kontoen din."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prenumerationer förnyas automatiskt till det visade priset, om de inte avbryts minst 24 timmar före slutet av den aktuella perioden. Hantera eller avbryt när som helst i inställningarna för ditt Apple-konto."
           }
         }
       }
@@ -2244,6 +3164,36 @@
             "state": "translated",
             "value": "使用條款"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brugsvilkår"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käyttöehdot"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notkunarskilmálar"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bruksvilkår"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Användarvillkor"
+          }
         }
       }
     },
@@ -2315,6 +3265,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "App Store 無法驗證此次購買，因此未生效。請再試一次。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store kunne ikke bekræfte dette køb, så det blev ikke gennemført. Prøv igen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store ei voinut vahvistaa tätä ostoa, joten sitä ei otettu käyttöön. Yritä uudelleen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store gat ekki staðfest þessi kaup og þau voru því ekki virkjuð. Reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store kunne ikke bekrefte dette kjøpet, så det ble ikke tatt i bruk. Prøv igjen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store kunde inte verifiera köpet, så det har inte aktiverats. Försök igen."
           }
         }
       }
@@ -2388,6 +3368,36 @@
             "state": "translated",
             "value": "App Store 未傳回任何方案。請檢查網路連線後再試一次。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store returnerede ingen abonnementer. Tjek din forbindelse, og prøv igen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store ei palauttanut yhtään tilausvaihtoehtoa. Tarkista yhteytesi ja yritä uudelleen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fann engar áskriftarleiðir. Athugaðu tenginguna og reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store returnerte ingen abonnementer. Sjekk tilkoblingen og prøv igjen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store returnerade inga abonnemang. Kontrollera din anslutning och försök igen."
+          }
         }
       }
     },
@@ -2459,6 +3469,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法完成購買，請再試一次。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Købet kunne ikke gennemføres. Prøv igen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostoa ei voitu viedä loppuun. Yritä uudelleen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að ljúka kaupinu. Reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpet kunne ikke fullføres. Prøv igjen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Köpet kunde inte slutföras. Försök igen."
           }
         }
       }
@@ -2532,6 +3572,36 @@
             "state": "translated",
             "value": "今日"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dag"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tänään"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Í dag"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dag"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idag"
+          }
         }
       }
     },
@@ -2603,6 +3673,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "試用 %@"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv %@"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokeile %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prófaðu %@"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testa %@"
           }
         }
       }
@@ -2676,6 +3776,36 @@
             "state": "translated",
             "value": "再試一次"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv igen"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yritä uudelleen"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reyna aftur"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv igjen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Försök igen"
+          }
         }
       }
     },
@@ -2747,6 +3877,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待核准。核准後即可使用。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venter på godkendelse. Du får adgang, så snart den er godkendt."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odottaa hyväksyntää. Saat käyttöoikeuden heti, kun se on hyväksytty."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bíður samþykkis. Þú færð aðgang um leið og kaupin hafa verið samþykkt."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venter på godkjenning. Du får tilgang så snart det er godkjent."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Väntar på godkännande. Du får åtkomst så snart det har godkänts."
           }
         }
       }
@@ -2820,6 +3980,36 @@
             "state": "translated",
             "value": "我們會提醒你試用即將結束。"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi minder dig om, at din prøveperiode er ved at udløbe."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muistutamme sinua, että kokeilusi on päättymässä."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Við minnum þig á að ókeypis prufutími þinn er að ljúka."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi minner deg om at prøveperioden din er i ferd med å utløpe."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi påminner dig när din provperiod håller på att ta slut."
+          }
         }
       }
     },
@@ -2891,6 +4081,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的方案將以 %@ 繼續。在此日之前取消即不會扣款。"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din plan fortsætter til %@. Annuller før denne dag, og du bliver ikke opkrævet."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilauksesi jatkuu hintaan %@. Peru ennen tätä päivää, niin sinua ei veloiteta."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áskriftin þín heldur áfram á %@. Segðu upp fyrir þennan dag og ekkert verður innheimt."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planen din fortsetter til %@. Si opp før denne dagen, så blir du ikke belastet."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din plan fortsätter för %@. Avbryt före den här dagen så debiteras du inte."
           }
         }
       }
@@ -2964,6 +4184,36 @@
             "state": "translated",
             "value": "最超值"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedste værdi"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paras arvo"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Besta verðið"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best verdi"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bäst värde"
+          }
         }
       }
     },
@@ -3035,6 +4285,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "兌換代碼"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indløs kode"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lunasta koodi"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Innleysa kóða"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Løs inn kode"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lös in kod"
           }
         }
       }

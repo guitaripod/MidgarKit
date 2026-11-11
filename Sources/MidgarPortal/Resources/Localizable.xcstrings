@@ -142,6 +142,12 @@
             "state": "translated",
             "value": "關閉"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loka"
+          }
         }
       }
     },
@@ -285,6 +291,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "你已擁有 %lld / %lld"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þú ert með %lld af %lld"
           }
         }
       }
@@ -430,6 +442,12 @@
             "state": "translated",
             "value": "我們開發的每款 App 都在這裡。拖曳即可探索，點按圖示可仔細查看。"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öll öppin sem við gerum eru hér. Dragðu til að kanna, ýttu á tákn til að skoða nánar."
+          }
         }
       }
     },
@@ -573,6 +591,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部 App"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ÖLL ÖPP"
           }
         }
       }
@@ -718,6 +742,12 @@
             "state": "translated",
             "value": "打開"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OPNA"
+          }
         }
       }
     },
@@ -861,6 +891,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "檢視"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SKOÐA"
           }
         }
       }
@@ -1006,6 +1042,12 @@
             "state": "translated",
             "value": "取得"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SÆKJA"
+          }
         }
       }
     },
@@ -1149,6 +1191,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "傳送到 %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SENDA Á %@"
           }
         }
       }
@@ -1294,6 +1342,12 @@
             "state": "translated",
             "value": "目前位置"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þú ert hér"
+          }
         }
       }
     },
@@ -1437,6 +1491,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已安裝"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uppsett"
           }
         }
       }
@@ -1582,6 +1642,12 @@
             "state": "translated",
             "value": "Midgar 宇宙"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midgar-alheimurinn"
+          }
         }
       }
     },
@@ -1725,6 +1791,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "可探索 %lld 款 App"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öpp til að kanna"
           }
         }
       }
@@ -1870,6 +1942,12 @@
             "state": "translated",
             "value": "Midgar Oy 的全部 App"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öll öpp frá Midgar Oy"
+          }
         }
       }
     },
@@ -2013,6 +2091,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的 Midgar"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þitt Midgar"
           }
         }
       }
@@ -2158,6 +2242,12 @@
             "state": "translated",
             "value": "你的 App"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þín öpp"
+          }
         }
       }
     },
@@ -2301,6 +2391,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Midgar 的更多 App"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meira frá Midgar"
           }
         }
       }
@@ -2446,6 +2542,12 @@
             "state": "translated",
             "value": "終身"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ævilangt"
+          }
         }
       }
     },
@@ -2589,6 +2691,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已解鎖"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnað"
           }
         }
       }
@@ -2734,6 +2842,12 @@
             "state": "translated",
             "value": "有效期限至 %@"
           }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virk til %@"
+          }
         }
       }
     },
@@ -2877,6 +2991,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "扣款發生問題，有效期限至 %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandamál með greiðslu, virk til %@"
           }
         }
       }

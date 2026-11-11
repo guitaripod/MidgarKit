@@ -5,7 +5,7 @@ import MidgarCore
 
 @Suite struct UsageCountsStringsTests {
     private static let languages = [
-        "ar", "cs", "da", "de", "en", "es", "fi", "fr", "it", "ja", "ko", "nb", "nl", "pl", "pt-BR", "pt-PT", "ru", "sv", "tr", "uk", "vi",
+        "ar", "cs", "da", "de", "en", "es", "fi", "fr", "is", "it", "ja", "ko", "nb", "nl", "pl", "pt-BR", "pt-PT", "ru", "sv", "tr", "uk", "vi",
         "zh-Hans", "zh-Hant"
     ]
 

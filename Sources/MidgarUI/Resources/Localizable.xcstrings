@@ -53,6 +53,12 @@
             "value": "Adresse copiée"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vistfang afritað"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -195,6 +201,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tous les chiffres de Midgar"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allar tölur Midgar"
           }
         },
         "it": {
@@ -341,6 +353,12 @@
             "value": "Une autre app Midgar a été ouverte depuis cet écran."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annað Midgar-app var opnað frá þeim skjá."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -483,6 +501,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Une autre app Midgar a été affichée sur cet écran."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annað Midgar-app var sýnt á þeim skjá."
           }
         },
         "it": {
@@ -629,6 +653,12 @@
             "value": "Une autre app Midgar a été touchée sur cet écran."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annað Midgar-app var snert á þeim skjá."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -771,6 +801,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retour"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Til baka"
           }
         },
         "it": {
@@ -917,6 +953,12 @@
             "value": "Annuler"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hætta við"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -1059,6 +1101,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continuer"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halda áfram"
           }
         },
         "it": {
@@ -1205,6 +1253,12 @@
             "value": "Copié"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afritað"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -1347,6 +1401,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copier l'adresse"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afrita vistfang"
           }
         },
         "it": {
@@ -1493,6 +1553,12 @@
             "value": "Les compteurs sont désactivés, donc aucun de ces éléments n'est envoyé."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talningar eru slökktar, þannig að ekkert af þessu er sent."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -1635,6 +1701,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compteurs de plantages, de blocages et d'utilisation intensive du disque ou du processeur, pour corriger ces problèmes."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talning á hrunum, frystingum og mikilli notkun á diski eða örgjörva, svo hægt sé að laga þau."
           }
         },
         "it": {
@@ -1781,6 +1853,12 @@
             "value": "Uniquement des compteurs, jamais rien qui vous identifie."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aðeins talningar, aldrei neitt sem auðkennir þig."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -1923,6 +2001,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chiffres quotidiens sur la rapidité de démarrage de l'app et la mémoire utilisée, pour corriger les versions lentes."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daglegar tölur um hversu hratt appið ræsist og hversu mikið minni það notar, svo hægt sé að laga hægar útgáfur."
           }
         },
         "it": {
@@ -2069,6 +2153,12 @@
             "value": "Installations actives par jour, par semaine et par mois."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daglegar, vikulegar og mánaðarlegar virkar uppsetningar."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -2211,6 +2301,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supprimer le compte"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loka aðgangi"
           }
         },
         "it": {
@@ -2357,6 +2453,12 @@
             "value": "Supprimer votre compte ?"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loka aðganginum þínum?"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -2499,6 +2601,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Semaine terminée à partir du %@. Ces chiffres comptent des installations, pas des personnes."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokin vika sem hófst %@. Þessar tölur telja uppsetningar, ekki fólk."
           }
         },
         "it": {
@@ -2645,6 +2753,12 @@
             "value": "Étapes de premier lancement avant un achat."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skref við fyrstu ræsingu fyrir kaup."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -2787,6 +2901,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Commencer"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hefjast handa"
           }
         },
         "it": {
@@ -2933,6 +3053,12 @@
             "value": "Comment un achat que vous avez lancé s'est terminé, et pour quel produit."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvernig kaup sem þú hófst enduðu, og fyrir hvaða vöru."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -3075,6 +3201,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "À quelle fréquence l'écran d'achat est affiché, et d'où dans l'app."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hversu oft kaupskjárinn birtist og frá hvaða stað í appinu."
           }
         },
         "it": {
@@ -3221,6 +3353,12 @@
             "value": "Inclut la semaine d'installation de l'app"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inniheldur vikuna sem appið var sett upp"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -3363,6 +3501,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nouvelles installations"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nýjar uppsetningar"
           }
         },
         "it": {
@@ -3509,6 +3653,12 @@
             "value": "OK"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Í lagi"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -3651,6 +3801,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Désactivé"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slökkt"
           }
         },
         "it": {
@@ -3797,6 +3953,12 @@
             "value": "Activé"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kveikt"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -3939,6 +4101,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Page %1$lld sur %2$lld"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Síða %lld af %lld"
           }
         },
         "it": {
@@ -4085,6 +4253,12 @@
             "value": "Politique de confidentialité"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persónuverndarstefna"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -4227,6 +4401,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Achats effectués dans l'app, par produit."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaup gerð í appinu, eftir vöru."
           }
         },
         "it": {
@@ -4373,6 +4553,12 @@
             "value": "Achats restaurés"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaup endurheimt"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -4515,6 +4701,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restaurer les achats"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endurheimta kaup"
           }
         },
         "it": {
@@ -4661,6 +4853,12 @@
             "value": "Envoyer un e-mail"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senda tölvupóst"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -4803,6 +5001,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Envoyé au plus une fois par jour"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent í mesta lagi einu sinni á dag"
           }
         },
         "it": {
@@ -4949,6 +5153,12 @@
             "value": "Envoyé au plus une fois par jour, par semaine et par mois"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent í mesta lagi einu sinni á dag, einu sinni í viku og einu sinni í mánuði"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -5091,6 +5301,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Envoyé au plus une fois par mois"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent í mesta lagi einu sinni í mánuði"
           }
         },
         "it": {
@@ -5237,6 +5453,12 @@
             "value": "Envoyé au plus une fois par semaine"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent í mesta lagi einu sinni í viku"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -5379,6 +5601,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Envoyé à chaque fois"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent í hvert skipti sem það gerist"
           }
         },
         "it": {
@@ -5525,6 +5753,12 @@
             "value": "Envoyé uniquement la première fois"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent aðeins í fyrsta skipti sem það gerist"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -5667,6 +5901,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réglages"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stillingar"
           }
         },
         "it": {
@@ -5813,6 +6053,12 @@
             "value": "Partager des compteurs d'utilisation anonymes"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deila nafnlausar notkunartölur"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -5955,6 +6201,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Passer"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleppa"
           }
         },
         "it": {
@@ -6101,6 +6353,12 @@
             "value": "Une erreur est survenue"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eitthvað fór úrskeiðis"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -6243,6 +6501,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Assistance"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aðstoð"
           }
         },
         "it": {
@@ -6389,6 +6653,12 @@
             "value": "Conditions d'utilisation"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notkunarskilmálar"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -6531,6 +6801,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "La page App Store d'une autre app Midgar a fini de charger depuis cet écran."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store-síða annars Midgar-appsins hlóðst að fullu frá þessum skjá."
           }
         },
         "it": {
@@ -6677,6 +6953,12 @@
             "value": "La feuille App Store d'une autre app Midgar a été affichée au moment opportun."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store-blaðið fyrir annað Midgar-app var sýnt á hentugu augnabliki."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -6819,6 +7101,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "L'app a été ouverte."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appið var opnað."
           }
         },
         "it": {
@@ -6965,6 +7253,12 @@
             "value": "L'introduction au premier lancement a été terminée."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kynningin við fyrstu ræsingu lauk."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -7107,6 +7401,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible d'ouvrir le lien."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að opna tengilinn."
           }
         },
         "it": {
@@ -7253,6 +7553,12 @@
             "value": "L'écran des autres apps Midgar a été ouvert, et d'où dans l'app."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skjárinn með öðrum Midgar-öppum var opnaður og frá hvaða stað í appinu."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -7395,6 +7701,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les chiffres de cette app"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tölur þessa appsins"
           }
         },
         "it": {
@@ -7541,6 +7853,12 @@
             "value": "Cette action supprime définitivement votre compte et ses données. Elle est irréversible."
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þetta eyðir aðganginum þínum og gögnum hans varanlega. Ekki er hægt að afturkalla þetta."
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -7683,6 +8001,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Si vous désactivez cette option, l'app cesse d'envoyer des compteurs et supprime ceux qui attendent."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þegar slökkt er á þessu hættir appið að senda tölur og eyðir allar tölur sem bíða sendingar."
           }
         },
         "it": {
@@ -7829,6 +8153,12 @@
             "value": "Compteurs d'utilisation"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notkunartölur"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -7971,6 +8301,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les compteurs d'utilisation sont des chiffres, pas des personnes. Aucun d'eux ne permet d'identifier votre appareil ou vous, et les petits nombres ne sont jamais affichés."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notkunartölur eru tölur, ekki fólk. Í þeim er ekkert sem auðkennir tækið þitt eða þig, og lágar tölur eru aldrei sýndar."
           }
         },
         "it": {
@@ -8117,6 +8453,12 @@
             "value": "Version"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Útgáfa"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -8259,6 +8601,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version copiée"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Útgáfa afrituð"
           }
         },
         "it": {
@@ -8405,6 +8753,12 @@
             "value": "Installations actives par semaine"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virkar uppsetningar á viku"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -8547,6 +8901,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ce que cette app envoie"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Það sem þetta app sendir"
           }
         },
         "it": {
@@ -8693,6 +9053,12 @@
             "value": "Nouveautés"
           }
         },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nýjungar"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -8835,6 +9201,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "moins de %lld"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "færri en %lld"
           }
         },
         "it": {

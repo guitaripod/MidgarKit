@@ -654,6 +654,90 @@
               }
             }
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kredit"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditter"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inneign"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inneignir"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditt"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditter"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1310,6 +1394,90 @@
               }
             }
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kredit tilføjet"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditter tilføjet"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inneign bætt við"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inneignir bættar við"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditt lagt til"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg kreditter lagt til"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1453,6 +1621,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Còn %lld / %lld"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld af %lld tilbage"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld af %lld eftir"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld av %lld igjen"
           }
         }
       }
@@ -1598,6 +1784,24 @@
             "state": "translated",
             "value": "Mua với giá %@"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køb for %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaupa fyrir %@"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøp for %@"
+          }
         }
       }
     },
@@ -1741,6 +1945,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hiện không có gói tín dụng nào."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kreditpakker er ikke tilgængelige lige nu."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inneignarpakkar eru ekki tiltækir eins og er."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredittpakker er ikke tilgjengelige akkurat nå."
           }
         }
       }
@@ -1886,6 +2108,24 @@
             "state": "translated",
             "value": "Không có gói tín dụng"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kreditpakker er ikke tilgængelige"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inneignarpakkar ekki tiltækir"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredittpakkene er ikke tilgjengelige"
+          }
         }
       }
     },
@@ -2029,6 +2269,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tín dụng tạm thời không khả dụng. Chưa tính phí nào."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kreditter er ikke tilgængelige lige nu. Der blev ikke opkrævet noget."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inneignir eru ekki tiltækar eins og er. Ekkert var skuldfært."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kreditter er ikke tilgjengelige akkurat nå. Ingenting ble belastet."
           }
         }
       }
@@ -2174,6 +2432,24 @@
             "state": "translated",
             "value": "Đủ cho mục này"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nok til dette"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nóg fyrir þetta"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nok til dette"
+          }
         }
       }
     },
@@ -2317,6 +2593,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quyền lợi miễn phí"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis kvoter"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ókeypis kvótar"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis kvoter"
           }
         }
       }
@@ -2462,6 +2756,24 @@
             "state": "translated",
             "value": "Đang tải gói tín dụng"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indlæser kreditpakker"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hleður inneignarpakka"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laster inn kredittpakker…"
+          }
         }
       }
     },
@@ -2605,6 +2917,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đặt lại vào %@"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nulstilles %@"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endurstillist %@"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilbakestilles %@"
           }
         }
       }
@@ -2750,6 +3080,24 @@
             "state": "translated",
             "value": "App Store không trả về gói tín dụng nào. Hãy kiểm tra kết nối và thử lại."
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store returnerede ingen kreditpakker. Tjek din forbindelse, og prøv igen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fann enga inneignarpakka. Athugaðu tenginguna og reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store returnerte ingen kredittpakker. Sjekk tilkoblingen og prøv igjen."
+          }
         }
       }
     },
@@ -2893,6 +3241,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không thể xác minh giao dịch mua. Nếu bạn đã bị trừ tiền, hãy liên hệ bộ phận hỗ trợ."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Købet kunne ikke bekræftes. Hvis du er blevet opkrævet, så kontakt support."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að staðfesta kaupin. Ef greiðsla hefur verið skuldfærð, hafðu samband við aðstoð."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpet kunne ikke bekreftes. Hvis du ble belastet, kontakt støtte."
           }
         }
       }
@@ -3038,6 +3404,24 @@
             "state": "translated",
             "value": "Quá nhiều yêu cầu. Vui lòng thử lại sau ít phút."
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For mange anmodninger. Prøv igen om et øjeblik."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Of margar beiðnir. Reyndu aftur eftir smá stund."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For mange forespørsler. Prøv igjen om litt."
+          }
         }
       }
     },
@@ -3182,6 +3566,24 @@
             "state": "translated",
             "value": "Đang chờ phê duyệt. Tín dụng sẽ được cộng ngay khi được phê duyệt."
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venter på godkendelse. Dine kreditter kommer, så snart den er godkendt."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bíður samþykkis. Inneignirnar þínar berast um leið og kaupin hafa verið samþykkt."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venter på godkjenning. Kredittene dine kommer så snart det er godkjent."
+          }
         }
       }
     },
@@ -3325,6 +3727,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn đang ngoại tuyến. Hãy kiểm tra kết nối và thử lại."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du er offline. Tjek din forbindelse, og prøv igen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þú ert án nettengingar. Athugaðu tenginguna og reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du er frakoblet. Sjekk tilkoblingen og prøv igjen."
           }
         }
       }
@@ -3982,6 +4402,90 @@
               }
             }
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Du skal bruge %arg kredit mere for at fortsætte."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Du skal bruge %arg kreditter mere for at fortsætte."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Þú þarft %arg inneign í viðbót til að halda áfram."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Þú þarft %arg inneignir í viðbót til að halda áfram."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Du trenger %arg kreditt til for å fortsette."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Du trenger %arg kreditter til for å fortsette."
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -4125,6 +4629,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Số dư của bạn"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din saldo"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staðan þín"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din saldo"
           }
         }
       }
@@ -4270,6 +4792,24 @@
             "state": "translated",
             "value": "Không thể tải số dư của bạn."
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din saldo kunne ikke indlæses."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að hlaða stöðunni þinni."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saldoen din kunne ikke lastes inn."
+          }
         }
       }
     },
@@ -4413,6 +4953,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tín dụng sẽ được cộng ngay khi giao dịch được xác nhận. Bạn không cần mua lại."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dine kreditter kommer, så snart købet er bekræftet. Du behøver ikke købe igen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inneignirnar þínar berast um leið og kaupin hafa verið staðfest. Þú þarft ekki að kaupa aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredittene dine kommer så snart kjøpet er bekreftet. Du trenger ikke kjøpe på nytt."
           }
         }
       }
@@ -4558,6 +5116,24 @@
             "state": "translated",
             "value": "Đang xác nhận giao dịch mua của bạn"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit køb bekræftes"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaupin þín eru í staðfestingu"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpet ditt bekreftes"
+          }
         }
       }
     },
@@ -4701,6 +5277,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phiên của bạn đã hết hạn. Hãy đăng nhập và thử lại."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din session er udløbet. Log ind, og prøv igen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Innskráningin þín er útrunnin. Skráðu þig inn og reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Økten din har utløpt. Logg på og prøv igjen."
           }
         }
       }
@@ -4846,6 +5440,24 @@
             "state": "translated",
             "value": "Không thể hoàn tất giao dịch mua. Vui lòng thử lại."
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Købet kunne ikke gennemføres. Prøv igen."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekki tókst að ljúka kaupinu. Reyndu aftur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøpet kunne ikke fullføres. Prøv igjen."
+          }
         }
       }
     },
@@ -4990,6 +5602,24 @@
             "state": "translated",
             "value": "Thử lại"
           }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv igen"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reyna aftur"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv igjen"
+          }
         }
       }
     },
@@ -5133,6 +5763,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang mua"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Køber…"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaupir…"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kjøper…"
           }
         }
       }

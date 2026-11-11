@@ -3,7 +3,7 @@ import Testing
 @testable import MidgarCreditsUI
 
 @Suite struct CreditStoreStringsTests {
-    private static let languages = ["en", "de", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "zh-Hans", "zh-Hant"]
+    private static let languages = ["en", "da", "de", "es", "fi", "fr", "is", "it", "ja", "ko", "nb", "pl", "pt-BR", "sv", "zh-Hans", "zh-Hant"]
 
     private static let keys = [
         "Your balance",

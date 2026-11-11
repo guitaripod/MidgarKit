@@ -10,7 +10,7 @@ import re
 import sys
 
 CATALOG = pathlib.Path(__file__).resolve().parent.parent / "Sources" / "MidgarPortal" / "Resources" / "Localizable.xcstrings"
-LOCALES = ["ar", "cs", "da", "de", "es", "fi", "fr", "it", "ja", "ko", "nb", "nl", "pl", "pt-BR", "pt-PT",
+LOCALES = ["ar", "cs", "da", "de", "es", "fi", "fr", "is", "it", "ja", "ko", "nb", "nl", "pl", "pt-BR", "pt-PT",
            "ru", "sv", "tr", "uk", "vi", "zh-Hans", "zh-Hant"]
 NON_LATIN = {"ar", "ja", "ko", "ru", "uk", "zh-Hans", "zh-Hant"}
 PLACEHOLDER = re.compile(r"%(?:\d+\$)?(?:lld|@|d)")
