@@ -39,6 +39,8 @@ struct MidgarBackdropGradient: View {
 }
 
 /// The part of the backdrop that lies behind this view, so a pinned bar with an opaque surface still looks like part of the page.
+///
+/// The gradient is drawn at the whole paywall's size and shifted up behind the bar, and `clipped()` only clips what is drawn: it would still take every click and scroll over the content above the bar, which on a Mac left the plans unscrollable. It is decoration, so it takes no hits at all.
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *)
 private struct MidgarBackdropSlice: View {
     let backdrop: MidgarPaywallBackdrop
@@ -53,6 +55,7 @@ private struct MidgarBackdropSlice: View {
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
         }
         .clipped()
+        .allowsHitTesting(false)
     }
 }
 
