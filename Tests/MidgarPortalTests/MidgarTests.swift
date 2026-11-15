@@ -103,6 +103,11 @@ final class MidgarTests: XCTestCase {
         XCTAssertEqual(makeApp(id: "123").storeURL.absoluteString, "https://apps.apple.com/app/id123")
     }
 
+    func testStoreURLOfAnIDNoURLTakesAsIsStillOpensTheStore() {
+        XCTAssertEqual(makeApp(id: "12 3|%").storeURL.host, "apps.apple.com")
+        XCTAssertEqual(makeApp(id: "12 3|%").storeURL.path, "/app/id12 3|%")
+    }
+
     func testBundledCatalogDeclaresDeveloperArtist() {
         XCTAssertEqual(CatalogService.loadBundledResponse()?.developer?.artistId, "1484270247")
     }

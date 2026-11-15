@@ -114,8 +114,15 @@ public struct MidgarApp: Identifiable, Hashable, Codable, Sendable {
 
     /// Public App Store product page, used as a fallback when in-app presentation is unavailable.
     public var storeURL: URL {
-        URL(string: "https://apps.apple.com/app/id\(appId)")!
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "apps.apple.com"
+        components.path = "/app/id\(appId)"
+        return components.url ?? Self.appStoreHome
     }
+
+    /// Where a catalog entry whose id cannot form a product page URL still leads.
+    private static let appStoreHome = URL(string: "https://apps.apple.com")!
 
     /// `true` when the App Store reports a usable rating to display.
     public var hasRating: Bool {
