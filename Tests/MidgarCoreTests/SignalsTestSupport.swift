@@ -92,6 +92,7 @@ final class SignalsHarness: @unchecked Sendable {
         platform: String = "ios",
         appVersion: String? = "2.1",
         installDate: @escaping @Sendable () -> Date? = { nil },
+        isTestInstall: @escaping @Sendable () async -> Bool = { false },
         policy: MidgarSignalsPolicy = .standard,
         tokenProvider: (@Sendable () async throws -> String?)? = nil
     ) -> MidgarSignals {
@@ -113,6 +114,7 @@ final class SignalsHarness: @unchecked Sendable {
             directory: directory,
             appVersion: appVersion,
             installDate: installDate,
+            isTestInstall: isTestInstall,
             logger: { logs.record($0) },
             policy: policy,
             platform: platform,

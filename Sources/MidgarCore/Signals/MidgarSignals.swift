@@ -10,6 +10,7 @@ import Foundation
 /// - The queue holds 500 events; the oldest go first when it is full. It is saved to a file in Application Support at most 5 seconds after it changes and whenever a batch leaves it or ``flush()`` runs, so unsent events survive a relaunch.
 /// - Offline, a timeout or a 5xx keeps the events for the next attempt. A 429 keeps them and waits for `Retry-After` (60 seconds when it is missing, at most an hour). Any other 4xx drops the batch and logs once.
 /// - A `signals` kill switch in the app's ``MidgarConfig``, or the person turning ``isEnabled`` off, turns ``record(_:props:)`` and ``send(_:)`` into no-ops and empties the queue.
+/// - A TestFlight or development install sends nothing: before its first request the instance asks StoreKit where the install came from, and an answer other than the App Store empties the queue and stops recording, so the developer's own use never reaches the counts.
 ///
 /// ``send(_:)`` is the way to send an event: it takes a generated ``MidgarSignal``, enforces on the device how often the registry lets one install send it, and stamps the install's cohort where the registry asks for it.
 ///
@@ -46,6 +47,8 @@ public actor MidgarSignals {
     let consent: MidgarSignalsConsent
     let installDate: @Sendable () -> Date?
     let policy: MidgarSignalsPolicy
+    private let isTestInstallProvider: @Sendable () async -> Bool
+    private var isTestInstall: Bool?
     private let platform: String
     private let appVersion: String?
     let now: @Sendable () -> Date
@@ -88,6 +91,7 @@ public actor MidgarSignals {
             directory: directory,
             appVersion: appVersion ?? MidgarSignalsPlatform.bundleVersion(),
             installDate: { MidgarSignalsInstallDate.ofThisApp() },
+            isTestInstall: { await MidgarSignalsInstallSource.isTestInstall() },
             logger: logger,
             policy: .standard,
             platform: MidgarSignalsPlatform.current,
@@ -102,6 +106,7 @@ public actor MidgarSignals {
         directory: URL?,
         appVersion: String?,
         installDate: @escaping @Sendable () -> Date? = { MidgarSignalsInstallDate.ofThisApp() },
+        isTestInstall: @escaping @Sendable () async -> Bool = { false },
         logger: @escaping @Sendable (String) -> Void,
         policy: MidgarSignalsPolicy,
         platform: String,
@@ -117,6 +122,7 @@ public actor MidgarSignals {
         self.consent = MidgarSignalsConsent(store: store)
         self.installDate = installDate
         self.policy = policy
+        self.isTestInstallProvider = isTestInstall
         self.platform = platform
         self.appVersion = appVersion
         self.now = now
@@ -192,9 +198,9 @@ public actor MidgarSignals {
         configProvider().isKilled(Self.killSwitchKey)
     }
 
-    /// True while nothing may be recorded: the remote kill switch is on or the person turned usage counts off.
+    /// True while nothing may be recorded: the remote kill switch is on, the person turned usage counts off, or StoreKit said this is a TestFlight or development install.
     var isSuppressed: Bool {
-        !consent.isEnabled || isKilled
+        !consent.isEnabled || isKilled || isTestInstall == true
     }
 
     func clearQueue() {
@@ -319,6 +325,7 @@ public actor MidgarSignals {
     }
 
     private func performFlush(drainAll: Bool) async {
+        await resolveInstallSource()
         var outcome = Outcome.delivered
         repeat {
             if isSuppressed {
@@ -334,6 +341,18 @@ public actor MidgarSignals {
         } while drainAll && outcome.allowsNextBatch && !queue.isEmpty
         flushTask = nil
         scheduleFollowUp(after: outcome)
+    }
+
+    /// Asks StoreKit once, before the first request, whether this is a TestFlight or development install, and logs once when it is. Only a flush calls it, and flushes never overlap, so the question is never asked twice.
+    private func resolveInstallSource() async {
+        guard isTestInstall == nil else {
+            return
+        }
+        let answer = await isTestInstallProvider()
+        isTestInstall = answer
+        if answer {
+            logger("signals: TestFlight or development install, usage counts are not sent")
+        }
     }
 
     /// The oldest events that fit one request: at most the event limit and the byte limit. An event too large to ever fit is dropped here.
