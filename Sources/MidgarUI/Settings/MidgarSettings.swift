@@ -21,6 +21,36 @@ public struct MidgarSettings<PortalCard: View>: View {
     }
 
     public var body: some View {
+        screen
+            .background(theme.background.color)
+            .onAppear { model.engine.refresh() }
+            .midgarToast(toastBinding)
+            .alert(pendingTitle, isPresented: pendingBinding) {
+                Button(pendingConfirmTitle, role: .destructive) { model.engine.beginConfirmedAction() }
+                Button(MidgarUIStrings.cancel, role: .cancel) { model.engine.cancelPending() }
+            } message: {
+                Text(verbatim: model.state.pending?.confirmation.message ?? "")
+            }
+            .alert(MidgarUIStrings.failureTitle, isPresented: failureBinding) {
+                Button(MidgarUIStrings.ok, role: .cancel) { model.engine.dismissFailure() }
+            } message: {
+                Text(verbatim: model.state.failureMessage ?? "")
+            }
+    }
+
+    /// The rows themselves: on Apple TV the layout of the television's own Settings, which draws its title itself,
+    /// and everywhere else a list under the navigation title.
+    @ViewBuilder
+    private var screen: some View {
+        #if os(tvOS)
+        MidgarSettingsTVLayout(title: title, sections: sections, portalCard: portalCard, model: model)
+        #else
+        list
+            .navigationTitle(title)
+        #endif
+    }
+
+    private var list: some View {
         List {
             if PortalCard.self != EmptyView.self {
                 Section {
@@ -48,21 +78,6 @@ public struct MidgarSettings<PortalCard: View>: View {
         }
         .midgarSettingsListStyle()
         .midgarHidingListBackground()
-        .background(theme.background.color)
-        .navigationTitle(title)
-        .onAppear { model.engine.refresh() }
-        .midgarToast(toastBinding)
-        .alert(pendingTitle, isPresented: pendingBinding) {
-            Button(pendingConfirmTitle, role: .destructive) { model.engine.beginConfirmedAction() }
-            Button(MidgarUIStrings.cancel, role: .cancel) { model.engine.cancelPending() }
-        } message: {
-            Text(verbatim: model.state.pending?.confirmation.message ?? "")
-        }
-        .alert(MidgarUIStrings.failureTitle, isPresented: failureBinding) {
-            Button(MidgarUIStrings.ok, role: .cancel) { model.engine.dismissFailure() }
-        } message: {
-            Text(verbatim: model.state.failureMessage ?? "")
-        }
     }
 
     private var pendingTitle: String {

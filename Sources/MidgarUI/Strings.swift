@@ -62,6 +62,14 @@ enum MidgarUIStrings {
         )
     }
 
+    static var on: String {
+        String(localized: "On", bundle: .module, comment: "Value of a setting that is switched on")
+    }
+
+    static var off: String {
+        String(localized: "Off", bundle: .module, comment: "Value of a setting that is switched off")
+    }
+
     static var cancel: String {
         String(localized: "Cancel", bundle: .module, comment: "Button that dismisses a confirmation without doing anything")
     }
