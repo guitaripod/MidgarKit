@@ -85,6 +85,8 @@ public enum MidgarHTTPError: Error, Sendable, Equatable, LocalizedError, MidgarT
                 bundle: .module,
                 comment: "Shown when the item a request asked for does not exist on Midgar's servers"
             )
+        case .server(let status, _, _) where status == MidgarModelRegion.refusalStatus:
+            return MidgarModelRegion.unavailableMessage
         case .server:
             return NSLocalizedString(
                 "Midgar could not complete the request. Try again later.",

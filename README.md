@@ -108,6 +108,18 @@ MidgarDemo enters demo mode only in DEBUG builds, or in a release build whose In
 
 `MidgarConfigStore` verifies every document against the pinned keys, rejects a document whose `minVersion` or `kill` has the wrong type, and keeps the highest accepted version in a `UserDefaults` suite (`cc.midgarcorp.midgarkit.config`) apart from the cache file, so deleting or swapping the cache cannot roll the app back. On Linux verification still fails closed, because it needs CryptoKit; follow-up: add swift-crypto so Linux clients can verify.
 
+## Model features by region
+
+Midgar's servers answer HTTP 451 `unavailable_in_region` on every model route (mako's chat, image and realtime routes, flaccy-api's model routes, the facts worker) in the countries the model providers do not serve, China mainland and Hong Kong among them (`services/lib/src/region.ts`). An app with model features hides them, and the paywall lines that sell them, while `MidgarModelRegion.shared.modelsAvailable` is false:
+
+```swift
+await MidgarModelRegion.shared.refresh(client: client)          // at launch and on returning to the foreground; GET /v1/region
+MidgarModelRegion.shared.note(statusCode: http.statusCode)     // after a model call made outside MidgarHTTPClient
+MidgarModelRegion.shared.note(error)                           // after a MidgarHTTPClient model call fails
+```
+
+The answer starts true, follows the device when it travels and is kept in the standard user defaults; `didChangeNotification` posts when it flips. A refused call through `MidgarHTTPClient` arrives as `MidgarHTTPError.server(status: 451, ...)`, whose description is `MidgarModelRegion.unavailableMessage` ("Not available in your region.", in the 26 languages the apps ship), the line to show where the feature was. It names no country, provider or law.
+
 ## Signals
 
 `MidgarSignals` (in MidgarCore) is the anonymous analytics client (D7): no vendor SDK, no Midgar ID, no device id, no `Authorization` header. It queues named events with a few props and sends them in batches to `POST /v1/signals/events`; the server (`services/signals`) keeps daily counts per app, event and platform.
