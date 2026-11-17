@@ -83,4 +83,22 @@ private struct Empty: Codable, Sendable {}
         region.note(statusCode: 451)
         #expect(posts == 1)
     }
+
+    @Test func onDeviceGenerationIsOffOnlyForChinaMainlandAccounts() {
+        #expect(MidgarModelRegion.allowsOnDeviceGeneration(storefrontCountryCode: "CHN") == false)
+        #expect(MidgarModelRegion.allowsOnDeviceGeneration(storefrontCountryCode: "chn") == false)
+        for code in ["HKG", "TWN", "USA", "FIN", nil] as [String?] {
+            #expect(MidgarModelRegion.allowsOnDeviceGeneration(storefrontCountryCode: code))
+        }
+    }
+
+    @Test func onDeviceGenerationStartsAvailableAndFollowsTheStorefront() {
+        let region = makeRegion()
+        #expect(region.onDeviceGenerationAvailable)
+        region.remember(onDevice: false)
+        #expect(region.onDeviceGenerationAvailable == false)
+        #expect(region.modelsAvailable)
+        region.remember(onDevice: true)
+        #expect(region.onDeviceGenerationAvailable)
+    }
 }

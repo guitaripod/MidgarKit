@@ -120,6 +120,8 @@ MidgarModelRegion.shared.note(error)                           // after a Midgar
 
 The answer starts true, follows the device when it travels and is kept in the standard user defaults; `didChangeNotification` posts when it flips. A refused call through `MidgarHTTPClient` arrives as `MidgarHTTPError.server(status: 451, ...)`, whose description is `MidgarModelRegion.unavailableMessage` ("Not available in your region.", in the 26 languages the apps ship), the line to show where the feature was. It names no country, provider or law.
 
+Generative features that run on the device (Apple Foundation Models, MLX models) need no server, so the 451 never reaches them; they check `MidgarModelRegion.shared.onDeviceGenerationAvailable` instead, which `refresh(client:)` sets to false for a China mainland App Store account (`Storefront.countryCode == "CHN"`). Hiding them there lets an app keep its China listing and answer No on Apple's China AI declarations.
+
 ## Signals
 
 `MidgarSignals` (in MidgarCore) is the anonymous analytics client (D7): no vendor SDK, no Midgar ID, no device id, no `Authorization` header. It queues named events with a few props and sends them in batches to `POST /v1/signals/events`; the server (`services/signals`) keeps daily counts per app, event and platform.
