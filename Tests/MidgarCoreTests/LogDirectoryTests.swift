@@ -14,4 +14,16 @@ import Testing
         let relative = LogConfiguration.linuxStateDirectory(environment: ["HOME": "/home/ada", "XDG_STATE_HOME": "state"], processName: "crucible")
         #expect(relative.path == "/home/ada/.local/state/crucible/logs")
     }
+
+    #if !os(Linux)
+    @Test func appleLogsLiveInLibraryOutsideTVOS() {
+        #if os(tvOS)
+        #expect(LogConfiguration.appleSearchPath == .cachesDirectory)
+        #expect(LogConfiguration.standardDirectory.path.hasSuffix("/Library/Caches/Logs"))
+        #else
+        #expect(LogConfiguration.appleSearchPath == .libraryDirectory)
+        #expect(LogConfiguration.standardDirectory.path.hasSuffix("/Library/Logs"))
+        #endif
+    }
+    #endif
 }

@@ -12,21 +12,34 @@ struct LogConfiguration: Sendable {
         )
     }
 
-    /// `Library/Logs` on Apple platforms; on Linux, where there is no Library, the XDG state directory's `<process>/logs`
-    /// (`~/.local/state/<process>/logs` by default), so logs outlive a reboot instead of landing in the temporary directory.
+    /// `Library/Logs` on Apple platforms, except tvOS, which lets an app write only to its caches and temporary directories (a
+    /// `Library/Logs` there is never created and every line was lost), so its logs go to `Library/Caches/Logs`. On Linux, where
+    /// there is no Library, the XDG state directory's `<process>/logs` (`~/.local/state/<process>/logs` by default), so logs
+    /// outlive a reboot instead of landing in the temporary directory.
     static var standardDirectory: URL {
         #if os(Linux)
         return linuxStateDirectory(environment: ProcessInfo.processInfo.environment, processName: ProcessInfo.processInfo.processName)
         #else
-        let library = (try? FileManager.default.url(
-            for: .libraryDirectory,
+        let parent = (try? FileManager.default.url(
+            for: appleSearchPath,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
         )) ?? FileManager.default.temporaryDirectory
-        return library.appendingPathComponent("Logs", isDirectory: true)
+        return parent.appendingPathComponent("Logs", isDirectory: true)
         #endif
     }
+
+    #if !os(Linux)
+    /// The directory the `Logs` folder lives in on this Apple platform.
+    static var appleSearchPath: FileManager.SearchPathDirectory {
+        #if os(tvOS)
+        .cachesDirectory
+        #else
+        .libraryDirectory
+        #endif
+    }
+    #endif
 
     /// `$XDG_STATE_HOME/<process>/logs`, or `~/.local/state/<process>/logs` when it is unset or not absolute.
     static func linuxStateDirectory(environment: [String: String], processName: String) -> URL {

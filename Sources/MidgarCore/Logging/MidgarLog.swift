@@ -5,7 +5,7 @@ import OSLog
 
 /// The one file and os.Logger logger every Midgar app uses.
 ///
-/// Call ``configure(subsystem:fileName:maxBytes:keepFiles:)`` once at launch. Each call goes to `os.Logger` and appends one line to `Library/Logs/<fileName>` in the app container, the path `devicectl device copy from` reads in the ios-device-logs workflow. File lines are written on a serial utility queue in call order, and ``flush()`` runs automatically when the app backgrounds or terminates.
+/// Call ``configure(subsystem:fileName:maxBytes:keepFiles:)`` once at launch. Each call goes to `os.Logger` and appends one line to `Library/Logs/<fileName>` in the app container (`Library/Caches/Logs/<fileName>` on tvOS, which allows no other writable Library folder), the path `devicectl device copy from` reads in the ios-device-logs workflow. File lines are written on a serial utility queue in call order, and ``flush()`` runs automatically when the app backgrounds or terminates.
 public enum MidgarLog {
     private static let state = LogState()
 

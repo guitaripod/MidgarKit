@@ -157,7 +157,7 @@ Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter
 
 ## Logging
 
-Logs go to `Library/Logs/app.log` with rotation. A log file that is deleted while the app runs is created again on the next write, and the `Library/Logs` directory is excluded from iCloud and device backups.
+Logs go to `Library/Logs/app.log` with rotation (`Library/Caches/Logs/app.log` on tvOS, where apps can only write to their caches). A log file that is deleted while the app runs is created again on the next write, and the `Library/Logs` directory is excluded from iCloud and device backups.
 
 ## Configuration
 
