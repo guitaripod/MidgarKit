@@ -61,6 +61,7 @@ public enum MidgarSignal: Sendable, Equatable {
     /// The closed set FunnelStep; the worker stores any other value as `other`.
     public enum FunnelStep: String, Sendable, CaseIterable {
         case samplePlayed = "sample_played", addMusicOpened = "add_music_opened", libraryFilled = "library_filled", importSucceeded = "import_succeeded", importFailed = "import_failed", trialStarted = "trial_started", pickerCancelled = "picker_cancelled", wifiTransferOpened = "wifi_transfer_opened", importNothingFound = "import_nothing_found", importUnsupported = "import_unsupported", importArchive = "import_archive", importAlreadyPresent = "import_already_present"
+        case secondLookOffered = "second_look_offered", secondLookStarted = "second_look_started"
     }
 
     /// The closed set Storefront; the worker stores any other value as `other`.

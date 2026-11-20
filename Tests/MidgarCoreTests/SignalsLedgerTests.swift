@@ -56,7 +56,7 @@ import Testing
 
         await signals.persistPending()
         #expect(await signals.writeCount == 2)
-        #expect(harness.ledgerOnDisk.count == 6)
+        #expect(harness.ledgerOnDisk.count == MidgarSignal.FunnelStep.allCases.count)
         #expect(harness.queueFileExists)
     }
 
