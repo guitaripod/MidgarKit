@@ -159,6 +159,10 @@ Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter
 
 Logs go to `Library/Logs/app.log` with rotation (`Library/Caches/Logs/app.log` on tvOS, where apps can only write to their caches). A log file that is deleted while the app runs is created again on the next write, and the `Library/Logs` directory is excluded from iCloud and device backups.
 
+### Frame watch
+
+`MidgarFrameWatch` (MidgarUI) says in the app's log how long the main thread kept the display waiting, for a debug run on a real device nobody is tapping and Instruments is not attached to. Every wait of 50 ms or more is a line as it happens (`Frame wait 76 ms`), and `report("until the sheet")` adds the stretch since the last report (`Frame watch, until the sheet: 412 frames, worst wait 76 ms, 3 late, 1 of 50 ms or more`; late means at least one frame was dropped). An app starts it from its own debug launch switches, or calls `MidgarFrameWatch.shared.startIfRequested()` at launch inside `#if DEBUG`, after which `MIDGAR_FRAME_WATCH=<seconds>` in the launch environment reports at that pace: `xcrun devicectl device process launch -e '{"MIDGAR_FRAME_WATCH":"2"}' <bundle id>`, then pull `Library/Logs`. `MidgarFrameTally` holds the arithmetic and its tests.
+
 ## Configuration
 
 ```swift
