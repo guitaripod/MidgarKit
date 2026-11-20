@@ -142,7 +142,7 @@ struct PortalHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Midgar")
+                Text(verbatim: "Midgar")
                     .font(.system(size: 20 * PortalMetrics.scale, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 Text(subtitle)
@@ -211,7 +211,7 @@ struct PortalCard: View {
 
     private var coreContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Midgar Oy")
+            Text(verbatim: "Midgar Oy")
                 .font(.system(size: 22 * PortalMetrics.scale, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             Text(MidgarStrings.coreBlurb)
