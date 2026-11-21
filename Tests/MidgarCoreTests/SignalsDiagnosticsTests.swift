@@ -183,10 +183,10 @@ private func day(_ text: String) -> Date {
     }
 
     @Test func aScreenIsAShortLowercaseId() {
-        for good in ["player", "album_detail", "s2"] {
+        for good in ["player", "album_detail", "s2", "a", String(repeating: "a", count: 40)] {
             #expect(MidgarTrail.isScreenID(good))
         }
-        for bad in ["", "Player", "my screen", "2fast", String(repeating: "a", count: 41), "marcus@example.com"] {
+        for bad in ["", "Player", "my screen", "2fast", "_private", "pl\u{E4}yer", "now-playing", String(repeating: "a", count: 41), "marcus@example.com"] {
             #expect(!MidgarTrail.isScreenID(bad))
         }
     }

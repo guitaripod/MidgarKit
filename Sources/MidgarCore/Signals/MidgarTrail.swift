@@ -29,8 +29,17 @@ public enum MidgarTrail {
         MidgarTrailStore.shared.previous
     }
 
+    /// Whether the text is a screen id: a lowercase letter, then lowercase letters, digits and underscores, at most 40 bytes in all. Checked byte by byte, because a mark runs on the main thread each time a screen comes on and a regular expression would be compiled every time.
     static func isScreenID(_ text: String) -> Bool {
-        text.range(of: #"^[a-z][a-z0-9_]{0,39}$"#, options: .regularExpression) != nil
+        let bytes = text.utf8
+        guard let first = bytes.first, bytes.count <= 40, isLowercaseLetter(first) else {
+            return false
+        }
+        return bytes.allSatisfy { isLowercaseLetter($0) || (48...57).contains($0) || $0 == 95 }
+    }
+
+    private static func isLowercaseLetter(_ byte: UInt8) -> Bool {
+        (97...122).contains(byte)
     }
 }
 
