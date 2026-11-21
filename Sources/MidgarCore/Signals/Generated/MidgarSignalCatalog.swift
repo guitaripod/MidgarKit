@@ -178,7 +178,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [],
             measurements: [Measurement(name: "foregroundMemory", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundWatchdog", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundAbnormal", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "backgroundMemory", minimum: 0, maximum: 100000, isInteger: true)],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -190,7 +190,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "kind", values: .list(MidgarSignal.CrashKind.allCases.map(\.rawValue)))],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -202,7 +202,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "domain", values: .list(MidgarSignal.FaultDomain.allCases.map(\.rawValue))), Prop(name: "code", values: .list(MidgarSignal.FaultCode.allCases.map(\.rawValue)))],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -214,7 +214,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "tier", values: .list(MidgarSignal.Tier.allCases.map(\.rawValue)), isContext: true)],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -226,7 +226,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "feature", values: .features), Prop(name: "tier", values: .list(MidgarSignal.Tier.allCases.map(\.rawValue)), isContext: true)],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -238,7 +238,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "within", values: .list(MidgarSignal.ValueFirstWithin.allCases.map(\.rawValue)))],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -250,7 +250,7 @@ public enum MidgarSignalCatalog {
             isStory: true,
             props: [Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)), isOptional: true), Prop(name: "viewsBefore", values: .list(MidgarSignal.PurchaseStoryViewsBefore.allCases.map(\.rawValue))), Prop(name: "age", values: .list(MidgarSignal.Age.allCases.map(\.rawValue)), isContext: true)],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -262,7 +262,7 @@ public enum MidgarSignalCatalog {
             isStory: true,
             props: [Prop(name: "tenure", values: .list(MidgarSignal.RenewalOffTenure.allCases.map(\.rawValue))), Prop(name: "activeDays", values: .list(MidgarSignal.RenewalOffActiveDays.allCases.map(\.rawValue)))],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -274,7 +274,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "experiment", values: .experiments), Prop(name: "variant", values: .variants)],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
         Entry(
@@ -286,7 +286,7 @@ public enum MidgarSignalCatalog {
             isStory: false,
             props: [Prop(name: "experiment", values: .experiments), Prop(name: "variant", values: .variants)],
             measurements: [],
-            apps: ["app-of-the-dead", "dream-eater", "flaccy", "helia", "solar-beam"],
+            apps: ["app-of-the-dead", "double-kick", "dream-eater", "embr", "flaccy", "helia", "living-dex", "master-of-inventory", "pay-day", "pixiepocket", "psybeam", "psywave", "sforesight", "solar-beam"],
             isAdoptedOnly: true
         ),
     ]

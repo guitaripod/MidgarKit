@@ -4,17 +4,16 @@ import Testing
 
 /// The events of Lifestream 3 stay inside the apps whose registry entry has a `[lifestream]` table.
 @Suite struct SignalsAdoptionTests {
-    private static let notAdopted = "pay-day"
+    private static let notAdopted = "master-of-flags"
 
     private func experiment() throws -> MidgarConfig {
-        let json = #"{"app":"pay-day","version":9,"values":{"lab.paywall-headline":"control,outcome;paywall.view;paywall.purchase"}}"#
+        let json = #"{"app":"master-of-flags","version":9,"values":{"lab.paywall-headline":"control,outcome;paywall.view;paywall.purchase"}}"#
         return MidgarConfig(document: try JSONDecoder().decode(MidgarConfigDocument.self, from: Data(json.utf8)), defaults: [:])
     }
 
     @Test func theRegistryNamesTheAdoptersOnTheNewEventsAndNobodyElseOnTheOldOnes() throws {
         let tier = try #require(MidgarSignalCatalog.entry(named: "app.tier"))
         #expect(tier.isAdoptedOnly && tier.apps.contains("dream-eater") && !tier.apps.contains(Self.notAdopted))
-        #expect(!tier.apps.contains("master-of-flags"))
         let view = try #require(MidgarSignalCatalog.entry(named: "paywall.view"))
         #expect(!view.isAdoptedOnly && view.isAllowed(for: Self.notAdopted))
         #expect(MidgarSignalCatalog.Entry(name: "x", purpose: "x", uniqueness: .each, isAdoptedOnly: true).isAllowed(for: "dream-eater") == false)
@@ -34,7 +33,7 @@ import Testing
 
         await signals.noteActive()
         await signals.note(.tier(.paid))
-        await signals.send(.featureUse(feature: "invoices"))
+        await signals.send(.featureUse(feature: "quiz"))
         await signals.noteValue()
         await signals.send(.paywallView(placement: .settings))
         await signals.send(.paywallPurchase(product: "com.example.pro"))
