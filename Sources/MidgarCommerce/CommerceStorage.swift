@@ -8,6 +8,12 @@ struct PendingReport: Codable, Sendable, Equatable {
     let queuedAt: Date
 }
 
+/// A purchase this install started that the App Store has not completed yet: an Ask to Buy waiting for approval, or a sheet whose transaction arrives later through the updates listener. A nil product stands for any product the store handles, for the sheets that do not say which one was chosen.
+struct AwaitedPurchase: Codable, Sendable, Equatable {
+    let productID: String?
+    let until: Date
+}
+
 /// The ledger's last answer with the Midgar ID and environment it was for.
 struct LedgerSnapshot: Codable, Sendable, Equatable {
     let midgarId: String
@@ -22,6 +28,8 @@ struct CommerceState: Codable, Sendable, Equatable {
     var ledger: LedgerSnapshot?
     /// When ``MidgarStore/reportPurchaseHistory()`` queued what StoreKit already held. Optional so a file written before the field existed still decodes, with its queue.
     var historyReportedAt: Date?
+    /// Purchases started here that are still to arrive. Optional for the same reason.
+    var awaited: [AwaitedPurchase]?
 }
 
 /// `<directory>/commerce-<app>.json`, rewritten atomically after every change so a relaunch resumes the queue and the cache.

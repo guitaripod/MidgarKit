@@ -29,6 +29,7 @@ extension MidgarStore {
         switch outcome {
         case .pending:
             log("commerce: purchase is pending approval")
+            expectPurchase(of: nil, for: Self.approvalLifetime)
             return .pending
         case .userCancelled:
             return .cancelled

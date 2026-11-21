@@ -237,6 +237,7 @@ public actor MidgarStore {
         switch outcome {
         case .pending:
             log("commerce: purchase of \(productID) is pending approval")
+            expectPurchase(of: productID, for: Self.approvalLifetime)
             return .pending
         case .userCancelled:
             return .cancelled
@@ -300,6 +301,7 @@ public actor MidgarStore {
         guard configuration.mode == .purchases else {
             throw MidgarStoreError.readOnly
         }
+        await expectPurchase(of: nil, for: Self.redemptionLifetime)
         do {
             if #available(iOS 27.0, visionOS 27.0, *) {
                 let result = try await AppStore.presentOfferCodeRedeemSheet(from: viewController)

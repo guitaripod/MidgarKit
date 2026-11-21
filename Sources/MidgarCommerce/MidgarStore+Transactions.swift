@@ -33,7 +33,7 @@ extension MidgarStore {
         }
         await finishOnce(transaction)
         let isNewPurchase = Self.isNewPurchase(transaction)
-        if origin == .purchase || isNewPurchase {
+        if isMadeHere(transaction, origin: origin, isNewPurchase: isNewPurchase) {
             await signal(.paywallPurchase(product: transaction.productID))
         }
         if origin == .update && isNewPurchase {
@@ -46,6 +46,15 @@ extension MidgarStore {
         await awaitLocalGrant(of: transaction)
         publishIfChanged()
         Task { [weak self] in await self?.refresh() }
+    }
+
+    /// Whether this install made the purchase: it came back from a purchase call here, or it is a first purchase this install was waiting for (an approved Ask to Buy, a redeemed offer code). The updates listener also delivers what was bought on another device, restored by the App Store or finished by an older build, and none of those is a purchase to count: before this rule every such transaction sent `paywall.purchase`, several times the ledger's sales.
+    private func isMadeHere(_ transaction: StoreTransaction, origin: Origin, isNewPurchase: Bool) -> Bool {
+        if origin == .purchase {
+            _ = claimExpected(transaction)
+            return true
+        }
+        return isNewPurchase && claimExpected(transaction)
     }
 
     /// The pauses between re-reads of StoreKit's entitlements while a transaction that grants something is not listed yet, three seconds in all.

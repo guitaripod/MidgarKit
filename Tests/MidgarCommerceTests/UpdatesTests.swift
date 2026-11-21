@@ -10,7 +10,8 @@ import Testing
         h.ledger.serve(midgarId: FakeIdentity.first)
         let first = h.transaction(id: 10, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(30 * day))
         h.storeKit.setCurrent([.verified(first)])
-        h.storeKit.emit(.verified(first))
+        h.storeKit.queue(.success(.verified(first)))
+        _ = try await h.store.purchase(Products.monthly)
         #expect(await eventually { await h.store.isEntitled(to: "pro") })
 
         let renewal = h.transaction(id: 11, original: 10, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(60 * day))
@@ -187,6 +188,7 @@ import Testing
 
     @Test func aRedeemedOfferCodeArrivesAsANewPurchaseThroughTheSamePath() async throws {
         let h = StoreHarness()
+        await h.store.expectPurchase(of: nil, for: MidgarStore.redemptionLifetime)
         let redeemed = h.transaction(id: 20, product: Products.monthly, kind: .autoRenewableSubscription, expires: commerceEpoch.addingTimeInterval(7 * day))
         h.storeKit.setCurrent([.verified(redeemed)])
         h.storeKit.emit(.verified(redeemed))
