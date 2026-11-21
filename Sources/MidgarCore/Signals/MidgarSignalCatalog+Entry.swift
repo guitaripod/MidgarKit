@@ -19,8 +19,10 @@ extension MidgarSignalCatalog {
         public let props: [Prop]
         /// The measurements the event carries, each with the range it must stay in.
         public let measurements: [Measurement]
-        /// The registry slugs of the apps allowed to send the event. Empty when every app may.
+        /// The registry slugs of the apps allowed to send the event. Empty when every app may, unless ``isAdoptedOnly``.
         public let apps: [String]
+        /// True for an event of Lifestream 3, which only the apps in ``apps`` send, and none while that list is empty.
+        public let isAdoptedOnly: Bool
 
         public var id: String { name }
 
@@ -33,7 +35,8 @@ extension MidgarSignalCatalog {
             isStory: Bool = false,
             props: [Prop] = [],
             measurements: [Measurement] = [],
-            apps: [String] = []
+            apps: [String] = [],
+            isAdoptedOnly: Bool = false
         ) {
             self.name = name
             self.purpose = purpose
@@ -44,11 +47,12 @@ extension MidgarSignalCatalog {
             self.props = props
             self.measurements = measurements
             self.apps = apps
+            self.isAdoptedOnly = isAdoptedOnly
         }
 
         /// Whether the app with this registry slug may send the event: any app when the event has no app limit, otherwise only the apps it names. Without a slug only the events with no limit qualify.
         public func isAllowed(for appID: String?) -> Bool {
-            apps.isEmpty || appID.map(apps.contains) == true
+            (apps.isEmpty && !isAdoptedOnly) || appID.map(apps.contains) == true
         }
     }
 

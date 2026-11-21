@@ -10,6 +10,8 @@ final class MidgarUsageCountsModel: ObservableObject {
     let appID: String?
     /// The catalog events this app sends, in registry order.
     let events: [MidgarSignalCatalog.Entry]
+    /// Whether the app sends a crash report when it crashes or freezes, and the UTC day it last did.
+    let crashReports: CrashReports
     /// This app's latest finished week, or nil until it is read, and for good when it cannot be: the section is then left out.
     @Published private(set) var numbers: MidgarAppNumbers?
     @Published private var revision = 0
@@ -17,6 +19,17 @@ final class MidgarUsageCountsModel: ObservableObject {
     private let loader: any MidgarPublicStatsLoading
     private var hasStartedLoading = false
     private var switchRow: MidgarSettingsRow
+
+    /// What the screen says about crash reports: whether the app sends them at all, and the day (`YYYY-MM-DD`) of the last one.
+    struct CrashReports: Sendable, Equatable {
+        var isSent = false
+        var lastDay: String?
+
+        /// What the app's own signals client reports.
+        static var current: CrashReports {
+            CrashReports(isSent: MidgarSignals.sendsCrashReports, lastDay: MidgarSignals.lastCrashReportDay)
+        }
+    }
 
     /// - Parameters:
     ///   - appID: The app's registry slug. Defaults to the one the app configured ``MidgarSignals`` with.
@@ -27,9 +40,11 @@ final class MidgarUsageCountsModel: ObservableObject {
         appID: String? = MidgarSignals.appID,
         catalog: [MidgarSignalCatalog.Entry] = MidgarSignalCatalog.entries,
         switchRow: MidgarSettingsRow = .usageCounts(),
-        loader: any MidgarPublicStatsLoading = MidgarPublicStatsClient()
+        loader: any MidgarPublicStatsLoading = MidgarPublicStatsClient(),
+        crashReports: CrashReports = .current
     ) {
         self.appID = appID
+        self.crashReports = crashReports
         self.events = catalog.allowed(for: appID)
         self.loader = loader
         self.switchRow = switchRow
@@ -79,8 +94,29 @@ final class MidgarUsageCountsModel: ObservableObject {
             id: "midgar.usageCounts.events",
             title: MidgarUIStrings.whatThisAppSends,
             footer: isEnabled ? nil : MidgarUIStrings.nothingIsSent,
-            rows: events.map(Self.row(for:))
+            rows: events.map(Self.row(for:)) + crashReportRows
         )
+    }
+
+    /// For an app that sends crash reports: one row that says exactly what a report holds and, once one has left, the day the last did. A crash report is not a count, so it is not among the events above.
+    private var crashReportRows: [MidgarSettingsRow] {
+        guard crashReports.isSent else {
+            return []
+        }
+        let what = MidgarSettingsRow(id: "midgar.usageCounts.crashReports", title: MidgarUIStrings.crashReports, subtitle: MidgarUIStrings.crashReportsDetail)
+        guard let day = crashReports.lastDay else {
+            return [what]
+        }
+        return [what, .info(id: "midgar.usageCounts.crashReports.last", title: MidgarUIStrings.lastReportSent, detail: Self.display(day: day))]
+    }
+
+    /// A UTC day in the person's language, or the day as it is when it is not a date.
+    static func display(day: String) -> String {
+        guard let date = MidgarAppNumbers.date(from: day) else {
+            return day
+        }
+        let utc = TimeZone(identifier: "UTC") ?? .gmt
+        return date.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, timeZone: utc))
     }
 
     private var numbersSection: MidgarSettingsSection? {

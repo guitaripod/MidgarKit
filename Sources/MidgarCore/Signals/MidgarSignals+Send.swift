@@ -10,12 +10,17 @@ extension MidgarSignals {
 
     /// Sends one generated event, if the registry lets this install send it now.
     ///
+    /// An event the registry limits to other apps is dropped here, which is how the events of Lifestream 3 stay inside the apps that adopted it.
+    ///
     /// An event that declares context gets it stamped after the uniqueness check, so a change of tier does not make a second send in the same period; a story is held for some hours first (``hold(_:at:)``).
     ///
     /// The event's uniqueness decides: `each` always goes; `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar for each distinct combination of props; `lifetime` goes once per install for each combination; `per-period` goes once per calendar period named by its `period` prop. Events that carry a cohort get the install's `cohort` prop. Nothing is sent or remembered while the kill switch is on or ``isEnabled`` is off.
     ///
     /// The call does no disk work and no network work: it looks the event up in memory and appends it to the queue. The ledger reaches disk at most every 5 seconds, and on ``flush()``.
     public func send(_ signal: MidgarSignal) {
+        guard allows(signal.name) else {
+            return
+        }
         remember(signal)
         deliver(name: signal.name, props: signal.props, uniqueness: signal.uniqueness, carriesCohort: signal.carriesCohort, context: signal.context, isStory: signal.isStory)
         noteLab(signal.name)

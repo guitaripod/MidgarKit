@@ -42,6 +42,22 @@ extension MidgarUIStrings {
         )
     }
 
+    static var crashReports: String {
+        String(localized: "Crash reports", bundle: .module, comment: "Title of a row in the list of what the app sends: reports about crashes and freezes")
+    }
+
+    static var crashReportsDetail: String {
+        String(
+            localized: "When the app crashes or freezes: what kind of fault it was, where in the app's code it happened, the app version, the system version and the device model. Nothing you wrote or opened, and nothing that identifies you.",
+            bundle: .module,
+            comment: "Explains exactly what a crash report contains, under the Crash reports row"
+        )
+    }
+
+    static var lastReportSent: String {
+        String(localized: "Last report sent", bundle: .module, comment: "Label of the date on which the app last sent a crash report")
+    }
+
     static var thisAppsNumbers: String {
         String(localized: "This app's numbers", bundle: .module, comment: "Section header above this app's public usage figures")
     }

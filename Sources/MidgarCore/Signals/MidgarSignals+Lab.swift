@@ -1,11 +1,11 @@
 import Foundation
 
 extension MidgarSignals {
-    /// Which version of an experiment to show on this install, or nil when the app's remote config does not carry the experiment, usage counts are off or signals are killed. Show what ships today for nil. It can be read from any thread and gives the same answer in every launch.
+    /// Which version of an experiment to show on this install, or nil when the app's remote config does not carry the experiment, the app has not adopted Lifestream 3, usage counts are off or signals are killed. Show what ships today for nil. It can be read from any thread and gives the same answer in every launch.
     ///
     /// Reading it sends nothing. The install enters the experiment when it next sends the event the experiment names as its exposure (for a paywall test, `paywall.view`), and its outcome counts when the outcome event follows.
     public nonisolated func variant(of experiment: String) -> String? {
-        guard consent.isEnabled, !isKilledNow else {
+        guard hasAdopted, consent.isEnabled, !isKilledNow else {
             return nil
         }
         return activeExperiments().first { $0.id == experiment }.map(lab.variant(of:))

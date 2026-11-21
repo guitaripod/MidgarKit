@@ -86,7 +86,12 @@ final class SignalsHarness: @unchecked Sendable {
     let gate = TimerGate()
     let logs = SignalsLogRecorder()
     let config = ConfigBox()
-    let appID = "dream-eater"
+    let appID: String
+
+    /// - Parameter appID: The registry slug the signals run as. The default is an app that adopted Lifestream 3.
+    init(appID: String = "dream-eater") {
+        self.appID = appID
+    }
 
     func makeSignals(
         platform: String = "ios",

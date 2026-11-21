@@ -32,7 +32,8 @@ import MidgarCore
             MidgarUIStrings.usageCountsTitle, MidgarUIStrings.usageCountsIntro, MidgarUIStrings.usageCountsSwitchFooter,
             MidgarUIStrings.whatThisAppSends, MidgarUIStrings.nothingIsSent, MidgarUIStrings.installWeekNote,
             MidgarUIStrings.thisAppsNumbers, MidgarUIStrings.weeklyActiveInstalls, MidgarUIStrings.newInstalls,
-            MidgarUIStrings.allOfMidgarsNumbers, MidgarUIStrings.onOff(isEnabled: true), MidgarUIStrings.onOff(isEnabled: false)
+            MidgarUIStrings.allOfMidgarsNumbers, MidgarUIStrings.onOff(isEnabled: true), MidgarUIStrings.onOff(isEnabled: false),
+            MidgarUIStrings.crashReports, MidgarUIStrings.crashReportsDetail, MidgarUIStrings.lastReportSent
         ]
         return fixed + MidgarSignal.Uniqueness.allCases.map(MidgarUIStrings.frequency(of:)) + MidgarSignalCatalog.entries.map(\.purpose)
     }

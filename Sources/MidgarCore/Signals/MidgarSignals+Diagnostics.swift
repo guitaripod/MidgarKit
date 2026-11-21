@@ -10,6 +10,8 @@ struct MidgarDiagnosticsState: Codable, Sendable, Equatable {
     var day = ""
     var taken: [String] = []
     var pending: [MidgarCrashCard] = []
+    /// The UTC day the last crash card left, for the screen that tells the person what the app sends.
+    var lastSent: String?
 }
 
 /// `<directory>/signals-diagnostics-<app>.json`, next to the event queue, so a card made while offline goes out after the next launch.
@@ -39,7 +41,7 @@ extension MidgarSignals {
     static let dailyCardLimit = 5
     static let cardsPerRequest = 5
 
-    var diagnosticsStore: MidgarDiagnosticsStore {
+    nonisolated var diagnosticsStore: MidgarDiagnosticsStore {
         MidgarDiagnosticsStore(fileURL: store.sibling("diagnostics"))
     }
 
@@ -92,13 +94,44 @@ extension MidgarSignals {
                 break
             }
             state.pending.removeFirst(batch.count)
+            state.lastSent = Self.dayKey(now())
             diagnosticsStore.save(isSuppressed ? MidgarDiagnosticsState() : state)
         }
     }
 
+    /// Whether this app adopted Lifestream 3: its registry entry has a `[lifestream]` table, which is what limits the newer events to it. An app that has not sends what it sent before and nothing else: no crash card, no MetricKit figure, no tier, no story and no experiment.
+    nonisolated var hasAdopted: Bool {
+        allows("health.crashed")
+    }
+
+    /// Whether this app sends a crash card when it crashes or freezes: it adopted Lifestream 3 and usage counts are on. The Usage Counts screen says so.
+    public nonisolated var sendsCrashReports: Bool {
+        hasAdopted && consent.isEnabled
+    }
+
+    /// The UTC day (`YYYY-MM-DD`) the last crash card left this install, or nil when none has.
+    public nonisolated var lastCrashReportDay: String? {
+        diagnosticsStore.load().lastSent
+    }
+
+    /// ``sendsCrashReports`` of the ``shared`` instance; false until signals are configured.
+    public nonisolated static var sendsCrashReports: Bool {
+        shared?.sendsCrashReports ?? false
+    }
+
+    /// ``lastCrashReportDay`` of the ``shared`` instance.
+    public nonisolated static var lastCrashReportDay: String? {
+        shared?.lastCrashReportDay
+    }
+
+    /// Whether the registry lets this app send the event of that name. An event the registry does not know is for the server to refuse.
+    nonisolated func allows(_ name: String) -> Bool {
+        MidgarSignalCatalog.entry(named: name)?.isAllowed(for: appID) ?? true
+    }
+
     /// What an app's launch does for diagnostics: sends the cards an earlier run could not, and on the platforms that have MetricKit subscribes to it, so crashes, freezes and the day's launch and memory figures arrive without the app asking. Does nothing outside an app's own process.
     func startDiagnostics() async {
-        guard MidgarSignalsPlatform.isApp() else {
+        guard MidgarSignalsPlatform.isApp(), hasAdopted else {
             return
         }
         await sendPendingCards()

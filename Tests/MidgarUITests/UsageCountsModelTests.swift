@@ -8,9 +8,27 @@ import MidgarCore
         appID: String? = "flaccy",
         catalog: [MidgarSignalCatalog.Entry] = fixtureCatalog,
         switchRow: MidgarSettingsRow = FakeSwitch().row,
-        loader: any MidgarPublicStatsLoading
+        loader: any MidgarPublicStatsLoading,
+        crashReports: MidgarUsageCountsModel.CrashReports = .init()
     ) -> MidgarUsageCountsModel {
-        MidgarUsageCountsModel(appID: appID, catalog: catalog, switchRow: switchRow, loader: loader)
+        MidgarUsageCountsModel(appID: appID, catalog: catalog, switchRow: switchRow, loader: loader, crashReports: crashReports)
+    }
+
+    private func crashRows(_ model: MidgarUsageCountsModel) -> [MidgarSettingsRow] {
+        (model.sections.first { $0.id == "midgar.usageCounts.events" }?.rows ?? []).filter { $0.id.hasPrefix("midgar.usageCounts.crashReports") }
+    }
+
+    @Test func anAppThatSendsCrashReportsSaysWhatOneHoldsAndWhenTheLastLeft() throws {
+        #expect(crashRows(model(loader: try answering())).isEmpty)
+
+        let sending = model(loader: try answering(), crashReports: .init(isSent: true, lastDay: nil))
+        #expect(crashRows(sending).map(\.title) == ["Crash reports"])
+        #expect(crashRows(sending).first?.subtitle?.contains("nothing that identifies you") == true)
+
+        let sent = model(loader: try answering(), crashReports: .init(isSent: true, lastDay: "2026-11-20"))
+        #expect(crashRows(sent).map(\.title) == ["Crash reports", "Last report sent"])
+        #expect(MidgarUsageCountsModel.display(day: "2026-11-20").contains("20"))
+        #expect(MidgarUsageCountsModel.display(day: "soon") == "soon")
     }
 
     private func answering() throws -> FakeStatsLoader {
