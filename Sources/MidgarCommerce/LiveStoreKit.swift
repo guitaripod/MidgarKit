@@ -132,6 +132,28 @@ actor LiveStoreKit: MidgarStoreKit {
         return Self.map(appTransaction.environment)
     }
 
+    /// The renewal state of each running subscription the account bought itself. A family member's subscription is not this person's to cancel, and one whose state does not verify is left out.
+    func renewals() async -> [StoreRenewal] {
+        var found: [StoreRenewal] = []
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result,
+                  transaction.productType == .autoRenewable,
+                  transaction.ownershipType == .purchased,
+                  let status = await transaction.subscriptionStatus,
+                  case .verified(let renewal) = status.renewalInfo
+            else {
+                continue
+            }
+            found.append(StoreRenewal(
+                originalID: transaction.originalID,
+                productID: transaction.productID,
+                willAutoRenew: renewal.willAutoRenew,
+                startedAt: transaction.originalPurchaseDate
+            ))
+        }
+        return found
+    }
+
     private func product(for id: String) async throws -> Product {
         if let cached = cachedProducts[id] {
             return cached
@@ -166,7 +188,8 @@ actor LiveStoreKit: MidgarStoreKit {
             appAccountToken: transaction.appAccountToken,
             environment: map(transaction.environment),
             jws: jws,
-            finish: { await transaction.finish() }
+            finish: { await transaction.finish() },
+            isTrial: transaction.offerType == .introductory && (transaction.price ?? 0) == 0
         )
     }
 

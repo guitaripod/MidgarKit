@@ -55,7 +55,7 @@ import Testing
         #expect(!harness.queueFileExists)
 
         await signals.persistPending()
-        #expect(await signals.writeCount == 2)
+        #expect(await signals.writeCount == 3, "the queue, the ledger and the context that counted the purchase screen")
         #expect(harness.ledgerOnDisk.count == MidgarSignal.FunnelStep.allCases.count)
         #expect(harness.queueFileExists)
     }

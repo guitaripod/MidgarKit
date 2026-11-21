@@ -10,13 +10,15 @@ public enum MidgarActivePeriod: String, CaseIterable, Sendable {
 }
 
 extension MidgarSignals {
-    /// Sends `app.active` for the day, week and month of the device's calendar. The uniqueness the registry gives the event keeps each period to one send per install, so the server's daily counts add up to daily, weekly and monthly active installs.
+    /// Sends `app.active` for the day, week and month of the device's calendar, remembers the day for the stories that look back on use, and queues the stories whose wait is over. The uniqueness the registry gives the event keeps each period to one send per install, so the server's daily counts add up to daily, weekly and monthly active installs.
     /// ``configure(configuration:config:directory:appVersion:)`` calls it at launch and on every return to the
     /// foreground. Nothing is sent or remembered while the kill switch is on or usage counts are off.
     public func noteActive() {
         for period in MidgarSignal.Period.allCases {
             send(.appActive(period: period))
         }
+        noteActiveContext()
+        releaseDueStories()
     }
 }
 

@@ -13,6 +13,8 @@ extension MidgarSignalCatalog {
         public let carriesCohort: Bool
         /// True while no code sends the event, so a screen that lists what an app sends leaves it out.
         public let isReserved: Bool
+        /// True for an event MidgarKit holds for some hours before sending, and whose props the server counts one at a time.
+        public let isStory: Bool
         /// The string props the event carries, each with the values it may take.
         public let props: [Prop]
         /// The measurements the event carries, each with the range it must stay in.
@@ -28,6 +30,7 @@ extension MidgarSignalCatalog {
             uniqueness: MidgarSignal.Uniqueness,
             carriesCohort: Bool = false,
             isReserved: Bool = false,
+            isStory: Bool = false,
             props: [Prop] = [],
             measurements: [Measurement] = [],
             apps: [String] = []
@@ -37,6 +40,7 @@ extension MidgarSignalCatalog {
             self.uniqueness = uniqueness
             self.carriesCohort = carriesCohort
             self.isReserved = isReserved
+            self.isStory = isStory
             self.props = props
             self.measurements = measurements
             self.apps = apps
@@ -58,17 +62,22 @@ extension MidgarSignalCatalog {
             case apps
             /// A product id from the app registry.
             case products
+            /// One of the features the app's registry entry lists.
+            case features
         }
 
         public let name: String
         public let values: Values
         /// True when the event may leave the prop out.
         public let isOptional: Bool
+        /// True when MidgarKit fills the prop from what the install knows about itself, such as whether it pays.
+        public let isContext: Bool
 
-        public init(name: String, values: Values, isOptional: Bool = false) {
+        public init(name: String, values: Values, isOptional: Bool = false, isContext: Bool = false) {
             self.name = name
             self.values = values
             self.isOptional = isOptional
+            self.isContext = isContext
         }
     }
 

@@ -73,8 +73,10 @@ import Testing
             let entry = try #require(MidgarSignalCatalog.entry(named: signal.name), "\(signal.name) is not in the catalog")
             #expect(entry.uniqueness == signal.uniqueness, "\(signal.name) uniqueness")
             #expect(entry.carriesCohort == signal.carriesCohort, "\(signal.name) cohort")
-            let declared = Set(entry.props.map(\.name) + entry.measurements.map(\.name))
+            let declared = Set(entry.props.filter { !$0.isContext }.map(\.name) + entry.measurements.map(\.name))
             #expect(declared == Set(signal.props.keys), "\(signal.name) props")
+            #expect(Set(entry.props.filter(\.isContext).map(\.name)) == Set(signal.context.map(\.rawValue)), "\(signal.name) context")
+            #expect(entry.isStory == signal.isStory, "\(signal.name) story")
         }
         #expect(Self.everyEvent.count == MidgarSignalCatalog.entries.count, "add the new event to everyEvent")
     }
@@ -107,7 +109,7 @@ import Testing
     @Test func theInstallWeekIsOnlyOnTheEventsTheRegistryMarks() {
         let withWeek = MidgarSignalCatalog.entries.filter(\.carriesCohort).map(\.name)
 
-        #expect(withWeek == ["app.active", "funnel.step"])
+        #expect(withWeek == ["app.active", "funnel.step", "value.first"])
     }
 
     @Test func theGeneratedUniquenessCoversTheWordsAnAppCanSay() {
@@ -134,5 +136,7 @@ import Testing
         .metricsDiagnostics(crashes: 1, hangs: 1, diskWrites: 1, cpuExceptions: 1),
         .metricsExits(foregroundMemory: 1, foregroundWatchdog: 1, foregroundAbnormal: 1, backgroundMemory: 1),
         .healthCrashed(kind: .crash), .errorHit(domain: .purchase, code: .offline),
+        .appTier, .featureUse(feature: "player"), .valueFirst(within: .firstSession),
+        .purchaseStory(placement: .limit, viewsBefore: .one), .renewalOff(tenure: .firstMonth, activeDays: .none),
     ]
 }

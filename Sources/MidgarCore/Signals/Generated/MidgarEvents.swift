@@ -38,6 +38,16 @@ public enum MidgarSignal: Sendable, Equatable {
     case healthCrashed(kind: CrashKind)
     /// Which failures you ran into, from a fixed list, so the common ones get fixed.
     case errorHit(domain: FaultDomain, code: FaultCode)
+    /// How many of the week's active installs are free, on a trial, paying or lapsed.
+    case appTier
+    /// Which parts of the app get used in a week, and whether by free or paying installs, so the ones worth building on are known.
+    case featureUse(feature: String)
+    /// How soon after installing you first got what the app is for.
+    case valueFirst(within: ValueFirstWithin)
+    /// What led up to a purchase made in the app, namely where the purchase screen was opened from, how often it had been shown and how long the app had been installed.
+    case purchaseStory(placement: Placement? = nil, viewsBefore: PurchaseStoryViewsBefore)
+    /// When a subscription's renewal is turned off, how long it had run and on how many of the last fourteen days the app was opened.
+    case renewalOff(tenure: RenewalOffTenure, activeDays: RenewalOffActiveDays)
 
     /// How often one install may send an event.
     public enum Uniqueness: String, Sendable, CaseIterable {
@@ -110,6 +120,36 @@ public enum MidgarSignal: Sendable, Equatable {
         case offline, timeout, server, refused, quota, payment, notFound = "not_found", unsupported, corrupt, full, denied, unknown
     }
 
+    /// The closed set Tier; the worker stores any other value as `other`.
+    public enum Tier: String, Sendable, CaseIterable {
+        case free, trial, paid, lapsed, unknown
+    }
+
+    /// The closed set ValueFirstWithin; the worker stores any other value as `other`.
+    public enum ValueFirstWithin: String, Sendable, CaseIterable {
+        case firstSession = "first_session", day0, week1, later
+    }
+
+    /// The closed set PurchaseStoryViewsBefore; the worker stores any other value as `other`.
+    public enum PurchaseStoryViewsBefore: String, Sendable, CaseIterable {
+        case none, one, twoThree = "two_three", fourNine = "four_nine", tenPlus = "ten_plus"
+    }
+
+    /// The closed set Age; the worker stores any other value as `other`.
+    public enum Age: String, Sendable, CaseIterable {
+        case day0, week1, month1, quarter1, older, unknown
+    }
+
+    /// The closed set RenewalOffTenure; the worker stores any other value as `other`.
+    public enum RenewalOffTenure: String, Sendable, CaseIterable {
+        case firstMonth = "first_month", quarter1, half1, year1, longer
+    }
+
+    /// The closed set RenewalOffActiveDays; the worker stores any other value as `other`.
+    public enum RenewalOffActiveDays: String, Sendable, CaseIterable {
+        case none, oneTwo = "one_two", threeSix = "three_six", sevenPlus = "seven_plus"
+    }
+
     /// The event name on the wire.
     public var name: String {
         switch self {
@@ -131,13 +171,18 @@ public enum MidgarSignal: Sendable, Equatable {
         case .metricsExits: return "metrics.exits"
         case .healthCrashed: return "health.crashed"
         case .errorHit: return "error.hit"
+        case .appTier: return "app.tier"
+        case .featureUse: return "feature.use"
+        case .valueFirst: return "value.first"
+        case .purchaseStory: return "purchase.story"
+        case .renewalOff: return "renewal.off"
         }
     }
 
     /// Every event name the registry declares.
-    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics", "metrics.exits", "health.crashed", "error.hit"]
+    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics", "metrics.exits", "health.crashed", "error.hit", "app.tier", "feature.use", "value.first", "purchase.story", "renewal.off"]
 
-    /// The props the event sends, without the cohort, which MidgarKit stamps.
+    /// The props the event sends, without the cohort and the context, which MidgarKit stamps.
     public var props: [String: MidgarSignalValue] {
         switch self {
         case .appLaunch: return [:]
@@ -194,6 +239,14 @@ public enum MidgarSignal: Sendable, Equatable {
             return props
         case .healthCrashed(let kind): return ["kind": .string(kind.rawValue)]
         case .errorHit(let domain, let code): return ["domain": .string(domain.rawValue), "code": .string(code.rawValue)]
+        case .appTier: return [:]
+        case .featureUse(let feature): return ["feature": .string(feature)]
+        case .valueFirst(let within): return ["within": .string(within.rawValue)]
+        case .purchaseStory(let placement, let viewsBefore):
+            var props: [String: MidgarSignalValue] = ["viewsBefore": .string(viewsBefore.rawValue)]
+            if let placement { props["placement"] = .string(placement.rawValue) }
+            return props
+        case .renewalOff(let tenure, let activeDays): return ["tenure": .string(tenure.rawValue), "activeDays": .string(activeDays.rawValue)]
         }
     }
 
@@ -218,13 +271,40 @@ public enum MidgarSignal: Sendable, Equatable {
         case .metricsExits: return .each
         case .healthCrashed: return .daily
         case .errorHit: return .daily
+        case .appTier: return .weekly
+        case .featureUse: return .weekly
+        case .valueFirst: return .lifetime
+        case .purchaseStory: return .each
+        case .renewalOff: return .each
         }
     }
 
     /// Whether MidgarKit stamps the install week on this event.
     public var carriesCohort: Bool {
         switch self {
-        case .appActive, .funnelStep: return true
+        case .appActive, .funnelStep, .valueFirst: return true
+        default: return false
+        }
+    }
+
+    /// What MidgarKit can add to an event from what the install knows about itself: whether it pays, and how long ago it was installed.
+    public enum Context: String, Sendable, CaseIterable {
+        case age, tier
+    }
+
+    /// The context MidgarKit stamps on this event.
+    public var context: [Context] {
+        switch self {
+        case .appTier, .featureUse: return [.tier]
+        case .purchaseStory: return [.age]
+        default: return []
+        }
+    }
+
+    /// Whether the event is a story: MidgarKit holds it for some hours before sending it and the server counts each of its props on its own, so it cannot be lined up with a purchase.
+    public var isStory: Bool {
+        switch self {
+        case .purchaseStory, .renewalOff: return true
         default: return false
         }
     }

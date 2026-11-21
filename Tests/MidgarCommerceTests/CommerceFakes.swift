@@ -67,6 +67,7 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
     private var syncCalls = 0
     private var environment: StoreEnvironment?
     private var catalog: [String: StoreProduct] = [:]
+    private var renewalStates: [StoreRenewal] = []
     private let stream: AsyncStream<StoreVerification>
     private let continuation: AsyncStream<StoreVerification>.Continuation
     private let intents: AsyncStream<String>
@@ -109,6 +110,10 @@ final class FakeStoreKit: MidgarStoreKit, @unchecked Sendable {
     func sync() async throws { lock.withLock { syncCalls += 1 } }
 
     func appEnvironment() async -> StoreEnvironment? { lock.withLock { environment } }
+
+    func setRenewals(_ renewals: [StoreRenewal]) { lock.withLock { renewalStates = renewals } }
+
+    func renewals() async -> [StoreRenewal] { lock.withLock { renewalStates } }
 }
 
 func makeTransaction(
@@ -148,6 +153,14 @@ final class LogCapture: @unchecked Sendable {
     var lines: [String] { lock.withLock { captured } }
 
     func record(_ line: String) { lock.withLock { captured.append(line) } }
+}
+
+actor NoteCapture {
+    private(set) var notes: [MidgarSignals.StoreNote] = []
+
+    func record(_ note: MidgarSignals.StoreNote) {
+        notes.append(note)
+    }
 }
 
 actor SignalCapture {
@@ -196,6 +209,7 @@ struct StoreHarness {
     let finishes: FinishLog
     let logs: LogCapture
     let signals: SignalCapture
+    let notes = NoteCapture()
     let sleeper: ManualSleeper
     let directory: URL
     let notifications = NotificationCenter()
@@ -243,7 +257,8 @@ struct StoreHarness {
             logger: { logs.record($0) },
             observesForeground: false,
             grantLagSleep: grantLagSleep,
-            notifications: notifications
+            notifications: notifications,
+            note: { [notes] in await notes.record($0) }
         )
     }
 

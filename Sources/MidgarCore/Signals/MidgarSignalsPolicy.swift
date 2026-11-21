@@ -30,4 +30,6 @@ struct MidgarSignalsPolicy: Sendable {
     let maximumRetryAfter: TimeInterval
     /// Queued events and the uniqueness ledger are written to disk at most this many seconds after they change, and at once on a flush.
     let persistInterval: TimeInterval
+    /// How long a story is held before it is queued, drawn at random from this range of seconds: six to forty-eight hours.
+    var storyDelay: ClosedRange<TimeInterval> = 21_600...172_800
 }

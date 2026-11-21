@@ -13,8 +13,8 @@ import Testing
 
         h.storeKit.intend(Products.pro)
 
+        #expect(await eventually { h.storeKit.purchases.map(\.productID) == [Products.pro] })
         #expect(await eventually { await h.store.isEntitled(to: "pro") })
-        #expect(h.storeKit.purchases.map(\.productID) == [Products.pro])
         #expect(h.storeKit.purchases.first?.token == UUID(uuidString: FakeIdentity.first))
         #expect(await eventually { h.finishes.ids == [1] && h.ledger.reports == ["jws-1-active"] })
         var approved = false

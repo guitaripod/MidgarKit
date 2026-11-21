@@ -30,11 +30,14 @@ public actor MidgarStore {
     let sleep: @Sendable (Duration) async throws -> Void
     let grantLagSleep: @Sendable (Duration) async throws -> Void
     let signal: @Sendable (MidgarSignal) async -> Void
+    let note: @Sendable (MidgarSignals.StoreNote) async -> Void
     let notifications: NotificationCenter
     let log: @Sendable (String) -> Void
 
     var state: CommerceState
     var localEntitlements: [MidgarEntitlement] = []
+    /// The products whose current transaction is a free introductory period.
+    var trialProducts: Set<String> = []
     var resolvedEnvironment: StoreEnvironment?
     var seenTransactions: Set<String> = []
     var finishedTransactions: Set<String> = []
@@ -68,7 +71,8 @@ public actor MidgarStore {
             sleep: { try await Task.sleep(for: $0) },
             signal: { await MidgarSignals.shared?.send($0) },
             logger: logger,
-            observesForeground: true
+            observesForeground: true,
+            note: { await MidgarSignals.shared?.note($0) }
         )
     }
 
@@ -83,7 +87,8 @@ public actor MidgarStore {
         logger: @escaping @Sendable (String) -> Void,
         observesForeground: Bool,
         grantLagSleep: (@Sendable (Duration) async throws -> Void)? = nil,
-        notifications: NotificationCenter = .default
+        notifications: NotificationCenter = .default,
+        note: @escaping @Sendable (MidgarSignals.StoreNote) async -> Void = { _ in }
     ) {
         let storage = CommerceStorage(directory: configuration.directory, appID: configuration.appID)
         self.configuration = configuration
@@ -96,6 +101,7 @@ public actor MidgarStore {
         self.sleep = sleep
         self.grantLagSleep = grantLagSleep ?? { try await Task.sleep(for: $0) }
         self.signal = signal
+        self.note = note
         self.notifications = notifications
         self.log = logger
         self.state = storage.load()

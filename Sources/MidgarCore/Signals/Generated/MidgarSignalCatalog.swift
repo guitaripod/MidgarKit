@@ -10,6 +10,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: true,
+            isStory: false,
             props: [],
             measurements: [],
             apps: []
@@ -20,6 +21,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .perPeriod,
             carriesCohort: true,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "period", values: .list(MidgarSignal.Period.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -30,6 +32,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: true,
+            isStory: false,
             props: [],
             measurements: [],
             apps: []
@@ -40,6 +43,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -50,6 +54,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "product", values: .products)],
             measurements: [],
             apps: []
@@ -60,6 +65,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "outcome", values: .list(MidgarSignal.Outcome.allCases.map(\.rawValue))), Prop(name: "product", values: .products)],
             measurements: [],
             apps: []
@@ -70,6 +76,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .lifetime,
             carriesCohort: true,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "step", values: .list(MidgarSignal.FunnelStep.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -80,6 +87,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -90,6 +98,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "appId", values: .apps), Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -100,6 +109,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "appId", values: .apps), Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -110,6 +120,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "appId", values: .apps), Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -120,6 +131,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "appId", values: .apps), Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -130,6 +142,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "appId", values: .apps), Prop(name: "storefront", values: .list(MidgarSignal.Storefront.allCases.map(\.rawValue)), isOptional: true), Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -140,6 +153,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [],
             measurements: [Measurement(name: "coldLaunchMs", minimum: 0, maximum: 600000, isInteger: false), Measurement(name: "hangSecondsPerHour", minimum: 0, maximum: 3600, isInteger: false), Measurement(name: "foregroundSeconds", minimum: 0, maximum: 604800, isInteger: false), Measurement(name: "peakMemoryMB", minimum: 0, maximum: 1048576, isInteger: false)],
             apps: []
@@ -150,6 +164,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [],
             measurements: [Measurement(name: "crashes", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "hangs", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "diskWrites", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "cpuExceptions", minimum: 0, maximum: 100000, isInteger: true)],
             apps: []
@@ -160,6 +175,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .each,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [],
             measurements: [Measurement(name: "foregroundMemory", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundWatchdog", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundAbnormal", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "backgroundMemory", minimum: 0, maximum: 100000, isInteger: true)],
             apps: []
@@ -170,6 +186,7 @@ public enum MidgarSignalCatalog {
             uniqueness: .daily,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "kind", values: .list(MidgarSignal.CrashKind.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
@@ -180,7 +197,63 @@ public enum MidgarSignalCatalog {
             uniqueness: .daily,
             carriesCohort: false,
             isReserved: false,
+            isStory: false,
             props: [Prop(name: "domain", values: .list(MidgarSignal.FaultDomain.allCases.map(\.rawValue))), Prop(name: "code", values: .list(MidgarSignal.FaultCode.allCases.map(\.rawValue)))],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "app.tier",
+            purpose: "How many of the week's active installs are free, on a trial, paying or lapsed.",
+            uniqueness: .weekly,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: false,
+            props: [Prop(name: "tier", values: .list(MidgarSignal.Tier.allCases.map(\.rawValue)), isContext: true)],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "feature.use",
+            purpose: "Which parts of the app get used in a week, and whether by free or paying installs, so the ones worth building on are known.",
+            uniqueness: .weekly,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: false,
+            props: [Prop(name: "feature", values: .features), Prop(name: "tier", values: .list(MidgarSignal.Tier.allCases.map(\.rawValue)), isContext: true)],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "value.first",
+            purpose: "How soon after installing you first got what the app is for.",
+            uniqueness: .lifetime,
+            carriesCohort: true,
+            isReserved: false,
+            isStory: false,
+            props: [Prop(name: "within", values: .list(MidgarSignal.ValueFirstWithin.allCases.map(\.rawValue)))],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "purchase.story",
+            purpose: "What led up to a purchase made in the app, namely where the purchase screen was opened from, how often it had been shown and how long the app had been installed.",
+            uniqueness: .each,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: true,
+            props: [Prop(name: "placement", values: .list(MidgarSignal.Placement.allCases.map(\.rawValue)), isOptional: true), Prop(name: "viewsBefore", values: .list(MidgarSignal.PurchaseStoryViewsBefore.allCases.map(\.rawValue))), Prop(name: "age", values: .list(MidgarSignal.Age.allCases.map(\.rawValue)), isContext: true)],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "renewal.off",
+            purpose: "When a subscription's renewal is turned off, how long it had run and on how many of the last fourteen days the app was opened.",
+            uniqueness: .each,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: true,
+            props: [Prop(name: "tenure", values: .list(MidgarSignal.RenewalOffTenure.allCases.map(\.rawValue))), Prop(name: "activeDays", values: .list(MidgarSignal.RenewalOffActiveDays.allCases.map(\.rawValue)))],
             measurements: [],
             apps: []
         ),

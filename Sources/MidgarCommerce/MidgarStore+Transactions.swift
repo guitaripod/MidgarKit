@@ -35,6 +35,7 @@ extension MidgarStore {
         let isNewPurchase = Self.isNewPurchase(transaction)
         if isMadeHere(transaction, origin: origin, isNewPurchase: isNewPurchase) {
             await signal(.paywallPurchase(product: transaction.productID))
+            await note(.purchased)
         }
         if origin == .update && isNewPurchase {
             emit(.purchaseApproved(productID: transaction.productID))
@@ -133,17 +134,22 @@ extension MidgarStore {
             return
         }
         var granted: [MidgarEntitlement] = []
+        var trials: Set<String> = []
         for verification in await storeKit.currentEntitlements() {
             switch verification {
             case .verified(let transaction):
                 if let entitlement = localEntitlement(for: transaction) {
                     granted.append(entitlement)
+                    if transaction.isTrial {
+                        trials.insert(transaction.productID)
+                    }
                 }
             case .unverified(let transaction, let reason):
                 log("commerce: ignored an unverified current entitlement for \(transaction.productID): \(reason)")
             }
         }
         localEntitlements = Self.collapse(granted)
+        trialProducts = trials
     }
 
     private func localEntitlement(for transaction: StoreTransaction) -> MidgarEntitlement? {

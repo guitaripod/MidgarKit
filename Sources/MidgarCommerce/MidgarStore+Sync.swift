@@ -21,6 +21,7 @@ extension MidgarStore {
             await flushReports()
             await refreshLedger()
             publishIfChanged()
+            await noteContext()
         } while rerunRequested
         syncTask = nil
         ensureRetryLoop()

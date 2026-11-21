@@ -30,6 +30,10 @@ struct CommerceState: Codable, Sendable, Equatable {
     var historyReportedAt: Date?
     /// Purchases started here that are still to arrive. Optional for the same reason.
     var awaited: [AwaitedPurchase]?
+    /// True once this install held any entitlement, which tells a lapsed customer from one who never paid. Optional for the same reason.
+    var hadEntitlement: Bool?
+    /// The original transaction ids of the running subscriptions whose turned-off renewal was already told to signals, so each is told once. They never leave the device. Optional for the same reason.
+    var renewalsOff: [String]?
 }
 
 /// `<directory>/commerce-<app>.json`, rewritten atomically after every change so a relaunch resumes the queue and the cache.

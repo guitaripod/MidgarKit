@@ -59,6 +59,10 @@ public actor MidgarSignals {
     var periodKeys: MidgarSignalPeriodKeys?
     var queueIsDirty = false
     var ledgerIsDirty = false
+    var context: MidgarSignalsContext?
+    var contextIsDirty = false
+    /// True when this run is the first to keep context for the install.
+    var startedContextThisRun = false
     var persistTask: Task<Void, Never>?
     /// How many times the queue or the ledger was written to disk. Tests read it to prove `send` does not write per call.
     private(set) var writeCount = 0
@@ -175,6 +179,7 @@ public actor MidgarSignals {
 
     /// Sends everything queued now, batch after batch, and returns when the queue is empty or a batch could not be sent. Call it when the app moves to the background. It ignores the 10 second spacing of automatic requests but still waits out a `Retry-After`. It also writes the queue and the uniqueness ledger to disk.
     public func flush() async {
+        releaseDueStories()
         persistPending()
         while let running = flushTask {
             await running.value
@@ -240,7 +245,7 @@ public actor MidgarSignals {
         }
     }
 
-    /// Writes whatever changed since the last write: the queue file, and the ledger with the entries of passed periods pruned.
+    /// Writes whatever changed since the last write: the queue file, the ledger with the entries of passed periods pruned, and the context.
     func persistPending() {
         persistTask?.cancel()
         persistTask = nil
@@ -256,6 +261,11 @@ public actor MidgarSignals {
             if let state = install {
                 state.ledgerStore.save(state.ledger)
             }
+        }
+        if contextIsDirty, let context {
+            contextIsDirty = false
+            writeCount += 1
+            MidgarSignalsContextStore(store: store).save(context)
         }
     }
 

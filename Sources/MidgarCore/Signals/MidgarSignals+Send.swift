@@ -10,15 +10,25 @@ extension MidgarSignals {
 
     /// Sends one generated event, if the registry lets this install send it now.
     ///
+    /// An event that declares context gets it stamped after the uniqueness check, so a change of tier does not make a second send in the same period; a story is held for some hours first (``hold(_:at:)``).
+    ///
     /// The event's uniqueness decides: `each` always goes; `daily`, `weekly` and `monthly` go once per calendar period of the device's ISO calendar for each distinct combination of props; `lifetime` goes once per install for each combination; `per-period` goes once per calendar period named by its `period` prop. Events that carry a cohort get the install's `cohort` prop. Nothing is sent or remembered while the kill switch is on or ``isEnabled`` is off.
     ///
     /// The call does no disk work and no network work: it looks the event up in memory and appends it to the queue. The ledger reaches disk at most every 5 seconds, and on ``flush()``.
     public func send(_ signal: MidgarSignal) {
-        deliver(name: signal.name, props: signal.props, uniqueness: signal.uniqueness, carriesCohort: signal.carriesCohort)
+        remember(signal)
+        deliver(name: signal.name, props: signal.props, uniqueness: signal.uniqueness, carriesCohort: signal.carriesCohort, context: signal.context, isStory: signal.isStory)
     }
 
     /// The path every send takes, with the event's registry facts given apart from the event so a test can drive the periodic kinds no event uses yet.
-    func deliver(name: String, props: [String: MidgarSignalValue], uniqueness: MidgarSignal.Uniqueness, carriesCohort: Bool) {
+    func deliver(
+        name: String,
+        props: [String: MidgarSignalValue],
+        uniqueness: MidgarSignal.Uniqueness,
+        carriesCohort: Bool,
+        context: [MidgarSignal.Context] = [],
+        isStory: Bool = false
+    ) {
         guard !isSuppressed else {
             clearQueue()
             return
@@ -35,10 +45,15 @@ extension MidgarSignals {
                 props["cohort"] = .string(cohort)
             }
         }
+        stamp(context, on: &props, at: now())
         guard let event = MidgarSignalEvent(name: name, props: props) else {
             return
         }
-        enqueue(event)
+        if isStory {
+            hold(event, at: now())
+        } else {
+            enqueue(event)
+        }
     }
 
     /// Whether usage counts are sent. On until the person turns them off; the choice is kept per app on disk.
@@ -63,6 +78,7 @@ extension MidgarSignals {
         install?.ledger = MidgarSignalsLedger()
         ledgerIsDirty = false
         MidgarSignalsLedgerStore(store: store).delete()
+        forgetContext()
         discardQueue()
     }
 

@@ -36,6 +36,16 @@ struct StoreTransaction: Sendable {
     let environment: StoreEnvironment
     let jws: String
     let finish: @Sendable () async -> Void
+    /// True while the transaction is a free introductory period, which makes the install a trial and not a payer.
+    var isTrial = false
+}
+
+/// Whether one of the account's own running subscriptions will renew, and when it began.
+struct StoreRenewal: Sendable, Equatable {
+    let originalID: UInt64
+    let productID: String
+    let willAutoRenew: Bool
+    let startedAt: Date
 }
 
 /// A transaction together with StoreKit's verdict on its signature.
@@ -102,4 +112,12 @@ protocol MidgarStoreKit: Sendable {
     func currentEntitlements() async -> [StoreVerification]
     func sync() async throws
     func appEnvironment() async -> StoreEnvironment?
+    func renewals() async -> [StoreRenewal]
+}
+
+extension MidgarStoreKit {
+    /// A seam that knows nothing about renewals reports none.
+    func renewals() async -> [StoreRenewal] {
+        []
+    }
 }
