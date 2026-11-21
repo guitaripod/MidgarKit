@@ -60,6 +60,14 @@ extension MidgarSignals {
         Task { await shared?.send(.featureUse(feature: id)) }
     }
 
+    /// Notes that a screen came on, from any thread: it goes on the crash trail (``MidgarTrail``), and with `feature` true it also counts as using that feature this week (``noteFeature(_:)``). The id must be one the app's registry entry lists under `[lifestream]`. Call it where the screen is really shown, such as `viewDidAppear`, never where its view is only built.
+    public nonisolated static func noteScreen(_ id: String, feature: Bool = false) {
+        MidgarTrail.mark(id)
+        if feature {
+            noteFeature(id)
+        }
+    }
+
     /// What a send of this event changes in what the install remembers, before the event itself goes out: a purchase screen is counted with where it was opened from.
     func remember(_ signal: MidgarSignal) {
         guard case .paywallView(let placement) = signal, !isSuppressed else {

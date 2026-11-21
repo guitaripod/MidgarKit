@@ -33,3 +33,15 @@ public struct MidgarUsageCounts: View {
             .padding(.vertical, theme.spacing.s)
     }
 }
+
+extension MidgarUsageCounts {
+    /// The screen's title in the person's language, for the Settings row an app adds to open it.
+    public static var title: String {
+        MidgarUIStrings.usageCountsTitle
+    }
+
+    /// "On" or "Off" in the person's language, as usage counts stand right now, for that row's value.
+    public static var status: String {
+        MidgarUIStrings.onOff(isEnabled: MidgarSignals.isEnabled)
+    }
+}
