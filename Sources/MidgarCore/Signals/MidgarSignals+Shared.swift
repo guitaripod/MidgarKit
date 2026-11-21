@@ -42,6 +42,7 @@ extension MidgarSignals {
             await signals.retain(observer)
             await signals.retain(backgroundObserver)
             await signals.noteActive()
+            await signals.startDiagnostics()
         }
         return signals
     }

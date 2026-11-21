@@ -71,6 +71,8 @@ public actor MidgarSignals {
     private var blockedUntil: Date?
     private var hasLoggedDrop = false
     private var retainedObjects: [AnyObject] = []
+    /// True once this instance subscribed to MetricKit, so a second call cannot subscribe it twice and report every payload twice.
+    var isCollectingMetrics = false
 
     /// - Parameters:
     ///   - configuration: Where and as which app to send. Its token provider is ignored: signals requests never carry `Authorization`.
@@ -405,6 +407,25 @@ public actor MidgarSignals {
             return .delivered
         } catch {
             return outcome(for: error)
+        }
+    }
+
+    /// Sends crash cards to `POST /v1/signals/diagnostics` under the rules of an event batch: nothing from a TestFlight or development install, nothing while usage counts are off or killed, never an `Authorization` header. True when the cards are done with (taken, refused for good, or not to be sent at all), false when they should be tried again later.
+    func deliverCards(_ cards: [MidgarCrashCard]) async -> Bool {
+        await resolveInstallSource()
+        guard !isSuppressed else {
+            return true
+        }
+        var headers = ["X-Platform": platform]
+        if let appVersion, !appVersion.isEmpty {
+            headers["X-App-Version"] = appVersion
+        }
+        let request = MidgarRequest(service: "signals", path: "diagnostics", method: .post, headers: headers, body: MidgarCrashCardBatch(cards: cards), neverRetries: true)
+        do {
+            _ = try await client.sendRaw(request)
+            return true
+        } catch {
+            return outcome(for: error).allowsNextBatch
         }
     }
 

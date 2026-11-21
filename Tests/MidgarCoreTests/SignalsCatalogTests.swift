@@ -132,5 +132,7 @@ import Testing
         .overlay(appId: "psywave", storefront: .fi, placement: .entry),
         .metricsDaily(coldLaunchMs: 1, hangSecondsPerHour: 1, foregroundSeconds: 1, peakMemoryMB: 1),
         .metricsDiagnostics(crashes: 1, hangs: 1, diskWrites: 1, cpuExceptions: 1),
+        .metricsExits(foregroundMemory: 1, foregroundWatchdog: 1, foregroundAbnormal: 1, backgroundMemory: 1),
+        .healthCrashed(kind: .crash), .errorHit(domain: .purchase, code: .offline),
     ]
 }

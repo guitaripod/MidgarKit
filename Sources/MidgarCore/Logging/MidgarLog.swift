@@ -45,6 +45,14 @@ public enum MidgarLog {
         record(.error, message, category: category)
     }
 
+    /// A failure the person ran into: written to the log as an error and counted once a day for this install as `error.hit`, by what failed and why, both from fixed lists. The message stays in the log on the device and is never sent.
+    public static func failure(_ domain: MidgarSignal.FaultDomain, _ code: MidgarSignal.FaultCode, _ message: String, category: Category = .general) {
+        record(.error, "\(domain.rawValue) \(code.rawValue): \(message)", category: category)
+        Task {
+            await MidgarSignals.shared?.send(.errorHit(domain: domain, code: code))
+        }
+    }
+
     /// An unrecoverable failure, written before the app is likely to stop.
     public static func fault(_ message: String, category: Category = .general) {
         record(.fault, message, category: category)

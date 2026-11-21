@@ -154,5 +154,35 @@ public enum MidgarSignalCatalog {
             measurements: [Measurement(name: "crashes", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "hangs", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "diskWrites", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "cpuExceptions", minimum: 0, maximum: 100000, isInteger: true)],
             apps: []
         ),
+        Entry(
+            name: "metrics.exits",
+            purpose: "How often the system ended the app while you used it, for memory, for freezing or after a fault, and how often for memory in the background, so those get fixed.",
+            uniqueness: .each,
+            carriesCohort: false,
+            isReserved: false,
+            props: [],
+            measurements: [Measurement(name: "foregroundMemory", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundWatchdog", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "foregroundAbnormal", minimum: 0, maximum: 100000, isInteger: true), Measurement(name: "backgroundMemory", minimum: 0, maximum: 100000, isInteger: true)],
+            apps: []
+        ),
+        Entry(
+            name: "health.crashed",
+            purpose: "Whether the app crashed, froze or was ended by the system on a day, so the share of installs with a clean day is known.",
+            uniqueness: .daily,
+            carriesCohort: false,
+            isReserved: false,
+            props: [Prop(name: "kind", values: .list(MidgarSignal.CrashKind.allCases.map(\.rawValue)))],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "error.hit",
+            purpose: "Which failures you ran into, from a fixed list, so the common ones get fixed.",
+            uniqueness: .daily,
+            carriesCohort: false,
+            isReserved: false,
+            props: [Prop(name: "domain", values: .list(MidgarSignal.FaultDomain.allCases.map(\.rawValue))), Prop(name: "code", values: .list(MidgarSignal.FaultCode.allCases.map(\.rawValue)))],
+            measurements: [],
+            apps: []
+        ),
     ]
 }

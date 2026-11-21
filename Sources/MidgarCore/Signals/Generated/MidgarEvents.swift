@@ -32,6 +32,12 @@ public enum MidgarSignal: Sendable, Equatable {
     case metricsDaily(coldLaunchMs: Double? = nil, hangSecondsPerHour: Double? = nil, foregroundSeconds: Double? = nil, peakMemoryMB: Double? = nil)
     /// Counts of crashes, freezes and heavy disk or processor use, so they get fixed.
     case metricsDiagnostics(crashes: Int? = nil, hangs: Int? = nil, diskWrites: Int? = nil, cpuExceptions: Int? = nil)
+    /// How often the system ended the app while you used it, for memory, for freezing or after a fault, and how often for memory in the background, so those get fixed.
+    case metricsExits(foregroundMemory: Int? = nil, foregroundWatchdog: Int? = nil, foregroundAbnormal: Int? = nil, backgroundMemory: Int? = nil)
+    /// Whether the app crashed, froze or was ended by the system on a day, so the share of installs with a clean day is known.
+    case healthCrashed(kind: CrashKind)
+    /// Which failures you ran into, from a fixed list, so the common ones get fixed.
+    case errorHit(domain: FaultDomain, code: FaultCode)
 
     /// How often one install may send an event.
     public enum Uniqueness: String, Sendable, CaseIterable {
@@ -89,6 +95,21 @@ public enum MidgarSignal: Sendable, Equatable {
         case vn, vu, wf, ws, ye, yt, za, zm, zw
     }
 
+    /// The closed set CrashKind; the worker stores any other value as `other`.
+    public enum CrashKind: String, Sendable, CaseIterable {
+        case crash, hang, memory, watchdog
+    }
+
+    /// The closed set FaultDomain; the worker stores any other value as `other`.
+    public enum FaultDomain: String, Sendable, CaseIterable {
+        case purchase, restore, network, ai, `import`, sync, playback, storage
+    }
+
+    /// The closed set FaultCode; the worker stores any other value as `other`.
+    public enum FaultCode: String, Sendable, CaseIterable {
+        case offline, timeout, server, refused, quota, payment, notFound = "not_found", unsupported, corrupt, full, denied, unknown
+    }
+
     /// The event name on the wire.
     public var name: String {
         switch self {
@@ -107,11 +128,14 @@ public enum MidgarSignal: Sendable, Equatable {
         case .overlay: return "overlay"
         case .metricsDaily: return "metrics.daily"
         case .metricsDiagnostics: return "metrics.diagnostics"
+        case .metricsExits: return "metrics.exits"
+        case .healthCrashed: return "health.crashed"
+        case .errorHit: return "error.hit"
         }
     }
 
     /// Every event name the registry declares.
-    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics"]
+    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics", "metrics.exits", "health.crashed", "error.hit"]
 
     /// The props the event sends, without the cohort, which MidgarKit stamps.
     public var props: [String: MidgarSignalValue] {
@@ -161,6 +185,15 @@ public enum MidgarSignal: Sendable, Equatable {
             if let diskWrites { props["diskWrites"] = .int(diskWrites) }
             if let cpuExceptions { props["cpuExceptions"] = .int(cpuExceptions) }
             return props
+        case .metricsExits(let foregroundMemory, let foregroundWatchdog, let foregroundAbnormal, let backgroundMemory):
+            var props: [String: MidgarSignalValue] = [:]
+            if let foregroundMemory { props["foregroundMemory"] = .int(foregroundMemory) }
+            if let foregroundWatchdog { props["foregroundWatchdog"] = .int(foregroundWatchdog) }
+            if let foregroundAbnormal { props["foregroundAbnormal"] = .int(foregroundAbnormal) }
+            if let backgroundMemory { props["backgroundMemory"] = .int(backgroundMemory) }
+            return props
+        case .healthCrashed(let kind): return ["kind": .string(kind.rawValue)]
+        case .errorHit(let domain, let code): return ["domain": .string(domain.rawValue), "code": .string(code.rawValue)]
         }
     }
 
@@ -182,6 +215,9 @@ public enum MidgarSignal: Sendable, Equatable {
         case .overlay: return .each
         case .metricsDaily: return .each
         case .metricsDiagnostics: return .each
+        case .metricsExits: return .each
+        case .healthCrashed: return .daily
+        case .errorHit: return .daily
         }
     }
 

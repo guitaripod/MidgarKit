@@ -8,6 +8,29 @@ public protocol MidgarMetricPayload: Sendable {
     var hangSecondsPerHour: Double? { get }
     var cumulativeForegroundSeconds: Double? { get }
     var peakMemoryMegabytes: Double? { get }
+    /// How often the system ended the app during the payload's day, by reason, where the platform reports it.
+    var exits: MidgarExitCounts? { get }
+}
+
+extension MidgarMetricPayload {
+    public var exits: MidgarExitCounts? {
+        nil
+    }
+}
+
+/// How often the system ended the app in one day: in the foreground for memory, for not responding (the watchdog) and after a fault, and in the background for memory.
+public struct MidgarExitCounts: Sendable, Equatable {
+    public var foregroundMemory: Int
+    public var foregroundWatchdog: Int
+    public var foregroundAbnormal: Int
+    public var backgroundMemory: Int
+
+    public init(foregroundMemory: Int = 0, foregroundWatchdog: Int = 0, foregroundAbnormal: Int = 0, backgroundMemory: Int = 0) {
+        self.foregroundMemory = foregroundMemory
+        self.foregroundWatchdog = foregroundWatchdog
+        self.foregroundAbnormal = foregroundAbnormal
+        self.backgroundMemory = backgroundMemory
+    }
 }
 
 /// The counts of one MetricKit diagnostic payload.
@@ -54,7 +77,7 @@ enum MidgarHistogram {
 }
 
 extension MidgarSignals {
-    /// Sends one `metrics.daily` event for a daily MetricKit payload, with the props `coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds` and `peakMemoryMB`.
+    /// Sends one `metrics.daily` event for a daily MetricKit payload, with the props `coldLaunchMs`, `hangSecondsPerHour`, `foregroundSeconds` and `peakMemoryMB`. Where the payload counts how the app's runs ended it also sends `metrics.exits`, and `health.crashed` once for a day the system ended the app in the foreground for memory or for not responding.
     public func recordDailyMetrics(_ payload: some MidgarMetricPayload) {
         send(.metricsDaily(
             coldLaunchMs: payload.coldLaunchMedianMilliseconds,
@@ -62,9 +85,24 @@ extension MidgarSignals {
             foregroundSeconds: payload.cumulativeForegroundSeconds,
             peakMemoryMB: payload.peakMemoryMegabytes
         ))
+        guard let exits = payload.exits else {
+            return
+        }
+        send(.metricsExits(
+            foregroundMemory: exits.foregroundMemory,
+            foregroundWatchdog: exits.foregroundWatchdog,
+            foregroundAbnormal: exits.foregroundAbnormal,
+            backgroundMemory: exits.backgroundMemory
+        ))
+        if exits.foregroundMemory > 0 {
+            send(.healthCrashed(kind: .memory))
+        }
+        if exits.foregroundWatchdog > 0 {
+            send(.healthCrashed(kind: .watchdog))
+        }
     }
 
-    /// Sends one `metrics.diagnostics` event for a MetricKit diagnostic payload, with the counts `crashes`, `hangs`, `diskWrites` and `cpuExceptions`.
+    /// Sends one `metrics.diagnostics` event for a MetricKit diagnostic payload, with the counts `crashes`, `hangs`, `diskWrites` and `cpuExceptions`, and `health.crashed` once for a day with a crash and once for a day with a freeze.
     public func recordDiagnostics(_ payload: some MidgarDiagnosticPayload) {
         send(.metricsDiagnostics(
             crashes: payload.crashCount,
@@ -72,5 +110,11 @@ extension MidgarSignals {
             diskWrites: payload.diskWriteCount,
             cpuExceptions: payload.cpuExceptionCount
         ))
+        if payload.crashCount > 0 {
+            send(.healthCrashed(kind: .crash))
+        }
+        if payload.hangCount > 0 {
+            send(.healthCrashed(kind: .hang))
+        }
     }
 }
