@@ -48,6 +48,17 @@ public struct MidgarConfig: Sendable, Equatable {
         read(key, \.stringValue) ?? fallback
     }
 
+    /// The string values of the verified document whose key starts with `prefix`, by the rest of the key. Compiled defaults are left out: what this reads is only ever switched on from the server.
+    func strings(withPrefix prefix: String) -> [String: String] {
+        var found: [String: String] = [:]
+        for (key, value) in values where key.hasPrefix(prefix) {
+            if let text = value.stringValue {
+                found[String(key.dropFirst(prefix.count))] = text
+            }
+        }
+        return found
+    }
+
     /// True when the document lists the feature under `kill`. Compiled defaults never kill a feature.
     public func isKilled(_ feature: String) -> Bool {
         kill.contains(feature)

@@ -64,6 +64,10 @@ extension MidgarSignalCatalog {
             case products
             /// One of the features the app's registry entry lists.
             case features
+            /// The id of an experiment the registry declares.
+            case experiments
+            /// One of the versions an experiment compares.
+            case variants
         }
 
         public let name: String

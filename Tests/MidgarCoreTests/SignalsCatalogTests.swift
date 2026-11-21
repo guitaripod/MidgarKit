@@ -138,5 +138,6 @@ import Testing
         .healthCrashed(kind: .crash), .errorHit(domain: .purchase, code: .offline),
         .appTier, .featureUse(feature: "player"), .valueFirst(within: .firstSession),
         .purchaseStory(placement: .limit, viewsBefore: .one), .renewalOff(tenure: .firstMonth, activeDays: .none),
+        .labExposed(experiment: "paywall-headline", variant: "control"), .labConverted(experiment: "paywall-headline", variant: "control"),
     ]
 }

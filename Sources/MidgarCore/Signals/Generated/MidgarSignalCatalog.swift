@@ -257,5 +257,27 @@ public enum MidgarSignalCatalog {
             measurements: [],
             apps: []
         ),
+        Entry(
+            name: "lab.exposed",
+            purpose: "Which version of a screen under test this install was shown, so two versions can be compared by counting.",
+            uniqueness: .lifetime,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: false,
+            props: [Prop(name: "experiment", values: .experiments), Prop(name: "variant", values: .variants)],
+            measurements: [],
+            apps: []
+        ),
+        Entry(
+            name: "lab.converted",
+            purpose: "That the outcome a test measures followed on an install that had been shown one of its versions.",
+            uniqueness: .lifetime,
+            carriesCohort: false,
+            isReserved: false,
+            isStory: false,
+            props: [Prop(name: "experiment", values: .experiments), Prop(name: "variant", values: .variants)],
+            measurements: [],
+            apps: []
+        ),
     ]
 }

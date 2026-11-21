@@ -18,6 +18,7 @@ extension MidgarSignals {
     public func send(_ signal: MidgarSignal) {
         remember(signal)
         deliver(name: signal.name, props: signal.props, uniqueness: signal.uniqueness, carriesCohort: signal.carriesCohort, context: signal.context, isStory: signal.isStory)
+        noteLab(signal.name)
     }
 
     /// The path every send takes, with the event's registry facts given apart from the event so a test can drive the periodic kinds no event uses yet.
@@ -79,6 +80,7 @@ extension MidgarSignals {
         ledgerIsDirty = false
         MidgarSignalsLedgerStore(store: store).delete()
         forgetContext()
+        lab.forget()
         discardQueue()
     }
 

@@ -48,6 +48,10 @@ public enum MidgarSignal: Sendable, Equatable {
     case purchaseStory(placement: Placement? = nil, viewsBefore: PurchaseStoryViewsBefore)
     /// When a subscription's renewal is turned off, how long it had run and on how many of the last fourteen days the app was opened.
     case renewalOff(tenure: RenewalOffTenure, activeDays: RenewalOffActiveDays)
+    /// Which version of a screen under test this install was shown, so two versions can be compared by counting.
+    case labExposed(experiment: String, variant: String)
+    /// That the outcome a test measures followed on an install that had been shown one of its versions.
+    case labConverted(experiment: String, variant: String)
 
     /// How often one install may send an event.
     public enum Uniqueness: String, Sendable, CaseIterable {
@@ -176,11 +180,13 @@ public enum MidgarSignal: Sendable, Equatable {
         case .valueFirst: return "value.first"
         case .purchaseStory: return "purchase.story"
         case .renewalOff: return "renewal.off"
+        case .labExposed: return "lab.exposed"
+        case .labConverted: return "lab.converted"
         }
     }
 
     /// Every event name the registry declares.
-    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics", "metrics.exits", "health.crashed", "error.hit", "app.tier", "feature.use", "value.first", "purchase.story", "renewal.off"]
+    public static let allNames: [String] = ["app.launch", "app.active", "onboarding.complete", "paywall.view", "paywall.purchase", "paywall.checkout", "funnel.step", "portal_open", "impression", "tap", "loaded", "launch", "overlay", "metrics.daily", "metrics.diagnostics", "metrics.exits", "health.crashed", "error.hit", "app.tier", "feature.use", "value.first", "purchase.story", "renewal.off", "lab.exposed", "lab.converted"]
 
     /// The props the event sends, without the cohort and the context, which MidgarKit stamps.
     public var props: [String: MidgarSignalValue] {
@@ -247,6 +253,8 @@ public enum MidgarSignal: Sendable, Equatable {
             if let placement { props["placement"] = .string(placement.rawValue) }
             return props
         case .renewalOff(let tenure, let activeDays): return ["tenure": .string(tenure.rawValue), "activeDays": .string(activeDays.rawValue)]
+        case .labExposed(let experiment, let variant): return ["experiment": .string(experiment), "variant": .string(variant)]
+        case .labConverted(let experiment, let variant): return ["experiment": .string(experiment), "variant": .string(variant)]
         }
     }
 
@@ -276,6 +284,8 @@ public enum MidgarSignal: Sendable, Equatable {
         case .valueFirst: return .lifetime
         case .purchaseStory: return .each
         case .renewalOff: return .each
+        case .labExposed: return .lifetime
+        case .labConverted: return .lifetime
         }
     }
 

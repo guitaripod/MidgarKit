@@ -45,6 +45,7 @@ public actor MidgarSignals {
     private let configProvider: @Sendable () -> MidgarConfig
     let store: MidgarSignalsStore
     let consent: MidgarSignalsConsent
+    nonisolated let lab: MidgarLab
     let installDate: @Sendable () -> Date?
     let policy: MidgarSignalsPolicy
     private let isTestInstallProvider: @Sendable () async -> Bool
@@ -126,6 +127,7 @@ public actor MidgarSignals {
         self.configProvider = config
         self.store = store
         self.consent = MidgarSignalsConsent(store: store)
+        self.lab = MidgarLab(store: store)
         self.installDate = installDate
         self.policy = policy
         self.isTestInstallProvider = isTestInstall
@@ -203,6 +205,16 @@ public actor MidgarSignals {
 
     var isKilled: Bool {
         configProvider().isKilled(Self.killSwitchKey)
+    }
+
+    /// The kill switch, readable from any thread.
+    nonisolated var isKilledNow: Bool {
+        configProvider().isKilled(Self.killSwitchKey)
+    }
+
+    /// The app's remote config as it stands, readable from any thread.
+    nonisolated func currentConfig() -> MidgarConfig {
+        configProvider()
     }
 
     /// True while nothing may be recorded: the remote kill switch is on, the person turned usage counts off, or StoreKit said this is a TestFlight or development install.
