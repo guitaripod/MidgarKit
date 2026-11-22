@@ -116,6 +116,16 @@ private func day(_ text: String) -> Date {
         #expect(card.frames.map(\.offset) == [5, 3, 1])
     }
 
+    @Test func aLaunchTreeMarkedPerThreadIsStillReadFromTheLeaf() throws {
+        let tree = frame("libsystem_pthread.dylib", systemUUID, 1, samples: 9, sub: [
+            frame("UIKitCore", systemUUID, 2, samples: 9, sub: [frame("Flaccy", appUUID, 3, samples: 9)])
+        ])
+        let launch = #"{"callStackTree":{"callStackPerThread":true,"callStacks":[{"threadAttributed":true,"callStackRootFrames":[\#(tree)]}]},"diagnosticMetaData":{}}"#
+        let card = try #require(cards(payload(extra: #","appLaunchDiagnostics":[\#(launch)]"#)).first)
+        #expect(card.kind == .launch)
+        #expect(card.frames.map(\.offset) == [3, 2, 1])
+    }
+
     @Test func everyKindOfDiagnosticGivesItsOwnCardCrashesFirst() {
         let other = #"{"callStackTree":{"callStackPerThread":true,"callStacks":[{"threadAttributed":true,"callStackRootFrames":[\#(frame("Flaccy", appUUID, 9))]}]},"diagnosticMetaData":{}}"#
         let data = payload(crashes: [crash()], hangs: [other], extra: #","cpuExceptionDiagnostics":[\#(other)],"diskWriteExceptionDiagnostics":[\#(other)],"appLaunchDiagnostics":[\#(other)]"#)

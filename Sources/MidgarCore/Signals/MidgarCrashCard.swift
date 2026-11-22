@@ -94,7 +94,7 @@ enum MidgarCrashCards {
     }
 
     private static func card(_ kind: MidgarCrashCard.Kind, _ diagnostic: Diagnostic, appBinaries: Set<String>, trail: [String]?) -> MidgarCrashCard? {
-        let frames = frames(of: diagnostic.callStackTree, appBinaries: appBinaries)
+        let frames = frames(of: diagnostic.callStackTree, kind: kind, appBinaries: appBinaries)
         guard !frames.isEmpty else {
             return nil
         }
@@ -126,8 +126,8 @@ enum MidgarCrashCards {
         return Array(trail.screens.filter(MidgarTrail.isScreenID).suffix(maximumTrail))
     }
 
-    /// The first sixteen frames nearest the fault. A per-thread tree is one chain that starts at the frame the fault happened in; the attributed thread's is taken. A sampled tree starts at the thread's entry, so its heaviest path is walked to its end and turned round.
-    private static func frames(of tree: Tree?, appBinaries: Set<String>) -> [MidgarCrashFrame] {
+    /// The first sixteen frames nearest the fault. A crash's per-thread tree is one chain that starts at the frame the fault happened in; the attributed thread's is taken. A sampled tree starts at the thread's entry, so its heaviest path is walked to its end and turned round. Launch, hang, processor and disk trees are always sampled, whatever `callStackPerThread` says: launch trees arrive marked per-thread yet start at `libsystem_pthread`.
+    private static func frames(of tree: Tree?, kind: MidgarCrashCard.Kind, appBinaries: Set<String>) -> [MidgarCrashFrame] {
         guard let tree, let stacks = tree.callStacks, !stacks.isEmpty else {
             return []
         }
@@ -141,7 +141,8 @@ enum MidgarCrashCards {
             path.append(node)
             next = (node.subFrames ?? []).max { ($0.sampleCount ?? 0) < ($1.sampleCount ?? 0) }
         }
-        let nearestFirst = tree.callStackPerThread == false ? Array(path.reversed()) : path
+        let sampled = kind != .crash || tree.callStackPerThread == false
+        let nearestFirst = sampled ? Array(path.reversed()) : path
         return Array(nearestFirst.compactMap { frame($0, appBinaries: appBinaries) }.prefix(maximumFrames))
     }
 
