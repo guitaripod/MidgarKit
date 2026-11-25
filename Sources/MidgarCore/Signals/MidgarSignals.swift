@@ -10,7 +10,7 @@ import Foundation
 /// - The queue holds 500 events; the oldest go first when it is full. It is saved to a file in Application Support at most 5 seconds after it changes and whenever a batch leaves it or ``flush()`` runs, so unsent events survive a relaunch.
 /// - Offline, a timeout or a 5xx keeps the events for the next attempt. A 429 keeps them and waits for `Retry-After` (60 seconds when it is missing, at most an hour). Any other 4xx drops the batch and logs once.
 /// - A `signals` kill switch in the app's ``MidgarConfig``, or the person turning ``isEnabled`` off, turns ``record(_:props:)`` and ``send(_:)`` into no-ops and empties the queue.
-/// - A TestFlight or development install sends nothing: before its first request the instance asks StoreKit where the install came from, and an answer other than the App Store empties the queue and stops recording, so the developer's own use never reaches the counts.
+/// - Only an App Store install sends: before its first request, and before a crash card is queued, the instance asks where the run came from (``MidgarSignalsInstallSource``), and a simulator, a `DEBUG` build, a bundle with no store receipt or an install StoreKit places off production empties the queue and stops recording, so the developer's own use never reaches the counts.
 ///
 /// ``send(_:)`` is the way to send an event: it takes a generated ``MidgarSignal``, enforces on the device how often the registry lets one install send it, and stamps the install's cohort where the registry asks for it.
 ///
@@ -50,6 +50,7 @@ public actor MidgarSignals {
     let policy: MidgarSignalsPolicy
     private let isTestInstallProvider: @Sendable () async -> Bool
     private var isTestInstall: Bool?
+    private var installSourceTask: Task<Bool, Never>?
     private let platform: String
     private let appVersion: String?
     let now: @Sendable () -> Date
@@ -217,7 +218,7 @@ public actor MidgarSignals {
         configProvider()
     }
 
-    /// True while nothing may be recorded: the remote kill switch is on, the person turned usage counts off, or StoreKit said this is a TestFlight or development install.
+    /// True while nothing may be recorded: the remote kill switch is on, the person turned usage counts off, or this is not an App Store install (see ``MidgarSignalsInstallSource``).
     var isSuppressed: Bool {
         !consent.isEnabled || isKilled || isTestInstall == true
     }
@@ -367,15 +368,22 @@ public actor MidgarSignals {
         scheduleFollowUp(after: outcome)
     }
 
-    /// Asks StoreKit once, before the first request, whether this is a TestFlight or development install, and logs once when it is. Only a flush calls it, and flushes never overlap, so the question is never asked twice.
-    private func resolveInstallSource() async {
+    /// Asks once whether this is an App Store install, and logs once when it is not. Every caller waits on the same
+    /// question, so a flush and a crash card arriving together never ask twice or read two answers.
+    func resolveInstallSource() async {
+        if isTestInstall != nil {
+            return
+        }
+        let asking = installSourceTask ?? Task { await isTestInstallProvider() }
+        installSourceTask = asking
+        let answer = await asking.value
+        installSourceTask = nil
         guard isTestInstall == nil else {
             return
         }
-        let answer = await isTestInstallProvider()
         isTestInstall = answer
         if answer {
-            logger("signals: TestFlight or development install, usage counts are not sent")
+            logger("signals: not an App Store install, usage counts are not sent")
         }
     }
 
@@ -432,7 +440,7 @@ public actor MidgarSignals {
         }
     }
 
-    /// Sends crash cards to `POST /v1/signals/diagnostics` under the rules of an event batch: nothing from a TestFlight or development install, nothing while usage counts are off or killed, never an `Authorization` header. True when the cards are done with (taken, refused for good, or not to be sent at all), false when they should be tried again later.
+    /// Sends crash cards to `POST /v1/signals/diagnostics` under the rules of an event batch: nothing from anything but an App Store install, nothing while usage counts are off or killed, never an `Authorization` header. True when the cards are done with (taken, refused for good, or not to be sent at all), false when they should be tried again later.
     func deliverCards(_ cards: [MidgarCrashCard]) async -> Bool {
         await resolveInstallSource()
         guard !isSuppressed else {

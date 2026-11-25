@@ -15,7 +15,32 @@ import Testing
         #expect(harness.host.requests.isEmpty)
         #expect(await signals.pendingCount == 0)
         #expect(!harness.queueFileExists)
-        #expect(harness.logs.lines == ["signals: TestFlight or development install, usage counts are not sent"])
+        #expect(harness.logs.lines == ["signals: not an App Store install, usage counts are not sent"])
+    }
+
+    @Test func onlyAReceiptStoreKitCallsProductionIsCounted() {
+        #expect(!MidgarSignalsInstallSource.isTestInstall(hasReceipt: true, production: true))
+        #expect(MidgarSignalsInstallSource.isTestInstall(hasReceipt: true, production: false))
+        #expect(!MidgarSignalsInstallSource.isTestInstall(hasReceipt: true, production: nil))
+        #expect(MidgarSignalsInstallSource.isTestInstall(hasReceipt: false, production: nil))
+        #expect(!MidgarSignalsInstallSource.isTestInstall(hasReceipt: false, production: true))
+    }
+
+    @Test func aFlushAndACrashCardAskWhereTheInstallCameFromOnlyOnce() async {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let asked = SignalsLogRecorder()
+        let signals = harness.makeSignals(isTestInstall: {
+            asked.record("asked")
+            return true
+        })
+
+        await signals.record("app.launch")
+        await signals.flush()
+        await signals.sendPendingCards()
+
+        #expect(asked.lines.count == 1)
+        #expect(harness.host.requests.isEmpty)
     }
 
     @Test func aTestFlightInstallStopsRecordingOnceStoreKitHasAnswered() async {

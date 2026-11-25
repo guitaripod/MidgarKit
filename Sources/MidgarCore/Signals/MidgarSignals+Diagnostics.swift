@@ -45,7 +45,7 @@ extension MidgarSignals {
         MidgarDiagnosticsStore(fileURL: store.sibling("diagnostics"))
     }
 
-    /// Turns the JSON of one MetricKit diagnostic payload into crash cards and sends them. A fault already taken today is not taken again, at most five are taken in a day, and what cannot be sent now waits on disk for the next launch. While usage counts are off, killed, or this is a TestFlight or development install, nothing is kept and nothing is sent.
+    /// Turns the JSON of one MetricKit diagnostic payload into crash cards and sends them. A fault already taken today is not taken again, at most five are taken in a day, and what cannot be sent now waits on disk for the next launch. While usage counts are off, killed, or this is not an App Store install, nothing is kept and nothing is sent.
     ///
     /// - Parameters:
     ///   - data: `MXDiagnosticPayload.jsonRepresentation()`.
@@ -56,6 +56,7 @@ extension MidgarSignals {
         guard !cards.isEmpty else {
             return
         }
+        await resolveInstallSource()
         guard !isSuppressed else {
             diagnosticsStore.save(MidgarDiagnosticsState())
             return
@@ -84,6 +85,7 @@ extension MidgarSignals {
         guard !state.pending.isEmpty else {
             return
         }
+        await resolveInstallSource()
         guard !isSuppressed else {
             diagnosticsStore.save(MidgarDiagnosticsState())
             return
@@ -129,11 +131,12 @@ extension MidgarSignals {
         MidgarSignalCatalog.entry(named: name)?.isAllowed(for: appID) ?? true
     }
 
-    /// What an app's launch does for diagnostics: sends the cards an earlier run could not, and on the platforms that have MetricKit subscribes to it, so crashes, freezes and the day's launch and memory figures arrive without the app asking. Does nothing outside an app's own process.
+    /// What an app's launch does for diagnostics: answers where the install came from, sends the cards an earlier run could not, and on the platforms that have MetricKit subscribes to it, so crashes, freezes and the day's launch and memory figures arrive without the app asking. Does nothing outside an app's own process.
     func startDiagnostics() async {
         guard MidgarSignalsPlatform.isApp(), hasAdopted else {
             return
         }
+        await resolveInstallSource()
         await sendPendingCards()
         #if canImport(MetricKit) && (os(iOS) || os(macOS))
         startCollectingMetrics()

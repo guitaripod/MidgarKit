@@ -317,6 +317,31 @@ private func day(_ text: String) -> Date {
         #expect(MidgarDiagnosticsStore(fileURL: stateFile(test)).load().pending.isEmpty)
     }
 
+    @Test func cardsAnEarlierRunLeftAreNeverSentFromATestInstall() async throws {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let card = try #require(cards(payload(crashes: [crash()])).first)
+        let file = stateFile(harness)
+        MidgarDiagnosticsStore(fileURL: file).save(MidgarDiagnosticsState(day: "", taken: [], pending: [card]))
+        let signals = harness.makeSignals(isTestInstall: { true })
+
+        await signals.sendPendingCards()
+
+        #expect(harness.host.requests.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: file.path))
+    }
+
+    @Test func aTestInstallNeverQueuesACard() async {
+        let harness = SignalsHarness()
+        defer { harness.cleanUp() }
+        let signals = harness.makeSignals(isTestInstall: { true })
+
+        await signals.recordDiagnosticJSON(payload(crashes: [crash()]), appBinaries: binaries, trail: nil)
+
+        #expect(harness.host.requests.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: stateFile(harness).path))
+    }
+
     @Test func aPayloadWithNoUsableDiagnosticSendsNothing() async {
         let harness = SignalsHarness()
         defer { harness.cleanUp() }
