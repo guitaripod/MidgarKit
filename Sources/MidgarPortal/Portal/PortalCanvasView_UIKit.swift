@@ -181,20 +181,38 @@ final class PortalCanvasView: UIView {
 
     private func startDisplayLink() {
         guard displayLink == nil, window != nil else { return }
+        Self.warnIfCappedAtSixtyHertz(window)
         let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.fire(_:)))
         link.preferredFrameRateRange = frameRate()
         link.add(to: .main, forMode: .common)
         displayLink = link
     }
 
-    /// One rate, the display's fastest, while the canvas moves. A range lets the system settle on a
-    /// rate in between (80 Hz on ProMotion phones), which reads as judder in a pan.
+    /// One rate, the fastest of the screen the canvas is on, while the canvas moves. A range lets the
+    /// system settle on a rate in between (80 Hz on ProMotion phones), which reads as judder in a pan.
     private func frameRate() -> CAFrameRateRange {
         #if os(visionOS)
-        return CAFrameRateRange(minimum: 60, maximum: 90, preferred: 90)
+        return PortalFrameRate.motion
         #else
-        let fastest = Float(window?.windowScene?.screen.maximumFramesPerSecond ?? 60)
-        return CAFrameRateRange(minimum: fastest, maximum: fastest, preferred: fastest)
+        guard let screen = window?.windowScene?.screen else { return PortalFrameRate.motion }
+        return PortalFrameRate.single(Float(screen.maximumFramesPerSecond))
+        #endif
+    }
+
+    private static var checkedHighRefresh = false
+
+    /// An iPhone holds every app to 60 Hz unless its Info.plist sets
+    /// `CADisableMinimumFrameDurationOnPhone`, so on a ProMotion phone the portal would pan at half
+    /// its rate. Says so once in the host's log; an iPad needs no key.
+    private static func warnIfCappedAtSixtyHertz(_ window: UIWindow?) {
+        #if os(iOS)
+        guard !checkedHighRefresh else { return }
+        checkedHighRefresh = true
+        guard UIDevice.current.userInterfaceIdiom == .phone,
+              let screen = window?.windowScene?.screen, screen.maximumFramesPerSecond > 60,
+              Bundle.main.object(forInfoDictionaryKey: "CADisableMinimumFrameDurationOnPhone") as? Bool != true
+        else { return }
+        Midgar.log.error("Set CADisableMinimumFrameDurationOnPhone to YES in the host's Info.plist: without it the Midgar portal runs at 60 Hz on this \(screen.maximumFramesPerSecond) Hz iPhone.")
         #endif
     }
 

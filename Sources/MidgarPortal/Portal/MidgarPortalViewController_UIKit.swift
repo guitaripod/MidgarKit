@@ -395,6 +395,7 @@ final class PortalIrisAnimator: NSObject, UIViewControllerAnimatedTransitioning 
         animation.toValue = opening ? large : small
         animation.duration = transitionDuration(using: transitionContext)
         animation.timingFunction = CAMediaTimingFunction(name: opening ? .easeOut : .easeIn)
+        animation.preferredFrameRateRange = PortalFrameRate.motion
         CATransaction.begin()
         CATransaction.setCompletionBlock {
             portalView.layer.mask = nil

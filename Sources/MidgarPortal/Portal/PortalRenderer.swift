@@ -1,6 +1,38 @@
 import CoreGraphics
 import Foundation
 import QuartzCore
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+/// How often the portal asks the display to refresh. On a ProMotion screen every animation that
+/// names no rate runs at whatever the system picks: 120 Hz on an iPad Pro, 48 Hz on an iPhone Air,
+/// even while nothing but the stars moves. Slow ambient motion asks for 30 Hz, which divides both
+/// 60 and 120, and anything that follows or answers a finger asks for the display's fastest single
+/// rate (a range can settle in between, at 80 Hz).
+enum PortalFrameRate {
+    static let ambient = CAFrameRateRange(minimum: 30, maximum: 30, preferred: 30)
+
+    @MainActor static var motion: CAFrameRateRange {
+        single(fastest)
+    }
+
+    static func single(_ rate: Float) -> CAFrameRateRange {
+        CAFrameRateRange(minimum: rate, maximum: rate, preferred: rate)
+    }
+
+    @MainActor static var fastest: Float {
+        #if os(visionOS)
+        return 90
+        #elseif canImport(UIKit)
+        return Float(UIScreen.main.maximumFramesPerSecond)
+        #else
+        return Float(NSScreen.main?.maximumFramesPerSecond ?? 60)
+        #endif
+    }
+}
 
 /// Where a cell was drawn on the last frame, in the canvas's top-left coordinate space.
 struct PortalCellFrame: Sendable {
@@ -554,6 +586,7 @@ final class PortalRenderer {
             spin.toValue = Double.pi * 2
             spin.duration = 30
             spin.repeatCount = .infinity
+            spin.preferredFrameRateRange = PortalFrameRate.ambient
             entry.marker.add(spin, forKey: "spin")
         }
     }
@@ -569,6 +602,7 @@ final class PortalRenderer {
         bob.repeatCount = .infinity
         bob.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         bob.timeOffset = Double(entry.cell.index) * 0.61
+        bob.preferredFrameRateRange = PortalFrameRate.ambient
         entry.body.add(bob, forKey: "bob")
     }
 
@@ -614,6 +648,7 @@ final class PortalRenderer {
         group.duration = 1.9
         group.repeatCount = .infinity
         group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        group.preferredFrameRateRange = PortalFrameRate.ambient
         focusPing.add(group, forKey: "ping")
     }
 
@@ -625,6 +660,7 @@ final class PortalRenderer {
         spring.stiffness = 220
         spring.damping = 9
         spring.duration = spring.settlingDuration
+        spring.preferredFrameRateRange = PortalFrameRate.motion
         layer.add(spring, forKey: "pop")
     }
 
@@ -636,6 +672,7 @@ final class PortalRenderer {
         animation.fromValue = from
         animation.toValue = value
         animation.duration = 0.35
+        animation.preferredFrameRateRange = PortalFrameRate.motion
         layer.add(animation, forKey: "focusGlow")
     }
 
@@ -670,6 +707,7 @@ final class PortalRenderer {
                 twinkle.autoreverses = true
                 twinkle.repeatCount = .infinity
                 twinkle.timeOffset = twinkleAt
+                twinkle.preferredFrameRateRange = PortalFrameRate.ambient
                 layer.add(twinkle, forKey: "twinkle")
             }
             rootLayer.addSublayer(layer)

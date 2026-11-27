@@ -423,15 +423,15 @@ final class PortalCardView: UIView {
             button.isHidden = true
         }
         setNeedsLayout()
-        guard animated else {
-            content.layer.removeAllAnimations()
-            content.alpha = 1
-            return
-        }
-        content.alpha = 0
-        UIView.animate(withDuration: 0.16, delay: 0, options: [.curveEaseOut, .allowUserInteraction, .beginFromCurrentState]) {
-            self.content.alpha = 1
-        }
+        content.layer.removeAnimation(forKey: "fadeIn")
+        guard animated else { return }
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0
+        fade.toValue = 1
+        fade.duration = 0.16
+        fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        fade.preferredFrameRateRange = PortalFrameRate.motion
+        content.layer.add(fade, forKey: "fadeIn")
     }
 
     override func layoutSubviews() {
@@ -527,6 +527,7 @@ final class PortalBackdropView: UIView {
         fade.toValue = colors
         fade.duration = 0.7
         fade.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        fade.preferredFrameRateRange = PortalFrameRate.motion
         accentGlow.add(fade, forKey: "accent")
     }
 

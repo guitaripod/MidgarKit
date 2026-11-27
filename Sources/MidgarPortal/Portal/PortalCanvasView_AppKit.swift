@@ -157,6 +157,7 @@ final class PortalCanvasView: NSView {
         guard displayLink == nil, fallbackTimer == nil, window != nil else { return }
         if #available(macOS 14.0, *) {
             let link = displayLink(target: self, selector: #selector(frame(_:)))
+            link.preferredFrameRateRange = PortalFrameRate.single(Float(window?.screen?.maximumFramesPerSecond ?? 60))
             link.add(to: .main, forMode: .common)
             displayLink = link
         } else {
