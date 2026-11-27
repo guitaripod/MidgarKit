@@ -4,10 +4,10 @@ import Testing
 
 /// The events of Lifestream 3 stay inside the apps whose registry entry has a `[lifestream]` table.
 @Suite struct SignalsAdoptionTests {
-    private static let notAdopted = "crucible"
+    private static let notAdopted = "not-adopted"
 
     private func experiment() throws -> MidgarConfig {
-        let json = #"{"app":"crucible","version":9,"values":{"lab.paywall-headline":"control,outcome;paywall.view;paywall.purchase"}}"#
+        let json = #"{"app":"not-adopted","version":9,"values":{"lab.paywall-headline":"control,outcome;paywall.view;paywall.purchase"}}"#
         return MidgarConfig(document: try JSONDecoder().decode(MidgarConfigDocument.self, from: Data(json.utf8)), defaults: [:])
     }
 
