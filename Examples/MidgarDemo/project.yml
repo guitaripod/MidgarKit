@@ -10,7 +10,7 @@ packages:
     path: ../..
 
 targets:
-  MidgarDemo:
+  MidgarPortalDemo:
     type: application
     platform: iOS
     sources:

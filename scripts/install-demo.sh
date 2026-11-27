@@ -19,7 +19,7 @@ DEMO=$REPO/Examples/MidgarDemo
 SCRATCH=$REPO/.scratch
 KEYCHAIN=$SCRATCH/device.keychain-db
 ORIGINAL_KEYCHAINS=$(security list-keychains -d user | tr -d '"' | xargs)
-APP=$SCRATCH/dd-demo/Build/Products/Debug-iphoneos/MidgarDemo.app
+APP=$SCRATCH/dd-demo/Build/Products/Debug-iphoneos/MidgarPortalDemo.app
 
 restore() {
   security list-keychains -d user -s $ORIGINAL_KEYCHAINS
@@ -42,7 +42,7 @@ uuid=$(security cms -D -i "$SIGN/midgardemo-dev-2026.mobileprovision" | plutil -
 cp "$SIGN/midgardemo-dev-2026.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
 
 (cd "$DEMO" && xcodegen generate > "$SCRATCH/xcodegen.log" 2>&1) || { tail -20 "$SCRATCH/xcodegen.log"; exit 1; }
-xcodebuild -project "$DEMO/MidgarDemo.xcodeproj" -scheme MidgarDemo -configuration Debug -destination generic/platform=iOS \
+xcodebuild -project "$DEMO/MidgarDemo.xcodeproj" -scheme MidgarPortalDemo -configuration Debug -destination generic/platform=iOS \
   -derivedDataPath "$SCRATCH/dd-demo" -skipPackagePluginValidation -skipMacroValidation build > "$SCRATCH/demo-build.log" 2>&1
 code=$?
 echo "BUILD EXIT $code"
