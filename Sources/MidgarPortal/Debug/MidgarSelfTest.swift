@@ -5,7 +5,9 @@ import UIKit
 /// A scripted run of the portal for devices nobody is touching: it opens the portal, flicks the
 /// camera around, records frame pacing, and writes screenshots and a JSON report into the app's
 /// Documents folder. Only compiled into Debug builds and only active with `-midgar-selftest` or the
-/// `MIDGAR_SELFTEST` environment variable.
+/// `MIDGAR_SELFTEST` environment variable. `MIDGAR_SELFTEST=perf` takes no screenshots, which stall
+/// the main thread and the render server, and drags and taps for longer, so a trace recorded over
+/// it shows only the portal's own frames.
 public enum MidgarSelfTest {
     @MainActor
     public static func autorun(after delay: TimeInterval = 2.5) {
@@ -14,7 +16,7 @@ public enum MidgarSelfTest {
         UIApplication.shared.isIdleTimerDisabled = true
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            await run()
+            if info.environment["MIDGAR_SELFTEST"] == "perf" { await runPerformance() } else { await run() }
             UIApplication.shared.isIdleTimerDisabled = false
         }
     }
@@ -58,6 +60,35 @@ public enum MidgarSelfTest {
             object["productSheetPresented"] = productSheet
             report = (try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])) ?? report
         }
+        write("selftest.json", report, to: directory)
+        NSLog("MIDGAR_SELFTEST_DONE \(String(data: report, encoding: .utf8) ?? "")")
+    }
+
+    /// Opens the portal, waits for the intro to settle, then drags, flicks and taps for about twelve
+    /// seconds with the frame meter running. Writes only the report.
+    @MainActor
+    static func runPerformance() async {
+        guard let host = Midgar.topViewController() else { return }
+        let directory = outputDirectory()
+        Midgar.present(from: host, config: MidgarConfig(enableTelemetry: false, placement: "selftest"))
+        try? await Task.sleep(nanoseconds: 3_800_000_000)
+        guard let window = Midgar.topViewController()?.view.window, let canvas = findCanvas(in: window) else {
+            write("selftest.json", Data("{\"error\":\"canvas not found\"}".utf8), to: directory)
+            return
+        }
+        let controller = canvas.controller
+        let meter = FrameMeter()
+        meter.start()
+        for _ in 0..<2 { await script(controller) }
+        for cell in controller.layout.cells.reversed().prefix(4) {
+            controller.bringToCentre(cell)
+            try? await Task.sleep(nanoseconds: 900_000_000)
+        }
+        meter.stop()
+        let report = meter.report(
+            maxFPS: window.windowScene?.screen.maximumFramesPerSecond ?? 60,
+            cells: controller.layout.cells.count
+        )
         write("selftest.json", report, to: directory)
         NSLog("MIDGAR_SELFTEST_DONE \(String(data: report, encoding: .utf8) ?? "")")
     }
