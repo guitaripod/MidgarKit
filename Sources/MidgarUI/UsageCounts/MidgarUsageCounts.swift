@@ -1,7 +1,7 @@
 import SwiftUI
 import MidgarCore
 
-/// The Usage Counts screen of a Midgar app's Settings: what usage counts are, the switch that turns them off (the same as ``MidgarSettingsRow/usageCounts()``), every count this app may send and why, this app's own public numbers, and a link to all of Midgar's numbers.
+/// The Usage Counts screen of a Midgar app's Settings: what usage counts are, the switch that turns them off (the same as ``MidgarSettingsRow/usageCounts()``), every count this app may send and why, this app's own public numbers, and, unless the app leaves it out, a link to all of Midgar's numbers.
 ///
 /// The numbers section appears only when the latest finished week could be read from the public numbers (`https://api.midgarcorp.cc/v1/ops/public/stats`). That one request carries no identifier and is not repeated; when it fails the section is simply not there. The app is found from the slug it configured ``MidgarSignals`` with.
 ///
@@ -10,9 +10,11 @@ public struct MidgarUsageCounts: View {
     @Environment(\.midgarTheme) private var theme
     @StateObject private var model: MidgarUsageCountsModel
 
-    /// - Parameter appID: The app's registry slug, such as `solar-beam`. Defaults to the one the app configured ``MidgarSignals`` with; pass it only when signals are configured later.
-    public init(appID: String? = nil) {
-        _model = StateObject(wrappedValue: MidgarUsageCountsModel(appID: appID ?? MidgarSignals.appID))
+    /// - Parameters:
+    ///   - appID: The app's registry slug, such as `solar-beam`. Defaults to the one the app configured ``MidgarSignals`` with; pass it only when signals are configured later.
+    ///   - linksOut: Whether the screen ends with the link to all of Midgar's numbers on the web. A Kids Category app passes false, since nothing in it may leave the app without a grown-up.
+    public init(appID: String? = nil, linksOut: Bool = true) {
+        _model = StateObject(wrappedValue: MidgarUsageCountsModel(appID: appID ?? MidgarSignals.appID, linksOut: linksOut))
     }
 
     init(model: MidgarUsageCountsModel) {

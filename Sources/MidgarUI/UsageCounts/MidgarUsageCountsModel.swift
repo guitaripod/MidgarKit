@@ -12,6 +12,8 @@ final class MidgarUsageCountsModel: ObservableObject {
     let events: [MidgarSignalCatalog.Entry]
     /// Whether the app sends a crash report when it crashes or freezes, and the UTC day it last did.
     let crashReports: CrashReports
+    /// Whether the screen ends with the link to all of Midgar's numbers, a page outside the app.
+    let linksOut: Bool
     /// This app's latest finished week, or nil until it is read, and for good when it cannot be: the section is then left out.
     @Published private(set) var numbers: MidgarAppNumbers?
     @Published private var revision = 0
@@ -36,15 +38,18 @@ final class MidgarUsageCountsModel: ObservableObject {
     ///   - catalog: The events to choose from. Defaults to the generated catalog.
     ///   - switchRow: The switch. Defaults to ``MidgarSettingsRow/usageCounts()``, which reads and sets ``MidgarSignals/isEnabled``.
     ///   - loader: Where the public numbers come from.
+    ///   - linksOut: Whether the screen ends with the link to all of Midgar's numbers. A Kids Category app passes false, since nothing in it may leave the app without a grown-up.
     init(
         appID: String? = MidgarSignals.appID,
         catalog: [MidgarSignalCatalog.Entry] = MidgarSignalCatalog.entries,
         switchRow: MidgarSettingsRow = .usageCounts(),
         loader: any MidgarPublicStatsLoading = MidgarPublicStatsClient(),
-        crashReports: CrashReports = .current
+        crashReports: CrashReports = .current,
+        linksOut: Bool = true
     ) {
         self.appID = appID
         self.crashReports = crashReports
+        self.linksOut = linksOut
         self.events = catalog.allowed(for: appID)
         self.loader = loader
         self.switchRow = switchRow
@@ -135,8 +140,11 @@ final class MidgarUsageCountsModel: ObservableObject {
         )
     }
 
-    private var allNumbersSection: MidgarSettingsSection {
-        MidgarSettingsSection(
+    private var allNumbersSection: MidgarSettingsSection? {
+        guard linksOut else {
+            return nil
+        }
+        return MidgarSettingsSection(
             id: "midgar.usageCounts.all",
             rows: [
                 .link(id: "midgar.usageCounts.all.link", title: MidgarUIStrings.allOfMidgarsNumbers, systemImage: "arrow.up.right.square", url: Self.allNumbersURL)

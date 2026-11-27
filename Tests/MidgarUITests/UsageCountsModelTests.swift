@@ -9,9 +9,10 @@ import MidgarCore
         catalog: [MidgarSignalCatalog.Entry] = fixtureCatalog,
         switchRow: MidgarSettingsRow = FakeSwitch().row,
         loader: any MidgarPublicStatsLoading,
-        crashReports: MidgarUsageCountsModel.CrashReports = .init()
+        crashReports: MidgarUsageCountsModel.CrashReports = .init(),
+        linksOut: Bool = true
     ) -> MidgarUsageCountsModel {
-        MidgarUsageCountsModel(appID: appID, catalog: catalog, switchRow: switchRow, loader: loader, crashReports: crashReports)
+        MidgarUsageCountsModel(appID: appID, catalog: catalog, switchRow: switchRow, loader: loader, crashReports: crashReports, linksOut: linksOut)
     }
 
     private func crashRows(_ model: MidgarUsageCountsModel) -> [MidgarSettingsRow] {
@@ -45,6 +46,14 @@ import MidgarCore
 
         #expect(ids(model) == ["midgar.usageCounts.switch", "midgar.usageCounts.events", "midgar.usageCounts.numbers", "midgar.usageCounts.all"])
         #expect(model.sections.map(\.title) == [nil, "What this app sends", "This app's numbers", nil])
+    }
+
+    @Test func aScreenThatMustNotLinkOutEndsWithTheNumbers() async throws {
+        let model = model(loader: try answering(), linksOut: false)
+        await model.load()
+
+        #expect(ids(model) == ["midgar.usageCounts.switch", "midgar.usageCounts.events", "midgar.usageCounts.numbers"])
+        #expect(model.sections.flatMap(\.rows).allSatisfy { if case .link = $0.kind { false } else { true } })
     }
 
     @Test func theNumbersAreLeftOutUntilTheyHaveBeenRead() throws {

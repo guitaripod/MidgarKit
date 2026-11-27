@@ -153,7 +153,7 @@ await MidgarSignals.shared?.send(.paywallView(placement: .settings))
 
 ## Usage Counts screen
 
-`MidgarUsageCounts` (MidgarUI; `MidgarUsageCountsViewController` for UIKit and AppKit hosts) is an optional Settings screen that lists every event the app may send with its purpose and frequency, read from the generated `MidgarSignalCatalog`, shows the app's latest weekly numbers from `https://api.midgarcorp.cc/v1/ops/public/stats` (one uncredentialed `GET`, no retry) and links to https://midgarcorp.cc/open. `MidgarSettingsRow.usageCountsDetail(perform:)` opens it. A new or reworded purpose in `registry/signals.yaml` needs its translations in MidgarUI's string catalog; `UsageCountsStringsTests` fails until they exist.
+`MidgarUsageCounts` (MidgarUI; `MidgarUsageCountsViewController` for UIKit and AppKit hosts) is an optional Settings screen that lists every event the app may send with its purpose and frequency, read from the generated `MidgarSignalCatalog`, shows the app's latest weekly numbers from `https://api.midgarcorp.cc/v1/ops/public/stats` (one uncredentialed `GET`, no retry) and links to https://midgarcorp.cc/open, unless the app passes `linksOut: false` (Master of Flags, a Kids Category app, where nothing may leave the app without a parental gate). `MidgarSettingsRow.usageCountsDetail(perform:)` opens it. A new or reworded purpose in `registry/signals.yaml` needs its translations in MidgarUI's string catalog; `UsageCountsStringsTests` fails until they exist.
 
 Tests: `swift test --filter Signals`. `MIDGAR_LIVE_SIGNALS=1 swift test --filter SignalsLive` sends one real `app.launch` for `dream-eater` to production, which leaves a row in `daily` that must be deleted afterwards.
 
