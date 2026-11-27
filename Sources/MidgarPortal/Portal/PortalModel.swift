@@ -61,7 +61,14 @@ final class PortalModel: ObservableObject {
 
     /// How many of the apps for this device the person has: the host, the ones installed here, and, once the identity service has answered, the ones their Midgar ID has a session or purchase in. Without that answer it is the first two, as before.
     var installedCount: Int {
-        ranked.filter { $0.runsOnThisDevice && (isHost($0) || installed.contains($0.bundleId.lowercased()) || isOwned($0)) }.count
+        let installed = installed
+        let owned = ownedSlugs
+        let host = hostBundleID?.lowercased()
+        return ranked.filter { app in
+            guard app.runsOnThisDevice else { return false }
+            let bundle = app.bundleId.lowercased()
+            return bundle == host || installed.contains(bundle) || (app.slug.map(owned.contains) ?? false)
+        }.count
     }
 
     /// The registry slugs of the apps "Your Midgar" lists, empty while the account is unknown.

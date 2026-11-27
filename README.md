@@ -5,9 +5,10 @@ The doorway between Midgar apps. One card in a host app's Settings opens the **p
 - **Every app, everywhere.** The catalog is hosted, so all Midgar apps appear in every host the moment they ship. The host app itself stays in the universe as the "you are here" marker.
 - **Knows what you have.** Installed apps get a tick and an OPEN button, the progress ring around the Midgar emblem counts them, and apps that live on another platform say so ("Mac", "iPhone") and offer to send the link.
 - **Related apps sit closest.** The ranking puts apps related to the host nearest the centre and apps the person already has further out.
-- **Fast by construction.** The portal is drawn with Core Animation layers only. A frame sets position, scale and opacity on pre-rendered textures, so the GPU does the work and the display link runs only while something moves.
+- **Fast by construction.** The portal is drawn with Core Animation layers that only show bitmaps, drawn once (icons on a background thread). A frame sets position, scale, opacity and depth on existing layers, with no paths rebuilt, no layer leaving the tree and no offscreen pass, so the GPU does the work and the display link runs only while something moves. On an iPhone XS a run of drags and taps holds 60 fps with zero to two single-frame hitches in 16 seconds.
 - **Private.** Anonymous, aggregate counts only (portal opens, impressions, taps, per placement and storefront). No IDFA, no identifier, no user data. A privacy manifest ships in the package.
-- **Native on every Apple platform.** UIKit on iOS, iPadOS, tvOS and visionOS; AppKit on macOS; SwiftUI wrappers for SwiftUI hosts.
+- **Native on every Apple platform.** The whole screen is UIKit on iOS, iPadOS, tvOS and visionOS; on macOS an AppKit canvas sits in a SwiftUI screen; SwiftUI wrappers serve SwiftUI hosts.
+- **One icon per product.** An app sold as several store records (Flaccy for iPhone and for Mac share a slug) gets one cell: the host's record, else the one made for this platform.
 
 ## Install
 
@@ -197,7 +198,8 @@ Edit `worker/catalog.meta.json` (taglines, accents, topics, related apps, platfo
 
 - `swift test` runs the portal engine tests (lattice, lens, camera physics, ranking, controller) in `MidgarPortalTests` and a module test per product.
 - `MIDGAR_SNAPSHOT_DIR=/tmp/shots swift test --filter MidgarPortalTests.PortalSnapshotTests` renders the portal and the entry card to PNGs on the Mac (`MIDGAR_SNAPSHOT_SIZE=393x852`, `MIDGAR_SNAPSHOT_PLATFORM=mac`, `MIDGAR_SNAPSHOT_HOST=<bundle id>`).
-- `scripts/install-demo.sh` builds `Examples/MidgarDemo`, installs it on the iPhone Air, runs a scripted self test (frame pacing and screenshots, Debug builds only) and collects the report.
+- On an iOS or tvOS simulator, `xcodebuild test -scheme MidgarKit-Package -only-testing:MidgarPortalTests` adds `PortalLayoutSnapshotTests` (phone both ways, iPad, television: the card never covers a near icon) and the "Your Midgar" renders; `TEST_RUNNER_MIDGAR_SNAPSHOT_DIR` saves the PNGs.
+- `scripts/install-demo.sh` builds `Examples/MidgarDemo`, installs it on the iPhone Air, runs a scripted self test (frame pacing and screenshots, Debug builds only) and collects the report. Launched with `MIDGAR_SELFTEST=perf` the self test takes no screenshots, which stall the main thread and the render server, so an `xctrace` Animation Hitches recording over it shows only the portal's own frames.
 - `scripts/check_strings.py` validates the string catalog.
 
 ## Requirements

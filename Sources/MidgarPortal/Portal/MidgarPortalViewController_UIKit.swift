@@ -1,23 +1,40 @@
 #if canImport(UIKit)
+import Combine
 import StoreKit
-import SwiftUI
 import UIKit
 
-/// The portal as a view controller: hosts the SwiftUI screen, presents App Store product pages,
-/// launches installed apps and shares links to apps that live on another platform.
+/// The portal as a view controller, built from UIKit views over a Core Animation canvas: the
+/// backdrop, the honeycomb, a slim header, the card describing what sits at the centre and, on
+/// touch screens, "Your Midgar". It presents App Store product pages, launches installed apps and
+/// shares links to apps that live on another platform.
 @MainActor
 public final class MidgarPortalViewController: UIViewController {
     private let model: PortalModel
-    private let hosting: UIHostingController<PortalScreen>
     private let irisDelegate: PortalIrisTransitioning
+    private let backdrop = PortalBackdropView()
+    private let canvas = PortalCanvasView()
+    private let header = PortalHeaderView()
+    private let card = PortalCardView()
+    #if !os(tvOS)
+    private var panel: YourMidgarPanelView?
+    #endif
+    private var modelChanges: AnyCancellable?
+    private var needsModelSync = true
+    private var loadedIDs: [String] = []
+    private var countedFor: (ids: [String], installed: Set<String>, yourMidgar: YourMidgarSection?)?
+    private var isRunning = false
     private var presentingProduct = false
 
-    init(config: MidgarConfig, irisOrigin: CGPoint? = nil) {
+    convenience init(config: MidgarConfig, irisOrigin: CGPoint? = nil) {
+        self.init(model: PortalModel(config: config), irisOrigin: irisOrigin)
+    }
+
+    init(model: PortalModel, irisOrigin: CGPoint? = nil) {
+        self.model = model
         irisDelegate = PortalIrisTransitioning(origin: irisOrigin)
-        model = PortalModel(config: config)
-        hosting = UIHostingController(rootView: PortalScreen(model: model))
         super.init(nibName: nil, bundle: nil)
         transitioningDelegate = irisDelegate
+        overrideUserInterfaceStyle = .dark
         #if !os(tvOS)
         modalPresentationCapturesStatusBarAppearance = true
         #endif
@@ -31,26 +48,207 @@ public final class MidgarPortalViewController: UIViewController {
     public override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     #endif
 
+    public override var preferredFocusEnvironments: [any UIFocusEnvironment] { [canvas] }
+
     public override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.02, green: 0.025, blue: 0.07, alpha: 1)
-        addChild(hosting)
-        hosting.view.translatesAutoresizingMaskIntoConstraints = false
-        hosting.view.backgroundColor = .clear
-        view.addSubview(hosting.view)
-        NSLayoutConstraint.activate([
-            hosting.view.topAnchor.constraint(equalTo: view.topAnchor),
-            hosting.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            hosting.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hosting.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        ])
-        hosting.didMove(toParent: self)
+        view.backgroundColor = PortalColor.space.uiColor
+        view.maximumContentSizeCategory = .accessibilityMedium
+        for subview in [backdrop, canvas, header, card] as [UIView] { view.addSubview(subview) }
+        connectCanvas()
+        connectChrome()
+        modelChanges = model.objectWillChange.sink { [weak self] _ in self?.setNeedsModelSync() }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(refreshInstalled),
+            name: UIApplication.willEnterForegroundNotification, object: nil
+        )
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if !isRunning {
+            isRunning = true
+            model.start()
+        }
         model.refreshInstalled()
     }
+
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        isRunning = false
+        model.stop()
+    }
+
+    public override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        if needsModelSync { syncFromModel() }
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let insets = view.safeAreaInsets
+        let layout = PortalScreenLayout(
+            size: view.bounds.size,
+            safeArea: PortalSafeArea(top: insets.top, leading: insets.left, bottom: insets.bottom, trailing: insets.right)
+        )
+        backdrop.frame = view.bounds
+        canvas.frame = view.bounds
+        canvas.insets = layout.canvasInsets
+        header.frame = layout.headerFrame
+        card.frame = layout.cardFrame
+        #if !os(tvOS)
+        if let panel {
+            let room = layout.panelBounds
+            let height = min(panel.naturalHeight(forWidth: room.width), room.height)
+            panel.frame = CGRect(x: room.minX, y: room.minY, width: room.width, height: height)
+        }
+        #endif
+    }
+
+    #if !os(tvOS)
+    public override var keyCommands: [UIKeyCommand]? {
+        let escape = UIKeyCommand(input: UIKeyCommand.inputEscape, modifierFlags: [], action: #selector(closeFromKeyboard))
+        escape.wantsPriorityOverSystemBehavior = true
+        return [escape]
+    }
+
+    @objc private func closeFromKeyboard() {
+        model.perform(.close)
+    }
+    #endif
+
+    /// Marks the screen stale after any model change. The work happens once, in the next layout
+    /// pass of the same frame, however many properties changed.
+    private func setNeedsModelSync() {
+        needsModelSync = true
+        viewIfLoaded?.setNeedsLayout()
+    }
+
+    @objc private func refreshInstalled() {
+        model.refreshInstalled()
+    }
+
+    /// Runs on every focus change while a finger drags, so it reads each published value once and
+    /// recounts the header only when what it counts has changed.
+    private func syncFromModel() {
+        needsModelSync = false
+        let ranked = model.ranked
+        let installed = model.installed
+        let yourMidgar = model.yourMidgar
+        let ids = ranked.map { $0.appId }
+        if ids != loadedIDs {
+            loadedIDs = ids
+            canvas.load(ranked: ranked, hostBundleID: model.hostBundleID, installed: installed, initialFocus: model.initialFocusID)
+        } else {
+            canvas.setInstalled(installed)
+        }
+        let counted = countedFor.map { $0.ids == ids && $0.installed == installed && $0.yourMidgar == yourMidgar } ?? false
+        if !counted {
+            countedFor = (ids, installed, yourMidgar)
+            header.subtitle = MidgarStrings.installedCount(model.installedCount, of: model.availableHere)
+        }
+        #if !os(tvOS)
+        header.showsYourMidgar = yourMidgar != nil
+        #endif
+        let animate = view.window != nil && !UIAccessibility.isReduceMotionEnabled
+        backdrop.setAccent(model.accent, animated: animate)
+        card.show(cardContent(for: model.selection), animated: animate)
+        #if !os(tvOS)
+        syncPanel(animated: animate)
+        #endif
+    }
+
+    private func cardContent(for selection: PortalSelection) -> PortalCardContent {
+        switch selection {
+        case .core:
+            return PortalCardContent(
+                title: "Midgar Oy",
+                body: MidgarStrings.coreBlurb,
+                bodyLines: 0,
+                rating: nil,
+                chips: [],
+                button: PortalCardContent.Button(title: MidgarStrings.allApps, accent: .midgar)
+            )
+        case .app(let app):
+            let accent = PortalColor(hex: app.accentHex)
+            var chips: [PortalCardContent.Chip] = []
+            if model.isHost(app) {
+                chips.append(PortalCardContent.Chip(text: MidgarStrings.youAreHere, accent: accent))
+            } else if model.isInstalled(app) {
+                chips.append(PortalCardContent.Chip(text: MidgarStrings.installed, accent: accent))
+            }
+            if let genre = app.genre { chips.append(PortalCardContent.Chip(text: genre, accent: nil)) }
+            return PortalCardContent(
+                title: app.shortName,
+                body: app.tagline ?? app.genre ?? "",
+                bodyLines: 2,
+                rating: app.hasRating ? (app.rating ?? 0).formatted(.number.precision(.fractionLength(1))) : nil,
+                chips: chips,
+                button: model.buttonTitle(for: app).map { PortalCardContent.Button(title: $0, accent: accent) }
+            )
+        }
+    }
+
+    private func connectCanvas() {
+        let model = model
+        canvas.controller.onFocusChange = { cell in
+            if let id = cell.appID { model.select(appID: id) } else { model.selectCore() }
+        }
+        canvas.controller.onActivate = { cell in
+            if cell.isCore {
+                model.perform(.developerPage)
+            } else if let id = cell.appID, let app = model.ranked.first(where: { $0.appId == id }), !model.isHost(app) {
+                model.perform(model.action(for: app))
+            }
+        }
+        canvas.controller.onSeen = { model.recordSeen($0) }
+        canvas.onAccessibilityActivate = canvas.controller.onActivate
+    }
+
+    private func connectChrome() {
+        let model = model
+        card.button.addAction(UIAction { _ in
+            switch model.selection {
+            case .core: model.perform(.developerPage)
+            case .app(let app): model.perform(model.action(for: app))
+            }
+        }, for: .primaryActionTriggered)
+        #if !os(tvOS)
+        header.closeButton.addAction(UIAction { _ in model.perform(.close) }, for: .primaryActionTriggered)
+        header.yourMidgarButton.addAction(UIAction { _ in
+            if model.showsYourMidgar { model.hideYourMidgar() } else { model.showYourMidgar() }
+        }, for: .primaryActionTriggered)
+        #endif
+    }
+
+    #if !os(tvOS)
+    private func syncPanel(animated: Bool) {
+        guard model.showsYourMidgar, let section = model.yourMidgar else {
+            guard let panel else { return }
+            self.panel = nil
+            UIView.animate(withDuration: animated ? 0.2 : 0, animations: { panel.alpha = 0 }, completion: { _ in panel.removeFromSuperview() })
+            return
+        }
+        let shown = panel ?? makePanel()
+        shown.configure(section: section, hostBundleID: model.hostBundleID, installed: model.installed)
+        guard shown.superview == nil else { return }
+        panel = shown
+        shown.alpha = 0
+        view.addSubview(shown)
+        view.setNeedsLayout()
+        UIView.animate(withDuration: animated ? 0.2 : 0) { shown.alpha = 1 }
+    }
+
+    private func makePanel() -> YourMidgarPanelView {
+        let model = model
+        let panel = YourMidgarPanelView()
+        panel.onSelect = { app in
+            if !model.isHost(app) { model.perform(model.action(for: app)) }
+        }
+        panel.onClose = { model.hideYourMidgar() }
+        return panel
+    }
+    #endif
 
     private func handle(_ action: PortalAction) {
         switch action {
@@ -89,8 +287,8 @@ public final class MidgarPortalViewController: UIViewController {
         UIApplication.shared.open(app.storeURL)
         #else
         let sheet = UIActivityViewController(activityItems: [app.storeURL], applicationActivities: nil)
-        sheet.popoverPresentationController?.sourceView = view
-        sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.maxY - 120, width: 1, height: 1)
+        sheet.popoverPresentationController?.sourceView = card.button
+        sheet.popoverPresentationController?.sourceRect = card.button.bounds
         present(sheet, animated: true)
         #endif
     }
@@ -129,6 +327,7 @@ extension MidgarPortalViewController: @MainActor SKStoreProductViewControllerDel
     public func productViewControllerDidFinish(_ viewController: SKStoreProductViewController) {
         presentingProduct = false
         viewController.dismiss(animated: true)
+        model.refreshInstalled()
     }
 }
 #endif

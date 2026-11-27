@@ -45,6 +45,15 @@ struct PortalColor: Equatable, Sendable {
     func lightened(_ amount: CGFloat) -> PortalColor { mixed(with: PortalColor(r: 1, g: 1, b: 1, a: a), amount) }
 
     var cgColor: CGColor { CGColor(colorSpace: PortalArt.colorSpace, components: [r, g, b, a])! }
+
+    /// The colour in 8-bit steps, for keys and comparisons that should ignore float noise.
+    var hashKey: String { "\(Int(r * 255))-\(Int(g * 255))-\(Int(b * 255))-\(Int(a * 255))" }
+}
+
+/// Solid colours for the panel and its rows, so nothing of the canvas behind the panel shows through.
+enum YourMidgarSurface {
+    static let panel = PortalColor.space.lightened(0.04)
+    static let row = PortalColor.space.lightened(0.11)
 }
 
 /// Every bitmap the portal shows is drawn here once, at the size it is displayed, so the render
@@ -283,5 +292,77 @@ enum PortalArt {
                 options: []
             )
         }
+    }
+}
+
+extension PortalArt {
+    /// The soft halo behind an icon: the accent at the centre fading to nothing at the edge.
+    static func glow(diameter: CGFloat, scale: CGFloat, accent: PortalColor) -> CGImage? {
+        render(size: CGSize(width: diameter, height: diameter), scale: scale) { ctx, size in
+            guard let halo = gradient(
+                [accent.withAlpha(0.55), accent.withAlpha(0.18), accent.withAlpha(0)],
+                locations: [0, 0.45, 1]
+            ) else { return }
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            ctx.drawRadialGradient(halo, startCenter: centre, startRadius: 0, endCenter: centre, endRadius: size.width / 2, options: [])
+        }
+    }
+
+    /// A stroked circle of `radius` centred in a square of `side` points, optionally dashed.
+    static func ring(
+        side: CGFloat,
+        radius: CGFloat,
+        lineWidth: CGFloat,
+        scale: CGFloat,
+        color: PortalColor,
+        dash: [CGFloat] = []
+    ) -> CGImage? {
+        render(size: CGSize(width: side, height: side), scale: scale) { ctx, size in
+            ctx.setStrokeColor(color.cgColor)
+            ctx.setLineWidth(lineWidth)
+            ctx.setLineCap(.round)
+            if !dash.isEmpty { ctx.setLineDash(phase: 0, lengths: dash) }
+            ctx.strokeEllipse(in: CGRect(
+                x: size.width / 2 - radius, y: size.height / 2 - radius, width: radius * 2, height: radius * 2
+            ))
+        }
+    }
+
+    /// The core's progress ring: a faint full track and a lit arc that starts at twelve o'clock and
+    /// runs clockwise for `fraction` of the way round.
+    static func progressRing(side: CGFloat, radius: CGFloat, fraction: CGFloat, scale: CGFloat, tint: PortalColor) -> CGImage? {
+        render(size: CGSize(width: side, height: side), scale: scale) { ctx, size in
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            ctx.setLineWidth(3)
+            ctx.setStrokeColor(PortalColor.white.withAlpha(0.12).cgColor)
+            ctx.strokeEllipse(in: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
+            let sweep = max(0, min(1, fraction))
+            guard sweep > 0 else { return }
+            ctx.setLineCap(.round)
+            ctx.setStrokeColor(tint.lightened(0.45).cgColor)
+            ctx.addArc(center: centre, radius: radius, startAngle: .pi / 2, endAngle: .pi / 2 - sweep * 2 * .pi, clockwise: true)
+            ctx.strokePath()
+        }
+    }
+
+    /// A filled disc, used for the faint dots of the empty lattice and the dotted links.
+    static func dot(diameter: CGFloat, scale: CGFloat, color: PortalColor) -> CGImage? {
+        render(size: CGSize(width: diameter, height: diameter), scale: scale) { ctx, size in
+            ctx.setFillColor(color.cgColor)
+            ctx.fillEllipse(in: CGRect(origin: .zero, size: size))
+        }
+    }
+}
+
+/// Bitmaps the renderer shares between its cells, drawn once per size and colour.
+@MainActor
+final class PortalTextureCache {
+    private var images: [String: CGImage] = [:]
+
+    func image(_ key: String, _ make: () -> CGImage?) -> CGImage? {
+        if let cached = images[key] { return cached }
+        guard let made = make() else { return nil }
+        images[key] = made
+        return made
     }
 }

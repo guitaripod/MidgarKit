@@ -1,5 +1,4 @@
 #if os(iOS)
-import SwiftUI
 import UIKit
 import XCTest
 @testable import MidgarPortal
@@ -35,7 +34,7 @@ final class YourMidgarSnapshotTestsIOS: XCTestCase {
         )
         let window = UIWindow(frame: CGRect(origin: .zero, size: device.size))
         window.overrideUserInterfaceStyle = .dark
-        let controller = UIHostingController(rootView: PortalScreen(model: model))
+        let controller = MidgarPortalViewController(model: model)
         controller.additionalSafeAreaInsets = device.safeArea
         window.rootViewController = controller
         window.isHidden = false
@@ -52,7 +51,7 @@ final class YourMidgarSnapshotTestsIOS: XCTestCase {
         try await Task.sleep(for: .seconds(2))
         controller.view.setNeedsLayout()
         controller.view.layoutIfNeeded()
-        replaceGlass(in: window)
+        PortalGlassStandIn.replaceGlass(in: window)
 
         let image = UIGraphicsImageRenderer(size: device.size).image { context in
             window.layer.render(in: context.cgContext)
@@ -66,32 +65,6 @@ final class YourMidgarSnapshotTestsIOS: XCTestCase {
         XCTAssertTrue(text.contains("Lifetime"), text)
         XCTAssertTrue(text.contains("Jan 20, 2027"), "the billing grace date must not be truncated: \(text)")
         XCTAssertFalse(text.contains("until..."), text)
-    }
-
-    /// `CALayer.render(in:)` draws nothing once a Liquid Glass layer (`CASDFLayer`) is in the tree, so the glass is hidden and a translucent shape of the same frame stands in for it. The material itself cannot be captured here.
-    private func replaceGlass(in window: UIWindow) {
-        var standIns: [(host: CALayer, frame: CGRect)] = []
-        func visit(_ layer: CALayer) {
-            let name = String(describing: type(of: layer))
-            if name == "CASDFLayer" {
-                layer.isHidden = true
-            } else if name == "SDFLayer", let host = layer.superlayer {
-                standIns.append((host, layer.frame))
-                layer.sublayers?.forEach(visit)
-            } else {
-                layer.sublayers?.forEach(visit)
-            }
-        }
-        visit(window.layer)
-        for (host, frame) in standIns {
-            let shape = CALayer()
-            shape.frame = frame
-            shape.cornerRadius = frame.height <= 60 ? frame.height / 2 : 30
-            shape.backgroundColor = UIColor(white: 1, alpha: 0.13).cgColor
-            shape.borderColor = UIColor(white: 1, alpha: 0.18).cgColor
-            shape.borderWidth = 1
-            host.insertSublayer(shape, at: 0)
-        }
     }
 
     private func save(_ data: Data, name: String) throws {

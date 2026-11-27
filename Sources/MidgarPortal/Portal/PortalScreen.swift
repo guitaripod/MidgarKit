@@ -1,4 +1,12 @@
+#if canImport(AppKit) && !canImport(UIKit)
+import AppKit
 import SwiftUI
+
+extension PortalSafeArea {
+    init(_ insets: EdgeInsets) {
+        self.init(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing)
+    }
+}
 
 extension Color {
     init(_ color: PortalColor) {
@@ -12,12 +20,9 @@ struct PortalScreen: View {
     @ObservedObject var model: PortalModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    nonisolated static let headerHeight: CGFloat = 64 * PortalMetrics.scale
-    nonisolated static let cardHeight: CGFloat = 156 * PortalMetrics.scale
-
     var body: some View {
         GeometryReader { proxy in
-            let layout = PortalScreenLayout(size: proxy.size, safeArea: proxy.safeAreaInsets)
+            let layout = PortalScreenLayout(size: proxy.size, safeArea: PortalSafeArea(proxy.safeAreaInsets))
             ZStack {
                 PortalBackdrop(accent: model.accent, animated: !reduceMotion)
                 PortalCanvas(model: model, insets: layout.canvasInsets)
@@ -48,10 +53,9 @@ struct PortalScreen: View {
         .onDisappear { model.stop() }
     }
 
-    /// "Your Midgar" over the canvas, kept clear of the header and the card. Not on tvOS, where a list of rows has no remote-friendly form here.
+    /// "Your Midgar" over the canvas, kept clear of the header and the card.
     @ViewBuilder
     private func yourMidgarPanel(layout: PortalScreenLayout) -> some View {
-        #if !os(tvOS)
         if model.showsYourMidgar, let section = model.yourMidgar {
             YourMidgarPanel(
                 section: section,
@@ -70,39 +74,6 @@ struct PortalScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .transition(.opacity)
         }
-        #endif
-    }
-}
-
-/// Where the card goes: under the canvas on tall screens, beside it when the screen is too short
-/// for both, as on a phone held sideways.
-struct PortalScreenLayout {
-    let size: CGSize
-    let safeArea: EdgeInsets
-
-    var isSideCard: Bool { size.width > size.height && size.height < 560 }
-
-    var sideCardWidth: CGFloat { min(340 * PortalMetrics.scale, size.width * 0.42) }
-
-    /// Where "Your Midgar" may sit, measured inside the safe area: under the header and clear of the card.
-    var panelInsets: PortalInsets {
-        let top = (safeArea.top > 0 ? 0 : 8) + PortalScreen.headerHeight
-        if isSideCard {
-            return PortalInsets(top: top, bottom: 12, trailing: sideCardWidth + 16 + 8)
-        }
-        return PortalInsets(top: top, bottom: max(safeArea.bottom, 16) + PortalScreen.cardHeight + 12)
-    }
-
-    var canvasInsets: PortalInsets {
-        let top = safeArea.top + PortalScreen.headerHeight
-        if isSideCard {
-            return PortalInsets(
-                top: top,
-                bottom: max(safeArea.bottom, 12),
-                trailing: sideCardWidth + max(safeArea.trailing, 16) + 8
-            )
-        }
-        return PortalInsets(top: top, bottom: safeArea.bottom + PortalScreen.cardHeight + 28)
     }
 }
 
@@ -132,10 +103,6 @@ struct PortalBackdrop: View {
     }
 }
 
-extension PortalColor {
-    var hashKey: String { "\(Int(r * 255))-\(Int(g * 255))-\(Int(b * 255))" }
-}
-
 struct PortalHeader: View {
     @ObservedObject var model: PortalModel
 
@@ -152,7 +119,6 @@ struct PortalHeader: View {
             }
             .accessibilityElement(children: .combine)
             Spacer()
-            #if !os(tvOS)
             if model.yourMidgar != nil {
                 Button {
                     if model.showsYourMidgar { model.hideYourMidgar() } else { model.showYourMidgar() }
@@ -178,10 +144,9 @@ struct PortalHeader: View {
             .buttonStyle(.plain)
             .closeShortcut()
             .accessibilityLabel(MidgarStrings.close)
-            #endif
         }
         .padding(.horizontal, 20)
-        .frame(height: PortalScreen.headerHeight)
+        .frame(height: PortalScreenLayout.headerHeight)
     }
 
     private var subtitle: String {
@@ -205,7 +170,7 @@ struct PortalCard: View {
         .transition(.asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.16)), removal: .identity))
         .padding(18 * PortalMetrics.scale)
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-        .frame(maxWidth: .infinity, minHeight: PortalScreen.cardHeight, maxHeight: PortalScreen.cardHeight, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: PortalScreenLayout.cardHeight, maxHeight: PortalScreenLayout.cardHeight, alignment: .topLeading)
         .portalGlass(in: RoundedRectangle(cornerRadius: 30, style: .continuous))
     }
 
@@ -294,12 +259,8 @@ struct PortalPillButton: View {
     let action: () -> Void
 
     var body: some View {
-        #if os(tvOS)
-        pill
-        #else
         Button(action: action) { pill }
             .buttonStyle(.plain)
-        #endif
     }
 
     private var pill: some View {
@@ -325,15 +286,11 @@ extension View {
     /// Liquid Glass where the OS has it, a frosted material everywhere else.
     @ViewBuilder
     func portalGlass<S: InsettableShape>(in shape: S) -> some View {
-        #if os(visionOS)
-        frostedGlass(in: shape)
-        #else
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, *) {
+        if #available(macOS 26.0, *) {
             self.glassEffect(.regular, in: shape)
         } else {
             frostedGlass(in: shape)
         }
-        #endif
     }
 
     private func frostedGlass<S: InsettableShape>(in shape: S) -> some View {
@@ -342,13 +299,9 @@ extension View {
             .overlay(shape.strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
     }
 
-    /// Escape closes the portal wherever a hardware keyboard exists.
-    @ViewBuilder
+    /// Escape closes the portal.
     func closeShortcut() -> some View {
-        #if os(tvOS)
-        self
-        #else
         keyboardShortcut(.cancelAction)
-        #endif
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if canImport(AppKit) && !canImport(UIKit)
 import SwiftUI
 
 /// Bridges the platform canvas view into SwiftUI and keeps it in step with the model.
@@ -27,9 +28,7 @@ struct PortalCanvas {
         }
         view.controller.onSeen = { model.recordSeen($0) }
         view.onAccessibilityActivate = view.controller.onActivate
-        #if canImport(AppKit) && !canImport(UIKit)
         view.onCancel = { model.perform(.close) }
-        #endif
     }
 
     @MainActor
@@ -50,19 +49,6 @@ struct PortalCanvas {
     }
 }
 
-#if canImport(UIKit)
-extension PortalCanvas: UIViewRepresentable {
-    func makeUIView(context: Context) -> PortalCanvasView {
-        let view = PortalCanvasView()
-        connect(view)
-        return view
-    }
-
-    func updateUIView(_ view: PortalCanvasView, context: Context) {
-        sync(view, coordinator: context.coordinator)
-    }
-}
-#else
 extension PortalCanvas: NSViewRepresentable {
     func makeNSView(context: Context) -> PortalCanvasView {
         let view = PortalCanvasView()

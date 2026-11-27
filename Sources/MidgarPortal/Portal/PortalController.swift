@@ -214,13 +214,13 @@ final class PortalController {
         let position = keepingCamera ? CGPoint(x: camera.position.x * ratio, y: camera.position.y * ratio) : .zero
         layout = newLayout
         camera = PortalCamera(position: position, bound: newLayout.reach + metrics.pitch * 0.4)
-        renderer.configure(layout: newLayout, apps: apps, hostBundleID: hostBundleID, installed: installed)
         renderer.setViewport(
             size: size,
             center: CGPoint(x: usable.midX, y: usable.midY),
             halfExtent: metrics.halfExtent,
             diameter: metrics.diameter
         )
+        renderer.configure(layout: newLayout, apps: apps, hostBundleID: hostBundleID, installed: installed)
         let index = min(focusedIndex, newLayout.cells.count - 1)
         focusedIndex = index
         renderer.setFocus(index, animated: false)

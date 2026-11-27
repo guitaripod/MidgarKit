@@ -19,6 +19,7 @@ final class PortalCanvasView: UIView {
 
     #if os(iOS)
     private let selectionFeedback = UISelectionFeedbackGenerator()
+    private var hapticsWarm = false
     #endif
 
     override init(frame: CGRect) {
@@ -102,7 +103,18 @@ final class PortalCanvasView: UIView {
         }
         controller.onFramesSettled = { [weak self] in
             self?.rebuildAccessibility()
+            self?.warmUpHaptics()
         }
+    }
+
+    /// The first selection haptic sets up the feedback engine, about 11 ms of main-thread work on an
+    /// iPhone XS. Doing it once the opening has settled keeps that out of the first drag.
+    private func warmUpHaptics() {
+        #if os(iOS)
+        guard !hapticsWarm else { return }
+        hapticsWarm = true
+        selectionFeedback.prepare()
+        #endif
     }
 
     private func installGestures() {
@@ -170,9 +182,20 @@ final class PortalCanvasView: UIView {
     private func startDisplayLink() {
         guard displayLink == nil, window != nil else { return }
         let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.fire(_:)))
-        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+        link.preferredFrameRateRange = frameRate()
         link.add(to: .main, forMode: .common)
         displayLink = link
+    }
+
+    /// One rate, the display's fastest, while the canvas moves. A range lets the system settle on a
+    /// rate in between (80 Hz on ProMotion phones), which reads as judder in a pan.
+    private func frameRate() -> CAFrameRateRange {
+        #if os(visionOS)
+        return CAFrameRateRange(minimum: 60, maximum: 90, preferred: 90)
+        #else
+        let fastest = Float(window?.windowScene?.screen.maximumFramesPerSecond ?? 60)
+        return CAFrameRateRange(minimum: fastest, maximum: fastest, preferred: fastest)
+        #endif
     }
 
     private func stopDisplayLink() {

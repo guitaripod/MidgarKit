@@ -10,13 +10,13 @@ struct OwnedItem: Hashable, Sendable {
     let name: String
     let kind: Kind
 
-    /// The line under the name: "Lifetime", or when the subscription's paid period (or its billing grace period) ends.
+    /// The line under the name: "Lifetime", or when the subscription's paid period (or its billing grace period) ends. The date never breaks across two lines.
     var detail: String {
         switch kind {
         case .lifetime:
             return MidgarStrings.lifetime
         case .subscription(let until, let inGrace):
-            let date = until.formatted(date: .abbreviated, time: .omitted)
+            let date = until.formatted(date: .abbreviated, time: .omitted).replacingOccurrences(of: " ", with: "\u{00A0}")
             return inGrace ? MidgarStrings.billingIssue(until: date) : MidgarStrings.activeUntil(date)
         }
     }

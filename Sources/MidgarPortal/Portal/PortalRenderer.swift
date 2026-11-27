@@ -9,9 +9,49 @@ struct PortalCellFrame: Sendable {
     let depth: CGFloat
 }
 
-/// Draws the portal with Core Animation layers only. Every cell is a handful of pre-rendered
-/// textures; a frame is nothing more than setting position, scale and opacity on those layers, so
-/// the GPU does all the drawing and a flick stays smooth at the display's full refresh rate.
+/// Carries a bitmap between the main actor and a background render. `CGImage` is immutable, so
+/// reading it from another thread is safe.
+struct PortalImageBox: @unchecked Sendable {
+    let image: CGImage?
+}
+
+/// Everything an icon bitmap is drawn from: two cells with equal recipes show identical pixels, so
+/// a recipe that has not changed is never drawn again.
+private struct PortalIconRecipe: Equatable {
+    let diameter: CGFloat
+    let scale: CGFloat
+    let accent: String
+    let monogram: String
+    let zoom: CGFloat
+    let isCore: Bool
+    let artwork: ObjectIdentifier?
+}
+
+/// One icon to draw away from the main thread.
+private struct PortalIconJob: Sendable {
+    let artwork: PortalImageBox
+    let diameter: CGFloat
+    let scale: CGFloat
+    let accent: PortalColor
+    let monogram: String
+    let zoom: CGFloat
+    let isCore: Bool
+
+    func render() -> PortalImageBox {
+        if isCore {
+            return PortalImageBox(image: PortalArt.coreEmblem(diameter: diameter, scale: scale, tint: .midgar))
+        }
+        return PortalImageBox(image: PortalArt.circularIcon(
+            source: artwork.image, diameter: diameter, scale: scale, accent: accent, monogram: monogram, zoom: zoom
+        ))
+    }
+}
+
+/// Draws the portal with Core Animation layers that only ever show bitmaps. Every icon, glow, ring
+/// and dot is drawn once (icons on a background thread), so a frame is nothing more than setting
+/// position, scale, opacity and depth on existing layers: no paths are rebuilt, nothing is
+/// rasterised again, no layer leaves the tree and no layer needs an offscreen pass, which keeps a
+/// flick at the display's full rate on an iPhone XS.
 @MainActor
 final class PortalRenderer {
     private struct Star {
@@ -21,23 +61,48 @@ final class PortalRenderer {
     }
 
     private final class CellLayers {
-        let cell: PortalCell
-        let app: MidgarApp?
-        let accent: PortalColor
+        var cell: PortalCell
+        var app: MidgarApp?
+        var accent: PortalColor
         let container = CALayer()
-        let glow = CAGradientLayer()
+        let glow = CALayer()
         let body = CALayer()
         let installed = CALayer()
         let platform = CALayer()
-        let marker = CAShapeLayer()
+        let marker = CALayer()
         let markerLabel = CALayer()
         var artwork: CGImage?
+        var recipe: PortalIconRecipe?
 
         init(cell: PortalCell, app: MidgarApp?, accent: PortalColor) {
             self.cell = cell
             self.app = app
             self.accent = accent
         }
+
+        var key: String { cell.appID ?? "core" }
+    }
+
+    /// A dotted line between two related apps, drawn as one dot repeated along it.
+    private final class Link {
+        let from: Int
+        let to: Int
+        let replicator = CAReplicatorLayer()
+        let dot = CALayer()
+        var isFocused: Bool?
+
+        init(from: Int, to: Int) {
+            self.from = from
+            self.to = to
+            replicator.addSublayer(dot)
+        }
+    }
+
+    private enum Depth {
+        static let stars: CGFloat = 0
+        static let ghosts: CGFloat = 1
+        static let links: CGFloat = 2
+        static let cells: CGFloat = 10
     }
 
     static let flipsY: Bool = {
@@ -47,6 +112,8 @@ final class PortalRenderer {
         return false
         #endif
     }()
+
+    static let ghostSide: CGFloat = 6.8
 
     let rootLayer = CALayer()
 
@@ -60,18 +127,18 @@ final class PortalRenderer {
     private var lens = PortalLens(halfExtent: CGSize(width: 1, height: 1))
     private var cells: [CellLayers] = []
     private var stars: [Star] = []
-    private var links: [(Int, Int)] = []
+    private var ghosts: [CALayer] = []
+    private var links: [Link] = []
+    private var points: [CGPoint] = []
     private var installedBundleIDs: Set<String> = []
     private var focusedIndex: Int?
-    private var drawOrder: [Int] = []
     private var hostBundleID: String?
-    private let ghostLayer = CAShapeLayer()
-    private let linkLayer = CAShapeLayer()
-    private let focusLinkLayer = CAShapeLayer()
+    private var progressFraction: CGFloat = 0
+    private var hasViewport = false
+    private let textures = PortalTextureCache()
     private let focusRing = CAShapeLayer()
     private let focusPing = CAShapeLayer()
-    private let progressTrack = CAShapeLayer()
-    private let progressArc = CAShapeLayer()
+    private let progressRing = CALayer()
 
     init(layout: PortalLayout, scale: CGFloat, reduceMotion: Bool) {
         self.layout = layout
@@ -79,7 +146,13 @@ final class PortalRenderer {
         self.reduceMotion = reduceMotion
         rootLayer.masksToBounds = false
         rootLayer.contentsScale = scale
-        configureShapeLayers()
+        progressRing.contentsScale = scale
+        progressRing.contentsGravity = .resize
+        for (layer, width) in [(focusRing, 2.5), (focusPing, 2.0)] {
+            layer.fillColor = nil
+            layer.lineWidth = width
+            layer.contentsScale = scale
+        }
     }
 
     var baseDiameter: CGFloat { diameter }
@@ -89,7 +162,8 @@ final class PortalRenderer {
         for entry in cells { applyIdleMotion(to: entry) }
     }
 
-    /// Rebuilds every cell for a new set of apps.
+    /// Lays out a new set of apps. Cells whose app was already shown keep their layers and their
+    /// drawn icon, so a refreshed catalog or a rotation never flashes or draws an icon again.
     func configure(
         layout: PortalLayout,
         apps: [String: MidgarApp],
@@ -99,47 +173,67 @@ final class PortalRenderer {
         self.layout = layout
         self.hostBundleID = hostBundleID?.lowercased()
         self.installedBundleIDs = installed
-        let previousArtwork = Dictionary(uniqueKeysWithValues: cells.compactMap { entry in
-            entry.cell.appID.flatMap { id in entry.artwork.map { (id, $0) } }
-        })
-        for entry in cells { entry.container.removeFromSuperlayer() }
-        drawOrder = []
+        detachFocus()
+        var previous = Dictionary(cells.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         cells = layout.cells.map { cell in
             let app = cell.appID.flatMap { apps[$0] }
             let accent = app.map { PortalColor(hex: $0.accentHex) } ?? .midgar
+            if let reused = previous.removeValue(forKey: cell.appID ?? "core") {
+                reused.cell = cell
+                reused.app = app
+                reused.accent = accent
+                reused.glow.opacity = 0.22
+                return reused
+            }
             let entry = CellLayers(cell: cell, app: app, accent: accent)
-            entry.artwork = cell.appID.flatMap { previousArtwork[$0] }
-            return entry
-        }
-        links = buildLinks(apps: apps)
-        for entry in cells {
             buildLayers(for: entry)
             rootLayer.addSublayer(entry.container)
+            return entry
         }
-        rebuildTextures()
-        refreshBadges()
+        for stale in previous.values { stale.container.removeFromSuperlayer() }
+        frames = [:]
+        points = Array(repeating: .zero, count: cells.count)
+        rebuildLinks(apps: apps)
+        rebuildGhosts()
+        for entry in cells {
+            applyIdleMotion(to: entry)
+            guard hasViewport else { continue }
+            sizeLayers(of: entry)
+            requestIcon(for: entry)
+        }
+        if hasViewport { refreshBadges() }
     }
 
     func setViewport(size: CGSize, center: CGPoint, halfExtent: CGSize, diameter: CGFloat) {
+        let firstViewport = !hasViewport
+        let sizeChanged = size != self.size
+        let diameterChanged = diameter != self.diameter || firstViewport
+        guard sizeChanged || diameterChanged || center != self.center || halfExtent != lens.halfExtent else { return }
+        hasViewport = true
         self.size = size
         self.center = center
         self.diameter = diameter
         lens = PortalLens(halfExtent: halfExtent)
         rootLayer.bounds = CGRect(origin: .zero, size: size)
         rootLayer.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        layoutStars()
-        for entry in cells { sizeLayers(of: entry) }
-        rebuildTextures()
+        if sizeChanged { layoutStars() }
+        guard diameterChanged else { return }
+        for entry in cells {
+            sizeLayers(of: entry)
+            requestIcon(for: entry)
+        }
         refreshBadges()
+        if let focusedIndex, cells.indices.contains(focusedIndex) { attachFocusRing(to: cells[focusedIndex]) }
     }
 
     func setArtwork(_ image: CGImage, forApp appID: String) {
         guard let entry = cells.first(where: { $0.cell.appID == appID }) else { return }
         entry.artwork = image
-        applyIcon(to: entry)
+        requestIcon(for: entry)
     }
 
     func setInstalled(_ bundleIDs: Set<String>) {
+        guard bundleIDs != installedBundleIDs else { return }
         installedBundleIDs = bundleIDs
         refreshBadges()
     }
@@ -150,9 +244,9 @@ final class PortalRenderer {
         let previous = focusedIndex
         focusedIndex = index
         if let previous, cells.indices.contains(previous) { fade(cells[previous].glow, to: 0.22, animated: animated) }
+        restyleLinks()
         guard let index, cells.indices.contains(index) else {
-            focusRing.removeFromSuperlayer()
-            focusPing.removeFromSuperlayer()
+            detachFocus()
             return
         }
         let entry = cells[index]
@@ -162,7 +256,10 @@ final class PortalRenderer {
     }
 
     func setProgress(_ fraction: CGFloat) {
-        progressArc.strokeEnd = max(0.001, min(1, fraction))
+        let clamped = max(0, min(1, fraction))
+        guard clamped != progressFraction else { return }
+        progressFraction = clamped
+        if let core = cells.first(where: { $0.cell.isCore }) { attachProgress(to: core) }
     }
 
     /// Renders one frame. `intro` is the seconds since the portal opened.
@@ -171,9 +268,7 @@ final class PortalRenderer {
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
 
-        var projected: [Int: (point: CGPoint, scale: CGFloat)] = [:]
-        projected.reserveCapacity(cells.count)
-        for entry in cells {
+        for (slot, entry) in cells.enumerated() {
             let progress = introProgress(of: entry.cell.index, elapsed: intro)
             let projection = lens.project(CGPoint(x: entry.cell.world.x - camera.x, y: entry.cell.world.y - camera.y))
             let point = CGPoint(
@@ -181,7 +276,7 @@ final class PortalRenderer {
                 y: center.y + projection.point.y * progress.travel
             )
             let cellScale = projection.scale * progress.size
-            projected[entry.cell.index] = (point, cellScale)
+            points[slot] = point
             place(entry, at: point, scale: cellScale, alpha: progress.alpha * depthAlpha(projection.scale))
             frames[entry.cell.index] = PortalCellFrame(
                 center: point,
@@ -189,9 +284,8 @@ final class PortalRenderer {
                 depth: projection.scale
             )
         }
-        orderCells(by: projected.mapValues(\.scale))
-        drawGhosts(camera: camera, intro: intro)
-        drawLinks(projected: projected)
+        moveGhosts(camera: camera, intro: intro)
+        moveLinks()
         moveStars(camera: camera)
     }
 
@@ -227,22 +321,13 @@ final class PortalRenderer {
         return 0.5 + 0.5 * t * t * (3 - 2 * t)
     }
 
+    /// Nearer cells draw above farther ones through `zPosition`, which the compositor sorts, so the
+    /// layer tree itself never changes while the camera moves.
     private func place(_ entry: CellLayers, at point: CGPoint, scale: CGFloat, alpha: CGFloat) {
         entry.container.position = layerPoint(point)
         entry.container.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
         entry.container.opacity = Float(alpha)
-    }
-
-    /// Keeps larger, nearer cells above smaller ones by ordering sublayers, and only touches the
-    /// layer tree when the order actually changes.
-    private func orderCells(by scales: [Int: CGFloat]) {
-        let wanted = cells.indices.sorted { (scales[$0] ?? 0) < (scales[$1] ?? 0) }
-        guard wanted != drawOrder else { return }
-        drawOrder = wanted
-        for index in wanted {
-            cells[index].container.removeFromSuperlayer()
-            rootLayer.addSublayer(cells[index].container)
-        }
+        entry.container.zPosition = Depth.cells + scale
     }
 
     private func layerPoint(_ point: CGPoint) -> CGPoint {
@@ -253,146 +338,182 @@ final class PortalRenderer {
         Self.flipsY ? CGPoint(x: x, y: diameter - y) : CGPoint(x: x, y: y)
     }
 
-    private func configureShapeLayers() {
-        ghostLayer.fillColor = PortalColor.white.withAlpha(0.28).cgColor
-        ghostLayer.strokeColor = nil
-        linkLayer.fillColor = nil
-        linkLayer.strokeColor = PortalColor.white.withAlpha(0.1).cgColor
-        linkLayer.lineWidth = 1
-        linkLayer.lineDashPattern = [2, 6]
-        linkLayer.lineCap = .round
-        focusLinkLayer.fillColor = nil
-        focusLinkLayer.lineWidth = 1.6
-        focusLinkLayer.lineDashPattern = [1, 6]
-        focusLinkLayer.lineCap = .round
-        focusRing.fillColor = nil
-        focusRing.lineWidth = 2.5
-        focusPing.fillColor = nil
-        focusPing.lineWidth = 2
-        progressTrack.fillColor = nil
-        progressTrack.lineWidth = 3
-        progressTrack.strokeColor = PortalColor.white.withAlpha(0.12).cgColor
-        progressArc.fillColor = nil
-        progressArc.lineWidth = 3
-        progressArc.lineCap = .round
-        progressArc.strokeEnd = 0.001
-        for layer in [ghostLayer, linkLayer, focusLinkLayer] { rootLayer.addSublayer(layer) }
-    }
-
-    private func buildLinks(apps: [String: MidgarApp]) -> [(Int, Int)] {
+    private func rebuildLinks(apps: [String: MidgarApp]) {
+        for link in links { link.replicator.removeFromSuperlayer() }
         var seen = Set<String>()
-        var pairs: [(Int, Int)] = []
-        let byBundle = Dictionary(uniqueKeysWithValues: layout.cells.compactMap { cell -> (String, Int)? in
-            cell.appID.flatMap { apps[$0] }.map { ($0.bundleId.lowercased(), cell.index) }
-        })
+        let byBundle = Dictionary(
+            layout.cells.compactMap { cell -> (String, Int)? in
+                cell.appID.flatMap { apps[$0] }.map { ($0.bundleId.lowercased(), cell.index) }
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        links = []
         for cell in layout.cells {
             guard let app = cell.appID.flatMap({ apps[$0] }) else { continue }
             for other in app.related {
                 guard let target = byBundle[other.lowercased()], target != cell.index else { continue }
                 let key = "\(min(cell.index, target))-\(max(cell.index, target))"
-                if seen.insert(key).inserted { pairs.append((cell.index, target)) }
+                guard seen.insert(key).inserted else { continue }
+                let link = Link(from: cell.index, to: target)
+                link.replicator.zPosition = Depth.links
+                link.dot.contentsScale = scale
+                rootLayer.addSublayer(link.replicator)
+                links.append(link)
             }
         }
-        return pairs
+        restyleLinks()
+    }
+
+    /// Links that touch the focused cell are drawn as brighter dots in its colour, the rest as faint
+    /// dashes. Only links whose role changed are touched.
+    private func restyleLinks() {
+        let accent = focusedIndex.flatMap { cells.indices.contains($0) ? cells[$0].accent : nil } ?? .midgar
+        for link in links {
+            let focused = link.from == focusedIndex || link.to == focusedIndex
+            guard focused != link.isFocused || focused else { continue }
+            link.isFocused = focused
+            if focused {
+                link.dot.bounds = CGRect(x: 0, y: 0, width: 2.6, height: 1.6)
+                link.dot.cornerRadius = 0.8
+                link.dot.backgroundColor = accent.lightened(0.3).withAlpha(0.75).cgColor
+                link.replicator.instanceTransform = CATransform3DMakeTranslation(7, 0, 0)
+            } else {
+                link.dot.bounds = CGRect(x: 0, y: 0, width: 2, height: 1)
+                link.dot.cornerRadius = 0.5
+                link.dot.backgroundColor = PortalColor.white.withAlpha(0.1).cgColor
+                link.replicator.instanceTransform = CATransform3DMakeTranslation(8, 0, 0)
+            }
+        }
+    }
+
+    private func moveLinks() {
+        for link in links {
+            guard points.indices.contains(link.from), points.indices.contains(link.to) else { continue }
+            let from = layerPoint(points[link.from])
+            let to = layerPoint(points[link.to])
+            let dx = to.x - from.x
+            let dy = to.y - from.y
+            let spacing: CGFloat = link.isFocused == true ? 7 : 8
+            link.replicator.position = from
+            link.replicator.setAffineTransform(CGAffineTransform(rotationAngle: atan2(dy, dx)))
+            link.replicator.instanceCount = max(0, Int(hypot(dx, dy) / spacing))
+        }
+    }
+
+    private func rebuildGhosts() {
+        let texture = textures.image("ghost") {
+            PortalArt.dot(diameter: Self.ghostSide, scale: scale, color: PortalColor.white.withAlpha(0.28))
+        }
+        while ghosts.count < layout.ghosts.count {
+            let layer = CALayer()
+            layer.bounds = CGRect(x: 0, y: 0, width: Self.ghostSide, height: Self.ghostSide)
+            layer.contents = texture
+            layer.contentsScale = scale
+            layer.zPosition = Depth.ghosts
+            rootLayer.addSublayer(layer)
+            ghosts.append(layer)
+        }
+        while ghosts.count > layout.ghosts.count {
+            ghosts.removeLast().removeFromSuperlayer()
+        }
+    }
+
+    private func moveGhosts(camera: CGPoint, intro: TimeInterval) {
+        let reveal = reduceMotion ? 1 : CGFloat(max(0, min(1, (intro - 0.3) / 0.8)))
+        for (layer, world) in zip(ghosts, layout.ghosts) {
+            let projection = lens.project(CGPoint(x: world.x - camera.x, y: world.y - camera.y))
+            let point = layerPoint(CGPoint(x: center.x + projection.point.x, y: center.y + projection.point.y))
+            let visible = reveal > 0 && point.x > -20 && point.x < size.width + 20 && point.y > -20 && point.y < size.height + 20
+            layer.isHidden = !visible
+            guard visible else { continue }
+            let radius = max(1.2, 3.4 * projection.scale) * reveal
+            let factor = radius * 2 / Self.ghostSide
+            layer.position = point
+            layer.setAffineTransform(CGAffineTransform(scaleX: factor, y: factor))
+        }
     }
 
     private func buildLayers(for entry: CellLayers) {
         let container = entry.container
         container.contentsScale = scale
         container.masksToBounds = false
-        entry.glow.type = .radial
-        entry.glow.startPoint = CGPoint(x: 0.5, y: 0.5)
-        entry.glow.endPoint = CGPoint(x: 1, y: 1)
-        entry.glow.colors = [
-            entry.accent.withAlpha(0.55).cgColor,
-            entry.accent.withAlpha(0.18).cgColor,
-            entry.accent.withAlpha(0).cgColor,
-        ]
-        entry.glow.locations = [0, 0.45, 1]
-        entry.glow.opacity = 0.22
-        entry.body.contentsScale = scale
-        entry.body.contentsGravity = .resize
-        entry.installed.contentsScale = scale
-        entry.installed.isHidden = true
-        entry.platform.contentsScale = scale
-        entry.platform.isHidden = true
-        entry.marker.fillColor = nil
-        entry.marker.strokeColor = PortalColor.white.withAlpha(0.7).cgColor
-        entry.marker.lineWidth = 1.6
-        entry.marker.lineDashPattern = [3, 6]
-        entry.marker.lineCap = .round
-        entry.marker.isHidden = true
-        entry.markerLabel.contentsScale = scale
-        entry.markerLabel.isHidden = true
+        container.allowsGroupOpacity = false
         for layer in [entry.glow, entry.body, entry.installed, entry.platform, entry.marker, entry.markerLabel] {
+            layer.contentsScale = scale
+            layer.contentsGravity = .resize
             container.addSublayer(layer)
         }
-        sizeLayers(of: entry)
-        applyIdleMotion(to: entry)
+        entry.glow.opacity = 0.22
+        entry.installed.isHidden = true
+        entry.platform.isHidden = true
+        entry.marker.isHidden = true
+        entry.markerLabel.isHidden = true
     }
 
     private func sizeLayers(of entry: CellLayers) {
         let d = diameter
+        let middle = CGPoint(x: d / 2, y: d / 2)
         entry.container.bounds = CGRect(x: 0, y: 0, width: d, height: d)
         entry.glow.bounds = CGRect(x: 0, y: 0, width: d * 1.9, height: d * 1.9)
-        entry.glow.position = CGPoint(x: d / 2, y: d / 2)
+        entry.glow.position = middle
+        entry.glow.contents = textures.image("glow|\(d)|\(entry.accent.hashKey)") {
+            PortalArt.glow(diameter: d * 1.9, scale: 1, accent: entry.accent)
+        }
         entry.body.bounds = CGRect(x: 0, y: 0, width: d, height: d)
-        entry.body.position = CGPoint(x: d / 2, y: d / 2)
-        entry.marker.bounds = CGRect(x: 0, y: 0, width: d, height: d)
-        entry.marker.position = CGPoint(x: d / 2, y: d / 2)
-        let markerRect = CGRect(x: -7, y: -7, width: d + 14, height: d + 14)
-        entry.marker.path = CGPath(ellipseIn: markerRect, transform: nil)
+        entry.body.position = middle
+        entry.marker.bounds = CGRect(x: 0, y: 0, width: d + 20, height: d + 20)
+        entry.marker.position = middle
+        entry.marker.contents = textures.image("marker|\(d)") {
+            PortalArt.ring(side: d + 20, radius: d / 2 + 7, lineWidth: 1.6, scale: scale, color: PortalColor.white.withAlpha(0.7), dash: [3, 6])
+        }
         let badge = max(20, d * 0.24)
         entry.installed.bounds = CGRect(x: 0, y: 0, width: badge, height: badge)
         entry.installed.position = localPoint(d * 0.82, d * 0.82)
-        entry.installed.contents = PortalArt.installedBadge(diameter: badge, scale: scale)
-    }
-
-    private func rebuildTextures() {
-        for entry in cells { applyIcon(to: entry) }
-    }
-
-    private func applyIcon(to entry: CellLayers) {
-        if entry.cell.isCore {
-            let image = PortalArt.coreEmblem(diameter: diameter, scale: scale, tint: .midgar)
-            entry.body.contents = image
-            attachProgress(to: entry)
-            return
+        entry.installed.contents = textures.image("installed|\(badge)") {
+            PortalArt.installedBadge(diameter: badge, scale: scale)
         }
+        if entry.cell.isCore { attachProgress(to: entry) }
+    }
+
+    /// Asks for the icon bitmap when what it is drawn from has changed. It is drawn on a background
+    /// thread and fades in when ready; an answer for a recipe that has since changed is dropped.
+    private func requestIcon(for entry: CellLayers) {
         let zoom: CGFloat = (entry.app?.platforms == [.mac]) ? 1.2 : 1.0
-        entry.body.contents = PortalArt.circularIcon(
-            source: entry.artwork,
+        let recipe = PortalIconRecipe(
+            diameter: diameter,
+            scale: scale,
+            accent: entry.accent.hashKey,
+            monogram: entry.app?.monogram ?? "M",
+            zoom: zoom,
+            isCore: entry.cell.isCore,
+            artwork: entry.artwork.map(ObjectIdentifier.init)
+        )
+        guard hasViewport, entry.recipe != recipe else { return }
+        entry.recipe = recipe
+        let job = PortalIconJob(
+            artwork: PortalImageBox(image: entry.artwork),
             diameter: diameter,
             scale: scale,
             accent: entry.accent,
-            monogram: entry.app?.monogram ?? "M",
-            zoom: zoom
+            monogram: recipe.monogram,
+            zoom: zoom,
+            isCore: recipe.isCore
         )
+        Task { @MainActor [weak entry] in
+            let drawn = await Task.detached(priority: .userInitiated) { job.render() }.value
+            guard let entry, entry.recipe == recipe, let image = drawn.image else { return }
+            entry.body.contents = image
+        }
     }
 
     private func attachProgress(to entry: CellLayers) {
-        let path = progressPath(radius: diameter / 2 + 9)
-        for layer in [progressTrack, progressArc] {
-            layer.removeFromSuperlayer()
-            layer.bounds = CGRect(x: 0, y: 0, width: diameter, height: diameter)
-            layer.position = CGPoint(x: diameter / 2, y: diameter / 2)
-            layer.path = path
-            entry.container.addSublayer(layer)
-        }
-        progressArc.strokeColor = PortalColor.midgar.lightened(0.45).cgColor
-    }
-
-    /// A circle that starts at twelve o'clock and runs clockwise on screen, built from points so it
-    /// reads the same whichever way the platform's layer coordinates point.
-    private func progressPath(radius: CGFloat) -> CGPath {
-        let path = CGMutablePath()
-        let segments = 120
-        for step in 0...segments {
-            let angle = CGFloat(step) / CGFloat(segments) * 2 * .pi
-            let point = localPoint(diameter / 2 + radius * sin(angle), diameter / 2 - radius * cos(angle))
-            if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-        return path
+        let side = diameter + 24
+        progressRing.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+        progressRing.position = CGPoint(x: diameter / 2, y: diameter / 2)
+        progressRing.contents = PortalArt.progressRing(
+            side: side, radius: diameter / 2 + 9, fraction: progressFraction, scale: scale, tint: .midgar
+        )
+        if progressRing.superlayer !== entry.container { entry.container.addSublayer(progressRing) }
     }
 
     private func refreshBadges() {
@@ -404,7 +525,9 @@ final class PortalRenderer {
             entry.markerLabel.isHidden = !isHost
             if isHost { configureHostMarker(entry) }
             if let foreign = app.foreignPlatform,
-               let pill = PortalArt.pill(text: foreign.badgeLabel, scale: scale, tint: entry.accent) {
+               let pill = textures.image("pill|\(foreign.rawValue)|\(entry.accent.hashKey)", {
+                   PortalArt.pill(text: foreign.badgeLabel, scale: scale, tint: entry.accent)
+               }) {
                 entry.platform.contents = pill
                 entry.platform.bounds = CGRect(x: 0, y: 0, width: CGFloat(pill.width) / scale, height: 20)
                 entry.platform.position = localPoint(diameter / 2, diameter * 0.96)
@@ -416,12 +539,16 @@ final class PortalRenderer {
     }
 
     private func configureHostMarker(_ entry: CellLayers) {
-        let label = PortalArt.pill(text: MidgarStrings.youAreHere, scale: scale, tint: entry.accent)
+        let label = textures.image("here|\(entry.accent.hashKey)") {
+            PortalArt.pill(text: MidgarStrings.youAreHere, scale: scale, tint: entry.accent)
+        }
         entry.markerLabel.contents = label
         let width = CGFloat(label?.width ?? 0) / scale
         entry.markerLabel.bounds = CGRect(x: 0, y: 0, width: width, height: 20)
         entry.markerLabel.position = localPoint(diameter / 2, diameter * 1.1)
-        if !reduceMotion, entry.marker.animation(forKey: "spin") == nil {
+        if reduceMotion {
+            entry.marker.removeAnimation(forKey: "spin")
+        } else if entry.marker.animation(forKey: "spin") == nil {
             let spin = CABasicAnimation(keyPath: "transform.rotation.z")
             spin.fromValue = 0
             spin.toValue = Double.pi * 2
@@ -445,17 +572,34 @@ final class PortalRenderer {
         entry.body.add(bob, forKey: "bob")
     }
 
+    private func detachFocus() {
+        focusRing.removeFromSuperlayer()
+        focusPing.removeFromSuperlayer()
+        focusPing.removeAllAnimations()
+        focusedIndex = nil
+    }
+
+    /// The ring and its pulse are one stroked circle each, shaped once per size: moving the focus to
+    /// an app of another colour only changes the stroke colour, with no bitmap drawn on this thread.
     private func attachFocusRing(to entry: CellLayers) {
-        let r = diameter / 2 + 5
-        let rect = CGRect(x: diameter / 2 - r, y: diameter / 2 - r, width: r * 2, height: r * 2)
-        let path = CGPath(ellipseIn: rect, transform: nil)
+        let radius = diameter / 2 + 5
+        let side = radius * 2
+        let ring = entry.accent.lightened(0.25)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        focusRing.strokeColor = ring.withAlpha(0.95).cgColor
+        focusPing.strokeColor = ring.withAlpha(0.6).cgColor
         for layer in [focusRing, focusPing] {
-            layer.removeFromSuperlayer()
-            layer.bounds = CGRect(x: 0, y: 0, width: diameter, height: diameter)
+            if layer.bounds.width != side {
+                layer.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+                layer.path = CGPath(ellipseIn: layer.bounds, transform: nil)
+            }
             layer.position = CGPoint(x: diameter / 2, y: diameter / 2)
-            layer.path = path
-            layer.strokeColor = entry.accent.lightened(0.25).withAlpha(layer === focusRing ? 0.95 : 0.6).cgColor
-            entry.container.insertSublayer(layer, above: entry.body)
+            if layer.superlayer !== entry.container {
+                layer.removeFromSuperlayer()
+                entry.container.insertSublayer(layer, above: entry.body)
+            }
         }
         focusPing.removeAllAnimations()
         guard !reduceMotion else { return }
@@ -495,35 +639,6 @@ final class PortalRenderer {
         layer.add(animation, forKey: "focusGlow")
     }
 
-    private func drawGhosts(camera: CGPoint, intro: TimeInterval) {
-        let path = CGMutablePath()
-        let reveal = reduceMotion ? 1 : CGFloat(max(0, min(1, (intro - 0.3) / 0.8)))
-        for world in layout.ghosts {
-            let projection = lens.project(CGPoint(x: world.x - camera.x, y: world.y - camera.y))
-            let point = layerPoint(CGPoint(x: center.x + projection.point.x, y: center.y + projection.point.y))
-            guard point.x > -20, point.x < size.width + 20, point.y > -20, point.y < size.height + 20 else { continue }
-            let radius = max(1.2, 3.4 * projection.scale) * reveal
-            path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-        }
-        ghostLayer.path = path
-    }
-
-    private func drawLinks(projected: [Int: (point: CGPoint, scale: CGFloat)]) {
-        let base = CGMutablePath()
-        let focus = CGMutablePath()
-        for (a, b) in links {
-            guard let from = projected[a], let to = projected[b] else { continue }
-            let target = (a == focusedIndex || b == focusedIndex) ? focus : base
-            target.move(to: layerPoint(from.point))
-            target.addLine(to: layerPoint(to.point))
-        }
-        linkLayer.path = base
-        focusLinkLayer.path = focus
-        if let index = focusedIndex, cells.indices.contains(index) {
-            focusLinkLayer.strokeColor = cells[index].accent.lightened(0.3).withAlpha(0.75).cgColor
-        }
-    }
-
     private func layoutStars() {
         for star in stars { star.layer.removeFromSuperlayer() }
         stars.removeAll()
@@ -531,26 +646,33 @@ final class PortalRenderer {
         var generator = SeededGenerator(seed: 0x4D49_4447_4152)
         let tints = [PortalColor.white, PortalColor(r: 0.75, g: 0.85, b: 1), PortalColor(r: 1, g: 0.9, b: 0.75)]
         let count = Int(min(90, max(40, size.width * size.height / 9000)))
-        let textures = tints.map { PortalArt.starDot(diameter: 8, scale: scale, tint: $0) }
+        let starTextures = tints.map { tint in
+            textures.image("star|\(tint.hashKey)") { PortalArt.starDot(diameter: 8, scale: scale, tint: tint) }
+        }
         for index in 0..<count {
             let depth = [0.05, 0.1, 0.18][index % 3]
             let layer = CALayer()
             let side = CGFloat.random(in: 2.5...(5 + CGFloat(index % 3) * 2), using: &generator)
             layer.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-            layer.contents = textures[Int.random(in: 0..<textures.count, using: &generator)]
+            layer.contents = starTextures[Int.random(in: 0..<starTextures.count, using: &generator)]
             layer.contentsScale = scale
+            layer.contentsGravity = .resize
+            layer.zPosition = Depth.stars
             layer.opacity = Float.random(in: 0.25...0.9, using: &generator)
+            let twinkleTo = Float.random(in: 0.1...0.4, using: &generator)
+            let twinkleFor = Double.random(in: 1.8...4.2, using: &generator)
+            let twinkleAt = Double.random(in: 0...3, using: &generator)
             if !reduceMotion {
                 let twinkle = CABasicAnimation(keyPath: "opacity")
                 twinkle.fromValue = layer.opacity
-                twinkle.toValue = Float.random(in: 0.1...0.4, using: &generator)
-                twinkle.duration = Double.random(in: 1.8...4.2, using: &generator)
+                twinkle.toValue = twinkleTo
+                twinkle.duration = twinkleFor
                 twinkle.autoreverses = true
                 twinkle.repeatCount = .infinity
-                twinkle.timeOffset = Double.random(in: 0...3, using: &generator)
+                twinkle.timeOffset = twinkleAt
                 layer.add(twinkle, forKey: "twinkle")
             }
-            rootLayer.insertSublayer(layer, at: 0)
+            rootLayer.addSublayer(layer)
             stars.append(Star(
                 layer: layer,
                 base: CGPoint(

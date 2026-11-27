@@ -1,16 +1,6 @@
-import SwiftUI
-
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
+#if canImport(AppKit) && !canImport(UIKit)
 import AppKit
-#endif
-
-/// Solid colours for the panel and its rows, so nothing of the canvas behind the panel shows through.
-enum YourMidgarSurface {
-    static let panel = PortalColor.space.lightened(0.04)
-    static let row = PortalColor.space.lightened(0.11)
-}
+import SwiftUI
 
 /// The "Your Midgar" panel: the Midgar apps the person has with what they own in each, then a few more worth a look. It sits over the canvas, between the header and the bottom card.
 struct YourMidgarPanel: View {
@@ -211,10 +201,7 @@ struct YourMidgarIcon: View {
 
 extension Image {
     init(midgar image: MidgarImage) {
-        #if canImport(UIKit)
-        self.init(uiImage: image)
-        #else
         self.init(nsImage: image)
-        #endif
     }
 }
+#endif
