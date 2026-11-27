@@ -286,6 +286,34 @@ final class PortalRankingTests: XCTestCase {
         XCTAssertEqual(ranked.map(\.appId), ["b", "a"])
     }
 
+    func testAProductWithSeveralStoreRecordsGetsOneCell() {
+        let phone = MidgarApp(appId: "1", bundleId: "com.example.player", name: "Player", platforms: [.ios, .mac], slug: "player")
+        let mac = MidgarApp(appId: "2", bundleId: "com.example.player.mac", name: "Player", platforms: [.mac], slug: "player")
+        let other = app("other")
+        let onPhone = PortalRanking.order(apps: [phone, mac, other], hostBundleID: nil, installed: [], platform: .ios)
+        XCTAssertEqual(Set(onPhone.map(\.appId)), ["1", "other"])
+        let onMac = PortalRanking.order(apps: [phone, mac, other], hostBundleID: nil, installed: [], platform: .mac)
+        XCTAssertEqual(Set(onMac.map(\.appId)), ["2", "other"])
+        let onTV = PortalRanking.order(apps: [phone, mac, other], hostBundleID: nil, installed: [], platform: .tvos)
+        XCTAssertEqual(Set(onTV.map(\.appId)), ["1", "other"])
+    }
+
+    func testTheHostKeepsItsOwnRecordOfAProduct() {
+        let phone = MidgarApp(appId: "1", bundleId: "com.example.player", name: "Player", platforms: [.ios, .mac], slug: "player")
+        let mac = MidgarApp(appId: "2", bundleId: "com.example.player.mac", name: "Player", platforms: [.mac], slug: "player")
+        let ranked = PortalRanking.order(apps: [phone, mac], hostBundleID: "com.example.player", installed: [], platform: .mac)
+        XCTAssertEqual(ranked.map(\.appId), ["1"])
+    }
+
+    func testTheBundledCatalogShowsEveryIconOnce() {
+        for platform in MidgarPlatform.allCases {
+            let ranked = PortalRanking.order(apps: CatalogService.bundledApps(), hostBundleID: nil, installed: [], platform: platform)
+            let slugs = ranked.compactMap(\.slug)
+            XCTAssertEqual(slugs.count, Set(slugs).count, "\(platform): \(slugs)")
+            XCTAssertEqual(ranked.filter { $0.slug == "flaccy" }.count, 1, "\(platform)")
+        }
+    }
+
     func testBundledCatalogPairsItsRelatedApps() {
         let apps = CatalogService.bundledApps()
         let psybeam = apps.first { $0.bundleId == "com.guitaripod.psybeam" }!
